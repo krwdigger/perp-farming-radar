@@ -623,7 +623,8 @@ html,body,[data-testid="stApp"],[data-testid="stApp"] *,
 }
 
 /* Market-activity proxy: compact two-line congestion cell. */
-.radar-rank-table th:last-child,.radar-rank-table td:last-child{
+.radar-table-wrap:not(.benchmark-wrap) .radar-rank-table th:last-child,
+.radar-table-wrap:not(.benchmark-wrap) .radar-rank-table td:last-child{
  min-width:135px;text-align:center;vertical-align:middle}
 .congestion-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
 .congestion-cell strong{font-size:15px!important;font-weight:700!important;color:#6b432a}
@@ -1110,6 +1111,7 @@ with radar_tabs[0]:
         oi_rank=group['oi_usd'].rank(pct=True,method='average')
         watched.loc[valid_market,'activity_congestion']=100*(0.6*vol_rank+0.4*oi_rank)
     def congestion_pumpkins(value):
+        import math
         if pd.isna(value):return '<span class="radar-missing">자료 부족</span>'
         score=float(value)
         if score>=80:label='매우 혼잡'
