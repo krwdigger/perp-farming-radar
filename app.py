@@ -137,6 +137,22 @@ def fetch_arcus_markets():
             'volume_source':'Arcus official /v1/markets · sum perpetual volume24hNotional',
             'oi_source':'Arcus markets API · perpetual one-sided OI × mark price'}
 
+@st.cache_data(ttl=300,show_spinner=False)
+def fetch_lighter_mainnet():
+    """Generic Lighter mainnet only: NOT Robinhood Chain Lighter."""
+    payload=api_get('https://mainnet.zklighter.elliot.ai/api/v1/exchangeStats')
+    if not isinstance(payload,dict) or payload.get('code')!=200:
+        raise ValueError('Lighter exchangeStats response invalid')
+    volume=number(payload.get('daily_usd_volume'))
+    if volume is None:
+        stats=payload.get('order_book_stats') or []
+        values=[number(item.get('daily_quote_token_volume')) for item in stats if isinstance(item,dict)]
+        values=[v for v in values if v is not None and v>=0]
+        volume=sum(values) if values else None
+    if volume is None:raise ValueError('Lighter has no daily USD volume')
+    return {'volume_24h_usd':volume,'volume_source':'Lighter mainnet official exchangeStats',
+            'market_data_time':datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}
+
 @st.cache_data(ttl=900,show_spinner=False)
 def fetch_pacifica_ccxt():
     """Market OI from published CCXT Pacifica adapter. Treat failures as missing."""
@@ -291,6 +307,8 @@ with st.spinner('공개 데이터 수집 중…'):
     except Exception as e: oi=pd.DataFrame();errors.append(f'OI: {e}')
     try: hl=fetch_hyperliquid() if use_hl else None
     except Exception as e: hl=None;errors.append(f'Hyperliquid: {e}')
+    try: lighter_mainnet=fetch_lighter_mainnet()
+    except Exception as e: lighter_mainnet=None;errors.append(f'Lighter mainnet: {e}')
     try: sx=fetch_standx()
     except Exception as e: sx=None;errors.append(f'StandX: {e}')
     try: va=fetch_variational()
@@ -377,6 +395,15 @@ if hl:
             if col!='name':df.loc[mask,col]=val
     else:
         df=pd.concat([df,pd.DataFrame([dict(hl, _id=hk)])],ignore_index=True)
+if lighter_mainnet:
+    key=norm('Lighter')
+    existing=df['_id'].eq(key)
+    if existing.any():
+        for field,value in lighter_mainnet.items():
+            if field not in df.columns:df[field]=None
+            df.loc[existing,field]=value
+    else:
+        df=pd.concat([df,pd.DataFrame([{'name':'Lighter','_id':key,**lighter_mainnet}])],ignore_index=True)
 manual=pd.DataFrame()
 if uploaded is not None:
     try:
@@ -488,7 +515,14 @@ def latest_oi_weekly_change(data,venue):
     return (now['oi_usd']/previous.iloc[-1]['oi_usd']-1)*100
 
 with radar_tabs[0]:
+    comparison=df[df['_id'].isin([norm('Hyperliquid'),norm('Lighter')])].copy()
+    comparison['watch_name']=comparison['_id'].map({norm('Hyperliquid'):'Hyperliquid',norm('Lighter'):'Lighter'})
+    comparison=comparison.drop_duplicates('watch_name')
     watched=df[df['is_watchlist'].fillna(False).astype(bool)].copy()
+    # Empty exchange records belong in diagnostics, not on the main market board.
+    watched=watched[watched['volume_24h_usd'].notna()|watched['oi_usd'].notna()|watched['volume_7d_usd'].notna()].copy()
+    watched=pd.concat([comparison,watched],ignore_index=True)
+    watched['comparison_reference']=watched['watch_name'].isin(['Hyperliquid','Lighter'])
     try:
         history=load_public_market_history()
         watched['oi_weekly_change_pct']=watched['watch_name'].map(lambda n:latest_oi_weekly_change(history,n))
@@ -527,14 +561,16 @@ with radar_tabs[0]:
     elif display_mode=='OI 확보':rank=rank[rank['oi_usd'].notna()]
     elif display_mode=='Volume + OI 확보':rank=rank[rank['volume_24h_usd'].notna()&rank['oi_usd'].notna()]
     col,ascending={'24H Volume ↓':('volume_24h_usd',False),'OI ↓':('oi_usd',False),'Volume/OI ↓':('volume_oi_ratio',False),'Volume/OI ↑':('volume_oi_ratio',True),'거래소명':('watch_name',True)}[sort]
-    rank=rank.sort_values(col,ascending=ascending,na_position='last').reset_index(drop=True)
+    rank=rank.sort_values(col,ascending=ascending,na_position='last')
+    rank=rank.sort_values('comparison_reference',ascending=False,kind='stable').reset_index(drop=True)
     rank.insert(0,'#',range(1,len(rank)+1))
+    rank['거래소']=rank['watch_name'].map(lambda n:'★ '+n if n in ('Hyperliquid','Lighter') else n)
     rank['24H Volume']=rank['volume_24h_usd'].map(compact_usd)
     rank['Open Interest']=rank['oi_usd'].map(compact_usd)
     rank['Vol / OI']=rank['volume_oi_ratio'].map(lambda x:f'{x:.2f}×' if pd.notna(x) else '—')
     rank['OI 7D']=rank['oi_weekly_change_pct'].map(lambda x:f'{x:+.1f}%' if pd.notna(x) else '—')
     rank['7D Traders']=rank['active_wallets_7d'].map(integer_fmt)
-    st.dataframe(rank[['#','watch_name','24H Volume','Open Interest','Vol / OI','OI 7D','7D Traders']].rename(columns={'watch_name':'Exchange'}),
+    st.dataframe(rank[['#','거래소','24H Volume','Open Interest','Vol / OI','OI 7D','7D Traders']].rename(columns={'거래소':'Exchange'}),
                  hide_index=True,use_container_width=True,height=min(570,max(190,40*(len(rank)+1))),
                  column_config={'#':st.column_config.NumberColumn('#',width='small'),
                                 'Exchange':st.column_config.TextColumn('Exchange',width='medium')})
