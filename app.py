@@ -4,6 +4,9 @@ from __future__ import annotations
 import io
 import html
 import os
+import base64
+from io import BytesIO
+from PIL import Image, ImageDraw, ImageFont
 import re
 from datetime import datetime, timezone
 from pathlib import Path
@@ -512,6 +515,36 @@ def latest_oi_weekly_change(data,venue):
     if previous.empty or previous.iloc[-1]['oi_usd']<=0:return float('nan')
     return (now['oi_usd']/previous.iloc[-1]['oi_usd']-1)*100
 
+@st.cache_data(ttl=3600,show_spinner=False)
+def round_exchange_logo(name, url):
+    """Generate an actual circular RGBA image for Plotly from an exchange logo."""
+    from PIL import Image, ImageDraw
+    canvas=Image.new('RGBA',(160,160),(0,0,0,0))
+    inset=4
+    mask=Image.new('L',(152,152),0)
+    ImageDraw.Draw(mask).ellipse((0,0,151,151),fill=255)
+    avatar=None
+    if url and url.startswith('https://'):
+        try:
+            response=requests.get(url,timeout=7,headers=HEADERS)
+            response.raise_for_status()
+            image=Image.open(BytesIO(response.content)).convert('RGBA')
+            image.thumbnail((126,126),Image.Resampling.LANCZOS)
+            avatar=Image.new('RGBA',(152,152),(250,252,253,255))
+            avatar.alpha_composite(image,((152-image.width)//2,(152-image.height)//2))
+        except Exception:
+            avatar=None
+    if avatar is None:
+        avatar=Image.new('RGBA',(152,152),(226,238,244,255))
+        draw=ImageDraw.Draw(avatar)
+        initial=str(name)[0:1].upper()
+        draw.text((76,76),initial,fill=(45,83,103,255),anchor='mm')
+    canvas.paste(avatar,(inset,inset),mask)
+    ImageDraw.Draw(canvas).ellipse((inset,inset,155,155),outline=(109,147,166,255),width=3)
+    output=BytesIO()
+    canvas.save(output,format='PNG')
+    return 'data:image/png;base64,'+base64.b64encode(output.getvalue()).decode('ascii')
+
 def exchange_logo_url(name):
     # Official-site favicons for projects absent or mismatched in DefiLlama.
     official={'StandX':'standx.com','Entropy':'entropy.io','hello.trade':'hello.trade'}
@@ -605,11 +638,11 @@ with radar_tabs[0]:
         benchmark_scale=shared_volume_max
         benchmark_rows=[]
         for _,b in benchmarks.iterrows():
-            v=b['volume_24h_usd'];oi=b['oi_usd']
-            ratio=f'{v/oi:.2f}×' if pd.notna(v) and pd.notna(oi) and oi>0 else '—'
+            v=b['volume_24h_usd'];benchmark_oi=b['oi_usd']
+            ratio=f'{v/benchmark_oi:.2f}×' if pd.notna(v) and pd.notna(benchmark_oi) and benchmark_oi>0 else '—'
             benchmark_rows.append('<tr><td class="rank-name">'+exchange_logo_html(b['watch_name'])+'</td>'
                                   '<td>'+market_volume_html(v,benchmark_scale)+'</td>'
-                                  '<td>'+html.escape(compact_usd(oi))+'</td><td>'+html.escape(ratio)+'</td></tr>')
+                                  '<td>'+html.escape(compact_usd(benchmark_oi))+'</td><td>'+html.escape(ratio)+'</td></tr>')
         st.markdown('<div class="radar-table-wrap benchmark-wrap"><table class="radar-rank-table"><thead><tr>'
                     '<th>비교군</th><th>24H Volume</th><th>Open Interest</th><th>Vol / OI</th>'
                     '</tr></thead><tbody>'+''.join(benchmark_rows)+'</tbody></table></div>',unsafe_allow_html=True)
@@ -703,47 +736,66 @@ with radar_tabs[0]:
     both=both[(both['volume_24h_usd']>0)&(both['oi_usd']>0)]
     if not both.empty:
         import math
+        volumes=both['volume_24h_usd']
+        low,high=float(volumes.min()),float(volumes.max())
+        def marker_size(volume):
+            # Circle area scales with 24H volume; perceptible without overpowering labels.
+            fraction=(float(volume)-low)/(high-low) if high>low else 0.5
+            return 43+29*math.sqrt(fraction)
+        lx=both['oi_usd'].map(lambda v:math.log10(v))
+        ly=both['volume_24h_usd'].map(lambda v:math.log10(v))
+        xmin,xmax=float(lx.min()),float(lx.max())
+        ymin,ymax=float(ly.min()),float(ly.max())
+        xpad=max((xmax-xmin)*0.23,0.24)
+        ypad=max((ymax-ymin)*0.26,0.26)
+        xlo,xhi=xmin-xpad,xmax+xpad
+        ylo,yhi=ymin-ypad,ymax+ypad
         fig=px.scatter(both,x='oi_usd',y='volume_24h_usd',hover_name='watch_name',
                        log_x=True,log_y=True,
-                       labels={'oi_usd':'Open Interest ($)','volume_24h_usd':'24H Volume ($)'})
-        # Invisible data points keep native axis coordinates and mouse hover.
-        fig.update_traces(marker=dict(size=34,color='rgba(0,0,0,0)'),
+                       labels={'oi_usd':'Open Interest (USD)','volume_24h_usd':'24H Volume (USD)'})
+        fig.update_traces(marker=dict(size=45,color='rgba(0,0,0,0)'),
                           hovertemplate='<b>%{hovertext}</b><br>OI: $%{x:,.0f}<br>24H Volume: $%{y:,.0f}<extra></extra>')
-        # Place images in domain coordinates: their size remains consistent on log axes.
-        min_x,max_x=both['oi_usd'].min(),both['oi_usd'].max()
-        min_y,max_y=both['volume_24h_usd'].min(),both['volume_24h_usd'].max()
-        lx0,lx1=math.log10(min_x),math.log10(max_x)
-        ly0,ly1=math.log10(min_y),math.log10(max_y)
-        sx=max(lx1-lx0,0.5);sy=max(ly1-ly0,0.5)
-        # Plotly range is expressed in base-10 log coordinates.
-        xlo,xhi=lx0-0.18*sx,lx1+0.18*sx
-        ylo,yhi=ly0-0.25*sy,ly1+0.25*sy
-        for _,item in both.iterrows():
-            x=(math.log10(item['oi_usd'])-xlo)/(xhi-xlo)
-            y=(math.log10(item['volume_24h_usd'])-ylo)/(yhi-ylo)
-            logo=exchange_logo_url(item['watch_name'])
-            if logo:
-                fig.add_layout_image(dict(source=logo,xref='x domain',yref='y domain',x=x,y=y,
-                                         sizex=0.060,sizey=0.085,xanchor='center',yanchor='middle',
-                                         sizing='contain',layer='above'))
-            else:
-                fig.add_annotation(x=x,y=y,xref='x domain',yref='y domain',
-                                   text=html.escape(str(item['watch_name'])[:1].upper()),
-                                   showarrow=False,bgcolor='#dfebf1',bordercolor='#bbd3e0',
-                                   borderpad=7,font=dict(size=15,color='#36566b'))
-            fig.add_annotation(x=x,y=min(0.99,y+0.058),xref='x domain',yref='y domain',
-                               text=html.escape(str(item['watch_name'])),showarrow=False,
-                               font=dict(size=13,color='#385467'),
-                               bgcolor='rgba(255,255,255,0.85)',borderpad=2)
-        fig.update_layout(height=470,margin=dict(t=24,l=16,r=24,b=16),
-                          xaxis=dict(range=[xlo,xhi],title_font=dict(size=15),tickfont=dict(size=13),
-                                     gridcolor='#dfe7eb',showline=False),
-                          yaxis=dict(range=[ylo,yhi],title_font=dict(size=15),tickfont=dict(size=13),
-                                     gridcolor='#dfe7eb',showline=False),
+        for _,entry in both.iterrows():
+            xpos=(math.log10(float(entry['oi_usd']))-xlo)/(xhi-xlo)
+            ypos=(math.log10(float(entry['volume_24h_usd']))-ylo)/(yhi-ylo)
+            diameter=marker_size(entry['volume_24h_usd'])
+            # Domain coordinates permit identically sized circular icons on log scales.
+            fig.add_layout_image(dict(
+                source=round_exchange_logo(str(entry['watch_name']),exchange_logo_url(entry['watch_name'])),
+                xref='x domain',yref='y domain',x=xpos,y=ypos,
+                sizex=diameter/1100,sizey=diameter/440,
+                xanchor='center',yanchor='middle',sizing='contain',layer='above'))
+            fig.add_annotation(x=xpos,y=min(0.985,ypos+diameter/760+0.018),
+                               xref='x domain',yref='y domain',showarrow=False,
+                               text=html.escape(str(entry['watch_name'])),
+                               font=dict(size=14,color='#2f4658',family='Arial'),
+                               bgcolor='rgba(255,255,255,0.92)',borderpad=3)
+        def axis_ticks(lo,hi):
+            candidates=[1,2,5]
+            ticks=[]
+            for power in range(math.floor(lo)-1,math.ceil(hi)+2):
+                for unit in candidates:
+                    logvalue=power+math.log10(unit)
+                    if lo<=logvalue<=hi:
+                        value=unit*10**power
+                        label=f'${value/1e9:g}B' if value>=1e9 else (f'${value/1e6:g}M' if value>=1e6 else f'${value:,.0f}')
+                        ticks.append((value,label))
+            return ticks
+        xticks=axis_ticks(xlo,xhi)
+        yticks=axis_ticks(ylo,yhi)
+        fig.update_layout(height=515,margin=dict(t=24,l=22,r=35,b=24),
                           paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',
-                          font=dict(family='Noto Sans KR, Arial',size=14,color='#42596b'),
-                          showlegend=False)
+                          font=dict(family='Arial',size=14,color='#3f5565'),showlegend=False,
+                          xaxis=dict(range=[xlo,xhi],tickmode='array',
+                                     tickvals=[v for v,_ in xticks],ticktext=[t for _,t in xticks],
+                                     title_font=dict(size=15),tickfont=dict(size=13),
+                                     showgrid=True,gridcolor='#e2e9ed',minor=dict(showgrid=False),zeroline=False),
+                          yaxis=dict(range=[ylo,yhi],tickmode='array',
+                                     tickvals=[v for v,_ in yticks],ticktext=[t for _,t in yticks],
+                                     title_font=dict(size=15),tickfont=dict(size=13),
+                                     showgrid=True,gridcolor='#e2e9ed',minor=dict(showgrid=False),zeroline=False))
         st.plotly_chart(fig,use_container_width=True)
+        st.caption('원형 로고의 크기는 24시간 거래량에 비례합니다. 가로축은 OI, 세로축은 거래량이며 두 축 모두 로그 눈금입니다.')
     with st.expander('데이터 제공 범위 및 미확보 항목'):
         coverage=watched[['watch_name','volume_source','oi_source']].copy()
         coverage['Volume']=watched['volume_24h_usd'].map(lambda x:'확보' if pd.notna(x) else '미확보')
@@ -821,7 +873,7 @@ with radar_tabs[3]:
 
     status_rows=[
       {'소스':'DefiLlama 프로토콜 목록','항목':'Perp DEX 목록','상태':'연결 성공' if not catalog.empty else '실패','캐시':'15분'},
-      {'소스':'DefiLlama OI 개요','항목':'OI','상태':'연결 성공' if not oi.empty else '실패','캐시':'15분'},
+      {'소스':'DefiLlama OI 개요','항목':'OI','상태':'연결 성공' if isinstance(oi,pd.DataFrame) and not oi.empty else '실패','캐시':'15분'},
       {'소스':'Variational Omni 공식 API','항목':'24H Volume / OI','상태':'연결 성공' if va else '실패','캐시':'5분'},
       {'소스':'Pacifica / CCXT','항목':'현재 OI','상태':'연결 성공' if pacifica_oi else '실패/응답 확인 필요','캐시':'15분'},
       {'소스':'Nado / CCXT','항목':'현재 OI','상태':'연결 성공' if nado_stats else '실패/응답 확인 필요','캐시':'15분'},
