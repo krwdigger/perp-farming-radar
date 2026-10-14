@@ -1987,7 +1987,36 @@ with radar_tabs[0]:
         coverage=watched[['watch_name','volume_source','oi_source']].copy()
         coverage['Volume']=watched['volume_24h_usd'].map(lambda x:'확보' if pd.notna(x) else '미확보')
         coverage['OI']=watched['oi_usd'].map(lambda x:'확보' if pd.notna(x) else '미확보')
-        st.dataframe(coverage.rename(columns={'watch_name':'거래소','volume_source':'거래량 출처','oi_source':'OI 출처'}),hide_index=True,use_container_width=True)
+        coverage_view=coverage.rename(columns={'watch_name':'거래소','volume_source':'거래량 출처','oi_source':'OI 출처'})
+        if _dark_now:
+            # Streamlit's canvas-based dataframe retains its light cell palette
+            # even when its surrounding panel is dark. Render this small
+            # coverage table in accessible native HTML instead.
+            headers=''.join(
+                '<th style="background:#3c2a32;color:#f3dfbf;padding:9px 12px;text-align:left;'
+                'border:1px solid #594535;white-space:nowrap">'
+                +html.escape(str(column))+'</th>'
+                for column in coverage_view.columns
+            )
+            rows=[]
+            for _,record in coverage_view.iterrows():
+                cells=''.join(
+                    '<td style="background:#241d28;color:#f0dfce;padding:9px 12px;'
+                    'border:1px solid #514038;vertical-align:top;overflow-wrap:anywhere">'
+                    +html.escape(str(value) if pd.notna(value) else '—')+'</td>'
+                    for value in record
+                )
+                rows.append('<tr>'+cells+'</tr>')
+            st.markdown(
+                '<div style="width:100%;overflow-x:auto;border:1px solid #594535;'
+                'border-radius:10px;background:#241d28">'
+                '<table style="border-collapse:collapse;width:100%;min-width:750px;'
+                'font-size:13px"><thead><tr>'+headers+'</tr></thead><tbody>'
+                +''.join(rows)+'</tbody></table></div>',
+                unsafe_allow_html=True
+            )
+        else:
+            st.dataframe(coverage_view,hide_index=True,use_container_width=True)
     st.download_button('시장 데이터 CSV',watched.to_csv(index=False).encode('utf-8-sig'),'perp_market_radar.csv','text/csv')
 
 with radar_tabs[1]:
