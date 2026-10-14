@@ -1133,13 +1133,43 @@ html.radar-dark .farming-ranking *{color:#dfc2aa!important}
 # Restore the original fixed top-right pumpkin toggle. The theme
 # stylesheet and button script must be emitted together for the DOM class
 # selectors and click handling to work.
-st.html(
-    _theme_widget.replace('{{DARK_CAT_B64}}',_dark_cat_b64)
-                 .replace('{{LIGHT_CAT_B64}}',_cat_head_b64)
-                 .replace('{{HAS_DARK_CAT}}','true' if _dark_cat_b64 else 'false'),
-    unsafe_allow_javascript=True
-)
-
+# The original DOM-injected button may not run under Streamlit's HTML
+# sandbox. Use a native, stateful control and position that control itself.
+_theme_dark = st.toggle('🎃 DARK' if st.session_state.get('radar_native_theme', False) else '🎃 LIGHT',
+                        key='radar_native_theme', help='라이트 / 다크 모드 전환')
+_theme_css = _theme_widget.split('</style>', 1)[0] + '</style>'
+if _theme_dark:
+    _theme_css = _theme_css.replace('html.radar-dark', 'html')
+st.html(_theme_css)
+st.markdown("""
+<style>
+/* Native mode switch: keep it at the original top-right screen position. */
+[class*="st-key-radar_native_theme"] {
+ position:fixed!important;top:18px!important;
+ right:max(24px,calc((100vw - 1450px)/2 + 30px))!important;
+ z-index:2147483645!important;
+ width:auto!important;
+ padding:8px 14px!important;border-radius:999px!important;
+ background:#fff4e2!important;border:1px solid #b9844f!important;
+ box-shadow:0 3px 15px rgba(36,19,7,.2)!important;
+}
+[class*="st-key-radar_native_theme"] label,
+[class*="st-key-radar_native_theme"] span,
+[class*="st-key-radar_native_theme"] p{
+ color:#583920!important;font-weight:700!important;
+}
+[class*="st-key-radar_native_theme"] label{gap:9px!important}
+html:has([class*="st-key-radar_native_theme"] input:checked)
+ [class*="st-key-radar_native_theme"]{
+ background:#372536!important;border-color:#ac6d42!important;
+}
+html:has([class*="st-key-radar_native_theme"] input:checked)
+ [class*="st-key-radar_native_theme"] :is(label,span,p){color:#fff0df!important}
+@media(max-width:650px){
+ [class*="st-key-radar_native_theme"]{top:10px!important;right:12px!important}
+}
+</style>
+""",unsafe_allow_html=True)
 
 # Independent left-edge settings control replaces the fragile native sidebar opener.
 with st.popover(' ', help='데이터 연결 및 설정 열기'):
