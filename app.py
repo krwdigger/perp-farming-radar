@@ -536,12 +536,11 @@ with radar_tabs[0]:
     comparison['watch_name']=comparison['_id'].map({norm('Hyperliquid'):'Hyperliquid',norm('Lighter'):'Lighter'})
     comparison=comparison.drop_duplicates('watch_name')
     watched=df[df['is_watchlist'].fillna(False).astype(bool)].copy()
-    # Empty exchange records belong in diagnostics, not on the main market board.
-    watched=watched[watched['volume_24h_usd'].notna()|watched['oi_usd'].notna()|watched['volume_7d_usd'].notna()].copy()
-    watched=pd.concat([comparison,watched],ignore_index=True)
-    watched['comparison_reference']=watched['watch_name'].isin(['Hyperliquid','Lighter'])
-    benchmarks=watched[watched['comparison_reference']].copy()
-    watched=watched[~watched['comparison_reference']].copy()
+    # Preserve all 11 named watchlist projects, even when no market metrics exist.
+    # Benchmark exchanges are displayed separately and never consume rank numbers.
+    watched=watched.drop_duplicates(subset=['watch_name'],keep='first').copy()
+    watched=watched[watched['watch_name'].notna() & watched['watch_name'].astype(str).str.strip().ne('')].copy()
+    benchmarks=comparison.copy()
     try:
         history=load_public_market_history()
         watched['oi_weekly_change_pct']=watched['watch_name'].map(lambda n:latest_oi_weekly_change(history,n))
