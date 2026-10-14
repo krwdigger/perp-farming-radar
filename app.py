@@ -375,6 +375,47 @@ with radar_tabs[0]:
     with st.expander('관심 거래소별 데이터 출처 및 수집 상태'):
         st.dataframe(watched[['watch_name','volume_source','oi_source','market_data_time']].rename(columns={'watch_name':'거래소','volume_source':'거래량 출처','oi_source':'OI 출처','market_data_time':'데이터 조회 시각'}),hide_index=True,use_container_width=True)
     st.download_button('관심 프로젝트 데이터 CSV',watched.to_csv(index=False).encode('utf-8-sig'),'watchlist_metrics.csv','text/csv')
+    st.markdown('#### 최근 자동 수집 추이')
+    @st.cache_data(ttl=300,show_spinner=False)
+    def load_snapshot_history():
+        url='https://raw.githubusercontent.com/krwdigger/perp-farming-radar/main/data/market_snapshots.csv'
+        hist=pd.read_csv(url)
+        hist['captured_at_utc']=pd.to_datetime(hist['captured_at_utc'],utc=True,errors='coerce')
+        for field in ['volume_24h_usd','oi_usd','markets']:
+            hist[field]=pd.to_numeric(hist[field],errors='coerce')
+        return hist.dropna(subset=['captured_at_utc'])
+    try:
+        hist=load_snapshot_history()
+        selected_venue=st.selectbox('시계열 프로젝트',['Variational','StandX','Pacifica','Arcus','Hyperliquid'],key='snap_venue')
+        h=hist[(hist['venue']==selected_venue)&(hist['status']=='ok')].sort_values('captured_at_utc').tail(250)
+        if h.empty:st.info('해당 거래소의 성공한 자동 수집 기록이 아직 없습니다.')
+        else:
+            leftchart,rightchart=st.columns(2)
+            with leftchart:
+                if h['oi_usd'].notna().any():
+                    fig=px.line(h,x='captured_at_utc',y='oi_usd',markers=True,title='시점별 OI ($)')
+                    fig.update_traces(line_color='#8caec1')
+                    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)')
+                    st.plotly_chart(fig,use_container_width=True)
+                else:st.info('OI 시계열 미제공 (시장목록만 조회)')
+            with rightchart:
+                if h['volume_24h_usd'].notna().any():
+                    fig=px.line(h,x='captured_at_utc',y='volume_24h_usd',markers=True,title='24시간 롤링 거래량 ($)')
+                    fig.update_traces(line_color='#b3a6bf')
+                    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)')
+                    st.plotly_chart(fig,use_container_width=True)
+                else:st.info('24시간 거래량 시계열 미제공')
+            if h['oi_usd'].notna().any():
+                latest=h[h['oi_usd'].notna()].iloc[-1]
+                previous=h[(h['captured_at_utc']<=latest['captured_at_utc']-pd.Timedelta(days=7))&h['oi_usd'].notna()]
+                if not previous.empty and previous.iloc[-1]['oi_usd']>0:
+                    delta=(latest['oi_usd']/previous.iloc[-1]['oi_usd']-1)*100
+                    st.metric('7일 이전 스냅샷 대비 OI 변화',f'{delta:+.2f}%')
+                else:st.caption('7일 OI 변화율: 7일 전 기록이 쌓여야 계산됩니다.')
+        st.download_button('자동 수집 원본 CSV',hist.to_csv(index=False).encode('utf-8-sig'),'radar_history.csv','text/csv')
+    except Exception as e:
+        st.info('자동 수집 이력이 아직 생성되지 않았습니다. GitHub Actions 최초 실행 후 시계열이 표시됩니다.')
+
 with radar_tabs[1]:
     st.subheader('참여자 경쟁도 vs 시장 OI')
     ca,cb=st.columns(2)
@@ -471,4 +512,4 @@ with radar_tabs[4]:
         c3.metric('활동 점유율',f'{mine/whole*100:.4f}%')
     else:st.warning('전체 활동량과 포인트 풀을 확인하세요.')
 st.divider()
-st.caption('v0.8 Data Audit Cloud Dancer · Read-only research dashboard · 에어드랍 수익 보장 없음 · 주문/지갑 서명 기능 없음')
+st.caption('v0.9 Scheduled History Cloud Dancer · Read-only research dashboard · 에어드랍 수익 보장 없음 · 주문/지갑 서명 기능 없음')
