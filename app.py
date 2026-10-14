@@ -286,6 +286,48 @@ html,body,[data-testid="stApp"],[class*="css"]{font-family:'DM Sans','Noto Sans 
 }
 
 
+
+/* Zero the inset of the real collapsed-sidebar toggle AND all inner wrappers. */
+[data-testid="stSidebarCollapsedControl"],
+[data-testid="stSidebarCollapsedControl"] > div,
+[data-testid="stSidebarCollapsedControl"] > div > div,
+[data-testid="stSidebarCollapsedControl"] button,
+[data-testid="stSidebarCollapsedControl"] [data-testid="stBaseButton-headerNoPadding"],
+[data-testid="stSidebarCollapsedControl"] [data-testid="stBaseButton-header"] {
+    margin-left:0!important;
+    margin-right:0!important;
+    padding-left:0!important;
+    padding-right:0!important;
+    left:0!important;
+    transform:none!important;
+}
+[data-testid="stSidebarCollapsedControl"]{
+    position:fixed!important;
+    left:0!important;
+    top:8px!important;
+    width:24px!important;
+    min-width:24px!important;
+    max-width:24px!important;
+    display:flex!important;
+    justify-content:flex-start!important;
+    align-items:center!important;
+    z-index:100001!important;
+}
+[data-testid="stSidebarCollapsedControl"] button{
+    width:24px!important;
+    min-width:24px!important;
+    height:32px!important;
+    display:flex!important;
+    justify-content:flex-start!important;
+    border-radius:0 7px 7px 0!important;
+}
+[data-testid="stSidebarCollapsedControl"] svg{
+    width:17px!important;
+    min-width:17px!important;
+    margin-left:0!important;
+    margin-right:0!important;
+}
+
 .block-container{max-width:1500px;padding-top:1.8rem;padding-bottom:4rem}
 h1,h2,h3{color:#485760!important;letter-spacing:-.025em;font-weight:700!important}
 h1{font-size:2.35rem!important}
