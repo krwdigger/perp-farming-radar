@@ -819,8 +819,32 @@ if _pumpkin_asset.exists():
 
 # Embedded photo-derived cursor: original transparent paw, scaled to browser-friendly dimensions.
 _cursor_file = DATA_DIR / 'assets' / 'cat_paw_cursor_hq.b64'
-if _cursor_file.is_file():
-    _paw_base64 = _cursor_file.read_text(encoding='utf-8').strip()
+_cursor_backup = DATA_DIR / 'assets' / 'cat_paw_cursor.b64'
+_paw_base64 = ''
+for _candidate in (_cursor_file, _cursor_backup):
+    if not _candidate.is_file():
+        continue
+    try:
+        _candidate_bytes = base64.b64decode(
+            _candidate.read_text(encoding='utf-8').strip(),validate=True)
+        with Image.open(BytesIO(_candidate_bytes)) as _cursor_img:
+            _cursor_img.load()
+            if _cursor_img.format != 'PNG':
+                raise ValueError('Cursor is not a PNG')
+            if _cursor_img.width < 12 or _cursor_img.height < 12:
+                raise ValueError('Cursor image too small')
+        if _candidate == _cursor_backup:
+            with Image.open(BytesIO(_candidate_bytes)) as _small_paw:
+                _paw_upscaled = _small_paw.convert('RGBA').resize(
+                    (48,51),Image.Resampling.LANCZOS)
+                _paw_output = BytesIO()
+                _paw_upscaled.save(_paw_output,format='PNG')
+                _candidate_bytes = _paw_output.getvalue()
+        _paw_base64 = base64.b64encode(_candidate_bytes).decode('ascii')
+        break
+    except Exception:
+        continue
+if _paw_base64:
     st.markdown(
         '<style>'
         'html,body,[data-testid="stApp"],[data-testid="stApp"] *{'
