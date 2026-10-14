@@ -19,6 +19,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Install market data dependency
+        run: python -m pip install 'ccxt>=4.4,<5'
       - name: Collect public metrics
         run: python collect_metrics.py
       - name: Commit append-only snapshot
