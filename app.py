@@ -1053,15 +1053,40 @@ html.radar-dark [data-testid="stAppViewContainer"]{
 html.radar-dark [data-testid="stMain"],
 html.radar-dark [data-testid="stMainBlockContainer"]{background-color:transparent!important}
 </style>"""
+# The supplied photograph is darkened by 75%; warm, illuminated face
+# openings are preserved at the original brightness with a soft glow.
+@st.cache_data(show_spinner=False)
+def _prepare_lit_pumpkin(photo_bytes):
+    import numpy as np
+    from PIL import ImageFilter
+    with Image.open(BytesIO(photo_bytes)) as im:
+        pixels = np.asarray(im.convert('RGB'), dtype=np.float32)
+    red, green, blue = pixels[:,:,0], pixels[:,:,1], pixels[:,:,2]
+    core = (
+        np.clip((green-142)/85,0,1) *
+        np.clip((red-205)/45,0,1) *
+        np.clip((green-blue-25)/90,0,1) *
+        np.clip((120-(red-green))/55,0,1)
+    )
+    halo = np.asarray(
+        Image.fromarray(np.uint8(core*255),'L').filter(
+            ImageFilter.GaussianBlur(9)),dtype=np.float32
+    )/255
+    preserve = np.clip(core*.97+halo*.28,0,1)[:,:,None]
+    shadow = pixels*.25+np.array([19,14,23],dtype=np.float32)*.75
+    rendered = np.uint8(np.clip(shadow*(1-preserve)+pixels*preserve,0,255))
+    output = BytesIO()
+    Image.fromarray(rendered,'RGB').save(output,format='WEBP',quality=88)
+    return base64.b64encode(output.getvalue()).decode('ascii')
+
 # Dark mode uses the separately uploaded pumpkin photograph.
 _dark_asset = DATA_DIR / 'assets' / 'pumpkin_dark.webp'
 if _dark_asset.is_file():
-    _dark_image = base64.b64encode(_dark_asset.read_bytes()).decode('ascii')
+    _dark_image = _prepare_lit_pumpkin(_dark_asset.read_bytes())
     _theme_css += (
         '<style>'
         'html.radar-dark body [data-testid="stAppViewContainer"]{'
-        'background-image:linear-gradient(rgba(19,14,23,.75),rgba(19,14,23,.75)),'
-        'url("data:image/webp;base64,'+_dark_image+'")!important;'
+        'background-image:url("data:image/webp;base64,'+_dark_image+'")!important;'
         'background-color:#17121a!important;'
         'background-position:center top!important;'
         'background-size:auto min(100vh, 1600px)!important;'
