@@ -359,6 +359,28 @@ for c in numeric_fields:
 for c in ['point_model','notes','oi_source','volume_source','market_data_time']:
     if c not in df:df[c]=None
 
+# Recent collector values backfill only missing public market metrics.
+try:
+    archive=pd.read_csv('https://raw.githubusercontent.com/krwdigger/perp-farming-radar/main/data/market_snapshots.csv')
+    archive['captured_at_utc']=pd.to_datetime(archive['captured_at_utc'],utc=True,errors='coerce')
+    for metric in ['volume_24h_usd','oi_usd']:
+        archive[metric]=pd.to_numeric(archive[metric],errors='coerce')
+    archive=archive[(archive['status'].eq('ok')) & archive['captured_at_utc'].notna()]
+    archive=archive[archive['captured_at_utc']>=pd.Timestamp.now(tz='UTC')-pd.Timedelta(hours=48)]
+    archive=archive[archive['venue'].isin(watch['name'])].sort_values('captured_at_utc',ascending=False)
+    for metric,source in [('volume_24h_usd','volume_source'),('oi_usd','oi_source')]:
+        recent=archive.dropna(subset=[metric]).drop_duplicates('venue')
+        if recent.empty:continue
+        look=recent.set_index('venue')
+        fill=df['watch_name'].map(look[metric])
+        missing=df[metric].isna() & fill.notna()
+        df.loc[missing,metric]=fill[missing]
+        df.loc[missing,source]='GitHub public snapshot (48h maximum age)'
+except Exception as archive_error:
+    errors.append('Historical snapshot fallback: '+str(archive_error)[:140])
+df['volume_oi_ratio_24h']=df['volume_24h_usd']/df['oi_usd'].replace(0,float('nan'))
+df.loc[df['oi_usd']<=0,'volume_oi_ratio_24h']=float('nan')
+
 df['is_watchlist']=df['is_watchlist'].fillna(False).astype(bool)
 df['volume_per_active_wallet_7d_usd']=df['volume_7d_usd']/df['active_wallets_7d'].replace(0,float('nan'))
 df['wallet_change_pct']=(df['active_wallets_7d']/df['active_wallets_prev_7d']-1)*100
@@ -434,7 +456,7 @@ with radar_tabs[0]:
     watched['상태']=watched.apply(lambda r:'참여자 데이터' if pd.notna(r['active_wallets_7d']) else ('시장 데이터' if pd.notna(r['oi_usd']) or pd.notna(r['volume_24h_usd']) or pd.notna(r['volume_7d_usd']) else '미연동'),axis=1)
     # User-facing home prioritizes actionable comparisons; diagnostics live in Data Sources.
     st.markdown('### Perp DEX Rankings')
-    st.caption('거래량·OI·7일 활성 지갑 비교 | 지갑 변화율 확인 시에만 혼잡도 색상을 표시합니다.')
+    st.caption('시장 활동은 거래량/OI 비율로 비교합니다. 비율은 파밍 효율이나 활성 지갑 수를 의미하지 않습니다.')
     f1,f2,f3=st.columns([2,1,1])
     search=f1.text_input('거래소 검색',placeholder='Variational, StandX, Nado…',key='watch_search')
     choice=f2.selectbox('데이터',['전체','24H Volume 확보','OI 확보','7D 지갑 확보'],key='watch_data_filter')
@@ -460,11 +482,12 @@ with radar_tabs[0]:
     display['혼잡 변화']=display['wallet_change_pct'].apply(crowd_label)
     display['Volume']=display['volume_24h_usd'].map(compact_usd)
     display['OI']=display['oi_usd'].map(compact_usd)
+    display['24H 거래량/OI']=display['volume_oi_ratio_24h'].map(lambda x:f'{x:.2f}×' if pd.notna(x) else '—')
     display['OI 7D 변화']=display['oi_weekly_change_pct'].map(lambda x:f'{x:+.1f}%' if pd.notna(x) else '—')
     display['활성 지갑']=display['active_wallets_7d'].map(integer_fmt)
     display['지갑당 7D Volume']=display['volume_per_active_wallet_7d_usd'].map(compact_usd)
     display['7D 변화']=display['wallet_change_pct'].apply(lambda x:f'{x:+.1f}%' if pd.notna(x) else '—')
-    st.dataframe(display[['순위','watch_name','volume_24h_usd','Volume','OI','OI 7D 변화','활성 지갑','지갑당 7D Volume','7D 변화','혼잡 변화']].rename(
+    st.dataframe(display[['순위','watch_name','volume_24h_usd','Volume','OI','24H 거래량/OI','OI 7D 변화','활성 지갑','지갑당 7D Volume','7D 변화','혼잡 변화']].rename(
         columns={'watch_name':'프로젝트','volume_24h_usd':'거래량 바 (24H)'}),
         hide_index=True,use_container_width=True,height=min(570,max(245,42*(len(display)+1)+10)),
         column_config={
