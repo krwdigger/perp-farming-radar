@@ -444,139 +444,99 @@ def latest_oi_weekly_change(data,venue):
     return (now['oi_usd']/previous.iloc[-1]['oi_usd']-1)*100
 
 with radar_tabs[0]:
-    st.subheader('관심 프로젝트 · Watchlist')
     watched=df[df['is_watchlist'].fillna(False).astype(bool)].copy()
     try:
-        market_history=load_public_market_history()
-        watched['oi_weekly_change_pct']=watched['watch_name'].map(lambda n:latest_oi_weekly_change(market_history,n))
+        history=load_public_market_history()
+        watched['oi_weekly_change_pct']=watched['watch_name'].map(lambda n:latest_oi_weekly_change(history,n))
     except Exception:
-        market_history=pd.DataFrame()
+        history=pd.DataFrame()
         watched['oi_weekly_change_pct']=float('nan')
-
-    watched['상태']=watched.apply(lambda r:'참여자 데이터' if pd.notna(r['active_wallets_7d']) else ('시장 데이터' if pd.notna(r['oi_usd']) or pd.notna(r['volume_24h_usd']) or pd.notna(r['volume_7d_usd']) else '미연동'),axis=1)
-    # User-facing home prioritizes actionable comparisons; diagnostics live in Data Sources.
-    st.markdown('### Perp DEX Rankings')
-    st.caption('시장 활동은 거래량/OI 비율로 비교합니다. 비율은 파밍 효율이나 활성 지갑 수를 의미하지 않습니다.')
-    f1,f2,f3=st.columns([2,1,1])
-    search=f1.text_input('거래소 검색',placeholder='Variational, StandX, Nado…',key='watch_search')
-    choice=f2.selectbox('데이터',['전체','24H Volume 확보','OI 확보','7D 지갑 확보'],key='watch_data_filter')
-    order=f3.selectbox('정렬',['24H Volume ↓','거래량/OI ↓','거래량/OI ↑','OI ↓','OI ↑','7D 지갑 변화 ↑','7D 지갑 변화 ↓'],key='watch_order')
-    display=watched.copy()
-    if search:display=display[display['watch_name'].astype(str).str.contains(search,case=False,regex=False)]
-    if choice=='24H Volume 확보':display=display[display['volume_24h_usd'].notna()]
-    elif choice=='OI 확보':display=display[display['oi_usd'].notna()]
-    elif choice=='7D 지갑 확보':display=display[display['active_wallets_7d'].notna()]
-    sort_column,ascending={
-      '24H Volume ↓':('volume_24h_usd',False),'거래량/OI ↓':('volume_oi_ratio_24h',False),'거래량/OI ↑':('volume_oi_ratio_24h',True),'OI ↓':('oi_usd',False),
-      'OI ↑':('oi_usd',True),'7D 지갑 변화 ↑':('wallet_change_pct',False),
-      '7D 지갑 변화 ↓':('wallet_change_pct',True)}[order]
-    display=display.sort_values(sort_column,ascending=ascending,na_position='last').reset_index(drop=True)
-    def crowd_label(change):
-        if pd.isna(change):return ''
-        if change>=25:return '🔴 유입 급증'
-        if change>=5:return '🟠 유입 증가'
-        if change<=-20:return '🟢 유입 크게 감소'
-        if change<=-5:return '🟢 유입 감소'
-        return '🔵 변화 작음'
-    display.insert(0,'순위',[i+1 for i in range(len(display))])
-    display['혼잡 변화']=display['wallet_change_pct'].apply(crowd_label)
-    display['Volume']=display['volume_24h_usd'].map(compact_usd)
-    display['OI']=display['oi_usd'].map(compact_usd)
-    display['24H 거래량/OI']=display['volume_oi_ratio_24h'].map(lambda x:f'{x:.2f}×' if pd.notna(x) else '—')
-    display['OI 7D 변화']=display['oi_weekly_change_pct'].map(lambda x:f'{x:+.1f}%' if pd.notna(x) else '—')
-    display['활성 지갑']=display['active_wallets_7d'].map(integer_fmt)
-    display['지갑당 7D Volume']=display['volume_per_active_wallet_7d_usd'].map(compact_usd)
-    display['7D 변화']=display['wallet_change_pct'].apply(lambda x:f'{x:+.1f}%' if pd.notna(x) else '—')
-    st.dataframe(display[['순위','watch_name','volume_24h_usd','Volume','OI','24H 거래량/OI','OI 7D 변화','활성 지갑','지갑당 7D Volume','7D 변화','혼잡 변화']].rename(
-        columns={'watch_name':'프로젝트','volume_24h_usd':'거래량 바 (24H)'}),
-        hide_index=True,use_container_width=True,height=min(570,max(245,42*(len(display)+1)+10)),
-        column_config={
-          '순위':st.column_config.NumberColumn('순위',width='small',format='%d'),
-          '프로젝트':st.column_config.TextColumn('프로젝트',width='medium'),
-          '거래량 바 (24H)':st.column_config.ProgressColumn('거래량 바 (24H)',width='medium',
-              min_value=0,max_value=max(1,float(display['volume_24h_usd'].max())) if display['volume_24h_usd'].notna().any() else 1,format='$%.0f'),
-          '혼잡 변화':st.column_config.TextColumn('혼잡 변화',width='medium')
-        })
-    movers=display[display['wallet_change_pct'].notna()]
-    if not movers.empty:
-        falling=movers.sort_values('wallet_change_pct').iloc[0]
-        rising=movers.sort_values('wallet_change_pct',ascending=False).iloc[0]
-        x,y=st.columns(2)
-        x.metric('이번 주 유입 감소 최상위',str(falling['watch_name']),f"{falling['wallet_change_pct']:+.1f}% (7D 지갑)")
-        y.metric('이번 주 유입 증가 최상위',str(rising['watch_name']),f"{rising['wallet_change_pct']:+.1f}% (7D 지갑)")
-    else:
-        st.caption('')
-    st.caption('색상은 **파밍 효율 등급이 아니라** 거래 지갑 유입 변화 구분입니다. 미확보 지갑 수를 거래량으로 추정하지 않습니다.')
-    st.markdown('#### 📊 관심 거래소 시장 규모 비교')
-    chart_left, chart_right=st.columns(2)
-    with chart_left:
-        vol=watched.dropna(subset=['volume_24h_usd']).sort_values('volume_24h_usd')
-        if vol.empty:st.info('24시간 거래량 데이터 미확보')
-        else:
-            fig=px.bar(vol,x='volume_24h_usd',y='watch_name',orientation='h',
-                       color_discrete_sequence=['#8cb6c9'],
-                       labels={'volume_24h_usd':'24H 거래량 (USD)','watch_name':''})
-            fig.update_layout(height=max(240,110+len(vol)*46),margin=dict(l=0,r=8,t=5,b=0),
-                              paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',
-                              font_color='#647682',showlegend=False)
-            fig.update_xaxes(tickformat='~s',gridcolor='#e2e7e9')
+    watched['volume_oi_ratio']=watched['volume_24h_usd']/watched['oi_usd'].replace(0,float('nan'))
+    watched.loc[watched['oi_usd']<=0,'volume_oi_ratio']=float('nan')
+    valid=watched[watched['volume_24h_usd'].notna()|watched['oi_usd'].notna()]
+    st.markdown("""<style>
+    .market-title{font-size:26px;font-weight:750;color:#354c5a;letter-spacing:-.04em;margin:0 0 4px}
+    .market-sub{font-size:13px;color:#7a8990;margin-bottom:18px}
+    .radar-kicker{font-size:11px;font-weight:750;letter-spacing:.12em;color:#8196a2;margin-bottom:8px}
+    .radar-total{font-size:27px;font-weight:750;color:#344e5e;letter-spacing:-.035em}
+    .radar-foot{font-size:12px;color:#81939c;margin-top:5px}
+    .radar-panel{padding:18px 20px;border:1px solid #dde5e7;border-radius:15px;background:#fdfdfb}
+    </style><div class="market-title">Perp DEX Market Overview</div>
+    <div class="market-sub">거래량과 미결제약정으로 비교하는 파밍 시장 지도 · 공개 데이터 기반</div>""",unsafe_allow_html=True)
+    def summary_card(name,value,foot):
+        st.markdown('<div class="radar-panel"><div class="radar-kicker">'+name+'</div><div class="radar-total">'+value+'</div><div class="radar-foot">'+foot+'</div></div>',unsafe_allow_html=True)
+    m1,m2,m3,m4=st.columns(4)
+    with m1:summary_card('24H VOLUME · 관측 거래소',compact_usd(watched['volume_24h_usd'].sum(min_count=1)),'확보된 거래소만 합산')
+    with m2:summary_card('OPEN INTEREST · 관측 거래소',compact_usd(watched['oi_usd'].sum(min_count=1)),'확보된 거래소만 합산')
+    with m3:summary_card('MARKET COVERAGE',str(len(valid))+' / '+str(len(watched)),'거래량 또는 OI 확인')
+    with m4:
+        ratio=watched['volume_oi_ratio'].dropna()
+        summary_card('24H VOLUME / OI',f'{ratio.median():.2f}×' if len(ratio) else '—','동일 거래소별 비율의 중앙값')
+    st.markdown('#### 거래소별 거래량 · OI')
+    control1,control2,control3=st.columns([2,1,1])
+    search=control1.text_input('거래소 검색',placeholder='Variational / StandX / Pacifica',key='market_search')
+    display_mode=control2.selectbox('지표',['전체','Volume 확보','OI 확보','Volume + OI 확보'],key='market_metric')
+    sort=control3.selectbox('정렬',['24H Volume ↓','OI ↓','Volume/OI ↓','Volume/OI ↑','거래소명'],key='market_sort')
+    rank=watched.copy()
+    if search:rank=rank[rank['watch_name'].astype(str).str.contains(search,case=False,regex=False)]
+    if display_mode=='Volume 확보':rank=rank[rank['volume_24h_usd'].notna()]
+    elif display_mode=='OI 확보':rank=rank[rank['oi_usd'].notna()]
+    elif display_mode=='Volume + OI 확보':rank=rank[rank['volume_24h_usd'].notna()&rank['oi_usd'].notna()]
+    col,ascending={'24H Volume ↓':('volume_24h_usd',False),'OI ↓':('oi_usd',False),'Volume/OI ↓':('volume_oi_ratio',False),'Volume/OI ↑':('volume_oi_ratio',True),'거래소명':('watch_name',True)}[sort]
+    rank=rank.sort_values(col,ascending=ascending,na_position='last').reset_index(drop=True)
+    rank.insert(0,'#',range(1,len(rank)+1))
+    rank['24H Volume']=rank['volume_24h_usd'].map(compact_usd)
+    rank['Open Interest']=rank['oi_usd'].map(compact_usd)
+    rank['Vol / OI']=rank['volume_oi_ratio'].map(lambda x:f'{x:.2f}×' if pd.notna(x) else '—')
+    rank['OI 7D']=rank['oi_weekly_change_pct'].map(lambda x:f'{x:+.1f}%' if pd.notna(x) else '—')
+    rank['7D Traders']=rank['active_wallets_7d'].map(integer_fmt)
+    st.dataframe(rank[['#','watch_name','24H Volume','Open Interest','Vol / OI','OI 7D','7D Traders']].rename(columns={'watch_name':'Exchange'}),
+                 hide_index=True,use_container_width=True,height=min(570,max(190,40*(len(rank)+1))),
+                 column_config={'#':st.column_config.NumberColumn('#',width='small'),
+                                'Exchange':st.column_config.TextColumn('Exchange',width='medium')})
+    st.caption('Vol/OI는 거래 회전율에 가까운 시장 활동 지표입니다. 파밍 수익률이나 활성 지갑 수의 대체치는 아닙니다. OI 7D는 일주일 전 기록이 있는 경우에만 표시합니다.')
+    chart_a,chart_b=st.columns(2)
+    with chart_a:
+        st.markdown('#### 24H Volume Rankings')
+        v=watched.dropna(subset=['volume_24h_usd']).sort_values('volume_24h_usd')
+        if not v.empty:
+            fig=px.bar(v,x='volume_24h_usd',y='watch_name',orientation='h',text='volume_24h_usd',
+                       color_discrete_sequence=['#75aabe'],labels={'volume_24h_usd':'USD','watch_name':''})
+            fig.update_traces(texttemplate='%{text:$,.3s}',textposition='outside',cliponaxis=False)
+            fig.update_layout(height=max(260,len(v)*52+70),margin=dict(l=0,r=90,t=8,b=20),
+                              paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',showlegend=False,
+                              font_color='#647682',xaxis=dict(tickformat='~s',gridcolor='#e4e9e9'))
             st.plotly_chart(fig,use_container_width=True)
-    with chart_right:
-        oi_chart=watched.dropna(subset=['oi_usd']).sort_values('oi_usd')
-        if oi_chart.empty:st.info('OI 데이터 미확보')
-        else:
-            fig=px.bar(oi_chart,x='oi_usd',y='watch_name',orientation='h',
-                       color_discrete_sequence=['#b7abb7'],
-                       labels={'oi_usd':'현재 OI (USD)','watch_name':''})
-            fig.update_layout(height=max(240,110+len(oi_chart)*46),margin=dict(l=0,r=8,t=5,b=0),
-                              paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',
-                              font_color='#647682',showlegend=False)
-            fig.update_xaxes(tickformat='~s',gridcolor='#e2e7e9')
+    with chart_b:
+        st.markdown('#### Open Interest Rankings')
+        v=watched.dropna(subset=['oi_usd']).sort_values('oi_usd')
+        if not v.empty:
+            fig=px.bar(v,x='oi_usd',y='watch_name',orientation='h',text='oi_usd',
+                       color_discrete_sequence=['#a1a9ba'],labels={'oi_usd':'USD','watch_name':''})
+            fig.update_traces(texttemplate='%{text:$,.3s}',textposition='outside',cliponaxis=False)
+            fig.update_layout(height=max(260,len(v)*52+70),margin=dict(l=0,r=90,t=8,b=20),
+                              paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',showlegend=False,
+                              font_color='#647682',xaxis=dict(tickformat='~s',gridcolor='#e4e9e9'))
             st.plotly_chart(fig,use_container_width=True)
-    st.caption('그래프는 데이터가 확보된 거래소만 보여주며, Volume과 OI는 파밍 경쟁률 점수가 아닙니다.')
-    with st.expander('관심 거래소별 데이터 출처 및 수집 상태'):
-        st.dataframe(watched[['watch_name','volume_source','oi_source','market_data_time']].rename(columns={'watch_name':'거래소','volume_source':'거래량 출처','oi_source':'OI 출처','market_data_time':'데이터 조회 시각'}),hide_index=True,use_container_width=True)
-    st.download_button('관심 프로젝트 데이터 CSV',watched.to_csv(index=False).encode('utf-8-sig'),'watchlist_metrics.csv','text/csv')
-    st.markdown('#### 최근 자동 수집 추이')
-    @st.cache_data(ttl=300,show_spinner=False)
-    def load_snapshot_history():
-        url='https://raw.githubusercontent.com/krwdigger/perp-farming-radar/main/data/market_snapshots.csv'
-        hist=pd.read_csv(url)
-        hist['captured_at_utc']=pd.to_datetime(hist['captured_at_utc'],utc=True,errors='coerce')
-        for field in ['volume_24h_usd','oi_usd','markets']:
-            hist[field]=pd.to_numeric(hist[field],errors='coerce')
-        return hist.dropna(subset=['captured_at_utc'])
-    try:
-        hist=load_snapshot_history()
-        selected_venue=st.selectbox('시계열 프로젝트',['Variational','StandX','Pacifica','Arcus','Hyperliquid'],key='snap_venue')
-        h=hist[(hist['venue']==selected_venue)&(hist['status']=='ok')].sort_values('captured_at_utc').tail(250)
-        if h.empty:st.info('해당 거래소의 성공한 자동 수집 기록이 아직 없습니다.')
-        else:
-            leftchart,rightchart=st.columns(2)
-            with leftchart:
-                if h['oi_usd'].notna().any():
-                    fig=px.line(h,x='captured_at_utc',y='oi_usd',markers=True,title='시점별 OI ($)')
-                    fig.update_traces(line_color='#8caec1')
-                    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)')
-                    st.plotly_chart(fig,use_container_width=True)
-                else:st.info('OI 시계열 미제공 (시장목록만 조회)')
-            with rightchart:
-                if h['volume_24h_usd'].notna().any():
-                    fig=px.line(h,x='captured_at_utc',y='volume_24h_usd',markers=True,title='24시간 롤링 거래량 ($)')
-                    fig.update_traces(line_color='#b3a6bf')
-                    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)')
-                    st.plotly_chart(fig,use_container_width=True)
-                else:st.info('24시간 거래량 시계열 미제공')
-            if h['oi_usd'].notna().any():
-                latest=h[h['oi_usd'].notna()].iloc[-1]
-                previous=h[(h['captured_at_utc']<=latest['captured_at_utc']-pd.Timedelta(days=7))&h['oi_usd'].notna()]
-                if not previous.empty and previous.iloc[-1]['oi_usd']>0:
-                    delta=(latest['oi_usd']/previous.iloc[-1]['oi_usd']-1)*100
-                    st.metric('7일 이전 스냅샷 대비 OI 변화',f'{delta:+.2f}%')
-                else:st.caption('7일 OI 변화율: 7일 전 기록이 쌓여야 계산됩니다.')
-        st.download_button('자동 수집 원본 CSV',hist.to_csv(index=False).encode('utf-8-sig'),'radar_history.csv','text/csv')
-    except Exception as e:
-        st.info('자동 수집 이력이 아직 생성되지 않았습니다. GitHub Actions 최초 실행 후 시계열이 표시됩니다.')
+    st.markdown('#### 시장 위치 분석')
+    both=watched.dropna(subset=['volume_24h_usd','oi_usd'])
+    both=both[(both['volume_24h_usd']>0)&(both['oi_usd']>0)]
+    if not both.empty:
+        fig=px.scatter(both,x='oi_usd',y='volume_24h_usd',text='watch_name',
+                       size='volume_24h_usd',size_max=43,log_x=True,log_y=True,
+                       labels={'oi_usd':'Open Interest ($)','volume_24h_usd':'24H Volume ($)'},
+                       color_discrete_sequence=['#7d9eae'])
+        fig.update_traces(textposition='top center')
+        fig.update_layout(height=375,margin=dict(t=25,l=10,r=20,b=10),
+                          paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',
+                          font_color='#647682')
+        st.plotly_chart(fig,use_container_width=True)
+    with st.expander('데이터 제공 범위 및 미확보 항목'):
+        coverage=watched[['watch_name','volume_source','oi_source']].copy()
+        coverage['Volume']=watched['volume_24h_usd'].map(lambda x:'확보' if pd.notna(x) else '미확보')
+        coverage['OI']=watched['oi_usd'].map(lambda x:'확보' if pd.notna(x) else '미확보')
+        st.dataframe(coverage.rename(columns={'watch_name':'거래소','volume_source':'거래량 출처','oi_source':'OI 출처'}),hide_index=True,use_container_width=True)
+    st.download_button('시장 데이터 CSV',watched.to_csv(index=False).encode('utf-8-sig'),'perp_market_radar.csv','text/csv')
 
 with radar_tabs[1]:
     st.subheader('참여자 경쟁도 vs 시장 OI')
