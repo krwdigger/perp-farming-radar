@@ -357,21 +357,16 @@ with radar_tabs[0]:
     d2.metric('현재 OI 확보',f'{int(oi_available.sum())}/{len(watched)}')
     d3.metric('활성 지갑 미확보',f'{int((~wallet_available).sum())}/{len(watched)}')
     st.info('**목표: 이번 주 어느 거래소에 사람이 몰리는가.** 활성 지갑 수와 7일 증감률을 우선하고, OI 규모와 7일 증감률은 보조 경쟁 지표로 사용합니다. 포인트 데이터는 필수 조건이 아닙니다.')
-    st.markdown('#### 관심 거래소 · 참여자 관측 가능 여부')
-    crowd_rows=[]
-    for _,r in watched.iterrows():
-        wallet_ok=pd.notna(r['active_wallets_7d'])
-        oi_ok=pd.notna(r['oi_usd'])
-        crowd_rows.append({
-          '거래소':r['watch_name'],
-          '7D 거래 지갑':integer_fmt(r['active_wallets_7d']),
-          '지갑 증감률':(f"{r['wallet_change_pct']:+.1f}%" if pd.notna(r['wallet_change_pct']) else '—'),
-          '현재 OI':compact_usd(r['oi_usd']),
-          '데이터 판단':'거래자 관측 가능' if wallet_ok else ('OI 추이 관찰 가능' if oi_ok else '미확보'),
-          '부족한 정보':('7일 이전 거래 지갑 수' if wallet_ok and pd.isna(r['wallet_change_pct']) else '—' if wallet_ok else '7일 활성 거래 지갑 / 주간 변화')
-        })
-    st.dataframe(pd.DataFrame(crowd_rows),hide_index=True,use_container_width=True,height=422)
-    st.caption('지갑 데이터가 없으면 OI로 사람이 얼마나 몰렸다고 단정하지 않습니다. 포인트 비공개 여부는 이 표의 관측 가능 조건에 포함되지 않습니다.')
+    st.markdown('#### 이번 주 파밍 경쟁 변화')
+    st.caption('7일 활성 거래자 변화와 OI 변화가 수집된 거래소만 표시합니다. 수치가 확보되지 않았다면 근거 없는 빈집 순위는 만들지 않습니다.')
+    crowd=watched[watched['wallet_change_pct'].notna()].copy()
+    if not crowd.empty:
+        crowd=crowd.sort_values('wallet_change_pct')
+        st.dataframe(crowd[['watch_name','active_wallets_7d','wallet_change_pct','oi_usd']].rename(
+            columns={'watch_name':'프로젝트','active_wallets_7d':'7D 활성 지갑','wallet_change_pct':'전주 대비 지갑 증감 %','oi_usd':'현재 OI ($)'}),
+            hide_index=True,use_container_width=True)
+    else:
+        st.info('아직 지갑별 주간 활동의 연속 데이터가 없어 거래자 유입·이탈 순위를 계산할 수 없습니다. 이번 주 빈집 후보는 판정 보류입니다.')
     st.markdown('#### 시장 활동 · 스케일 비교')
     vplot=watched.dropna(subset=['oi_usd']).sort_values('oi_usd',ascending=False)
     if not vplot.empty:
