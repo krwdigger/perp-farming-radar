@@ -1912,39 +1912,28 @@ with radar_tabs[0]:
             item['diameter']=max(12.0,min(item['preferred'],
                                           0.80*neighbor_distance-3.0))
 
+        # Render native Plotly points first. Embedded per-logo PNG layout images
+        # can leave the Streamlit chart blank in some browser/Plotly combinations.
+        # Native scatter markers guarantee visible coordinates and hover targets.
         fig=go.Figure()
-        for item in markets:
-            name=item['name']
-            actual_x=item['oi']
-            actual_y=item['volume']
-            diameter=item['diameter']
-            tooltip=('<b>'+html.escape(name)+'</b><br>'
-                     +'OI: $'+f'{actual_x:,.0f}'+'<br>'
-                     +'24H Volume: $'+f'{actual_y:,.0f}'+'<extra></extra>')
-
-            # The hover target and circular image have identical data anchors.
-            fig.add_scatter(
-                x=[actual_x],y=[actual_y],mode='markers',showlegend=False,
-                marker=dict(size=max(18,diameter+5),
-                            color='rgba(255,250,241,0.01)',line=dict(width=0)),
-                hovertemplate=tooltip,name=name
-            )
-            try:
-                logo=round_exchange_logo(name,exchange_logo_url(name))
-                fig.add_layout_image(dict(
-                    source=logo,xref='x domain',yref='y domain',
-                    x=item['nx'],y=item['ny'],
-                    sizex=diameter/930,sizey=diameter/395,
-                    xanchor='center',yanchor='middle',sizing='contain',
-                    layer='below'
-                ))
-            except Exception:
-                fig.add_scatter(
-                    x=[actual_x],y=[actual_y],mode='markers',showlegend=False,
-                    marker=dict(size=diameter,color='#c57c3a',
-                                line=dict(color='#fff4e1',width=1.5)),
-                    hovertemplate=tooltip
-                )
+        fig.add_scatter(
+            x=[item['oi'] for item in markets],
+            y=[item['volume'] for item in markets],
+            mode='markers+text',
+            text=[item['name'] for item in markets],
+            textposition='top center',
+            textfont=dict(size=11,color='#b87a46'),
+            marker=dict(
+                size=[max(13,item['diameter']) for item in markets],
+                color='#c57c3a',
+                opacity=0.93,
+                line=dict(color='#f9deb6',width=1.5)
+            ),
+            customdata=[[item['name']] for item in markets],
+            hovertemplate='<b>%{customdata[0]}</b><br>OI: $%{x:,.0f}<br>24H Volume: $%{y:,.0f}<extra></extra>',
+            showlegend=False,
+            cliponaxis=False
+        )
 
         xticks=axis_ticks(xmax)
         yticks=axis_ticks(ymax)
