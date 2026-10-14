@@ -1,0 +1,12 @@
+name,aliases,tracking_note
+Variational,Variational,공식 API 및 포인트 산정 규칙 확인 필요
+Nado,Nado,주간 포인트 모델 및 지갑 단위 데이터 조사
+StandX,StandX,거래량과 OI 및 포인트 이벤트 구분
+N1,N1|01 Exchange,동명이의 거래소 및 브랜드 확인 필요
+Arcus,Arcus,Robinhood Chain 거래소 연결 상태 확인
+Entropy,Entropy,공식 시장 데이터 확인
+QFEX,QFEX,공식 API 및 포인트 규칙 확인
+TxFlow,TxFlow,동일 브랜드 및 공식 API 확인
+robinhoodchain.lighter,,일반 Lighter 전체 데이터와 섞지 말 것
+Pacifica,Pacifica,거래량 및 포인트 배분 주기 확인
+hello.trade,hello.trade|Hello Trade,거래소 공식 식별 및 API 확인
