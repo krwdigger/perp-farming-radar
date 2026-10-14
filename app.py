@@ -1130,12 +1130,18 @@ html.radar-dark .farming-ranking *{color:#dfc2aa!important}
 })();
 </script>
 """
-st.html(
-    _theme_widget.replace('{{DARK_CAT_B64}}',_dark_cat_b64)
-                 .replace('{{LIGHT_CAT_B64}}',_cat_head_b64)
-                 .replace('{{HAS_DARK_CAT}}','true' if _dark_cat_b64 else 'false'),
-    unsafe_allow_javascript=True
-)
+# Native Streamlit theme control: remains visible when browser-side scripts are blocked.
+# Render the same existing theme CSS conditionally instead of depending on
+# a JavaScript-injected button or browser localStorage.
+_theme_dark = st.toggle('🎃 DARK / LIGHT', value=False, key='radar_native_theme',
+                        help='켜면 다크 모드, 끄면 라이트 모드')
+_theme_css = _theme_widget.split('</style>', 1)[0] + '</style>'
+if _theme_dark:
+    _theme_css = _theme_css.replace('html.radar-dark', 'html')
+    # The original dark palette depends on an html class; its selectors are
+    # activated server-side here, so no DOM mutation is needed.
+st.html(_theme_css)
+
 
 # Independent left-edge settings control replaces the fragile native sidebar opener.
 with st.popover(' ', help='데이터 연결 및 설정 열기'):
