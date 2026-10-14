@@ -865,6 +865,84 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+
+_dark_cat_asset=DATA_DIR/'assets'/'dark_cat_head.b64'
+_dark_cat_b64=_dark_cat_asset.read_text(encoding='utf-8').strip() if _dark_cat_asset.exists() else ''
+_theme_widget=r"""
+<style id="radar-theme-css">
+#radar-dark-toggle{position:fixed!important;top:18px!important;right:max(24px,calc((100vw - 1450px)/2 + 30px))!important;z-index:2147483645!important;cursor:pointer!important;border:1px solid #b9844f!important;border-radius:999px!important;padding:9px 16px!important;font:700 14px/1.4 'Noto Sans KR',sans-serif!important;background:#fff4e2!important;color:#583920!important;box-shadow:0 3px 15px rgba(36,19,7,.2)!important;}
+html.radar-dark body,html.radar-dark [data-testid="stApp"]{background:#120f14!important;color:#f1e3d5!important}
+html.radar-dark [data-testid="stAppViewContainer"]{background-color:#17121a!important;background-blend-mode:multiply,multiply!important}
+html.radar-dark [data-testid="stAppViewContainer"] .block-container{background:rgba(23,19,27,.94)!important;backdrop-filter:none!important}
+html.radar-dark #radar-dark-toggle{background:#372536!important;border-color:#ac6d42!important;color:#fff0df!important}
+html.radar-dark .radar-banner h1,html.radar-dark [data-testid="stApp"] h1,html.radar-dark [data-testid="stApp"] h2,html.radar-dark [data-testid="stApp"] h3,html.radar-dark [data-testid="stApp"] h4,html.radar-dark [data-testid="stApp"] p,html.radar-dark [data-testid="stApp"] li,html.radar-dark [data-testid="stApp"] label,html.radar-dark [data-testid="stApp"] span{color:#e9d7c5!important}
+html.radar-dark [data-testid="stCaptionContainer"] *{color:#bdad9d!important}
+html.radar-dark .radar-table-wrap,html.radar-dark .venue-rank-chart,html.radar-dark .radar-rank-table,html.radar-dark .market-chart-panel,html.radar-dark [data-testid="stExpander"],html.radar-dark [data-testid="stExpander"] details,html.radar-dark [data-testid="stExpander"] summary,html.radar-dark [data-testid="stMetric"],html.radar-dark [data-testid="stDataFrame"]{background:#241d28!important;color:#f2e4d6!important;border-color:#594535!important}
+html.radar-dark .radar-rank-table thead th,html.radar-dark .radar-rank-table th,html.radar-dark .fundraising-ranking thead th{background:#3c2a2a!important;color:#f3dfbf!important;border-color:#684e38!important}
+html.radar-dark .radar-rank-table tbody td,html.radar-dark .radar-rank-table tbody tr,html.radar-dark .radar-rank-table .rank-name{background:#241d28!important;color:#f0dfce!important;border-color:#514038!important}
+html.radar-dark .radar-rank-table tbody tr:hover td{background:#362733!important}
+html.radar-dark .radar-bar-track,html.radar-dark .venue-rank-measure{background-color:#4e3a37!important}
+html.radar-dark .venue-rank-value,html.radar-dark .venue-rank-axis,html.radar-dark .venue-rank-ticks,html.radar-dark .exchange-cell,html.radar-dark .congestion-cell strong,html.radar-dark .funding-source{color:#f0d7b7!important}
+html.radar-dark input,html.radar-dark textarea,html.radar-dark [data-baseweb="select"] > div,html.radar-dark [data-testid="stTextInput"] > div > div{background:#30252c!important;color:#f5e7d5!important;border-color:#78563f!important}
+html.radar-dark [data-testid="stTabs"] [role="tab"],html.radar-dark [data-testid="stTabs"] [role="tab"] *{color:#e7c7a2!important}
+html.radar-dark [data-testid="stTabs"] [role="tab"][aria-selected="true"]{border-bottom-color:#f1a558!important}
+html.radar-dark [data-testid="stExpander"] summary{background:#2b202c!important}
+html.radar-dark [data-testid="stApp"] a{color:#ffbd7e!important}
+html.radar-dark .js-plotly-plot .main-svg,html.radar-dark .js-plotly-plot .bg{background:transparent!important;fill:#241d28!important}
+html.radar-dark .js-plotly-plot text{fill:#e8d4be!important}
+html.radar-dark .js-plotly-plot .gridlayer path{stroke:#604a3e!important}
+html.radar-dark [data-testid="stAlert"]{background:#34252b!important;border-color:#624936!important}
+@media(max-width:650px){#radar-dark-toggle{top:10px!important;right:12px!important;padding:7px 11px!important}}
+</style>
+<script>
+(() => {
+  const key='radar.theme.v1';
+  let button=document.getElementById('radar-dark-toggle');
+  if(!button){
+    button=document.createElement('button');
+    button.id='radar-dark-toggle';
+    button.type='button';
+    button.setAttribute('aria-label','다크모드 전환');
+    document.body.appendChild(button);
+  }
+  const darkCat='data:image/webp;base64,{{DARK_CAT_B64}}';
+  const lightCat='data:image/webp;base64,{{LIGHT_CAT_B64}}';
+  function apply(isDark){
+    document.documentElement.classList.toggle('radar-dark',isDark);
+    button.textContent=isDark?'☀️ 라이트모드':'🌙 다크모드';
+    button.setAttribute('aria-pressed',String(isDark));
+    const cat=document.querySelector('.radar-cat-head');
+    if(cat) cat.src=isDark && {{HAS_DARK_CAT}} ? darkCat : lightCat;
+  }
+  button.onclick=()=>{
+    const next=!document.documentElement.classList.contains('radar-dark');
+    apply(next);
+    try{localStorage.setItem(key,next?'dark':'light')}catch(_e){}
+  };
+  let saved='light';
+  try{saved=localStorage.getItem(key)||'light'}catch(_e){}
+  apply(saved==='dark');
+  if(!window.__radarThemeObserver){
+    const observer=new MutationObserver(()=>{
+      const cat=document.querySelector('.radar-cat-head');
+      if(cat){
+        const desired=document.documentElement.classList.contains('radar-dark') && {{HAS_DARK_CAT}} ? darkCat : lightCat;
+        if(cat.src!==desired)cat.src=desired;
+      }
+    });
+    observer.observe(document.body,{childList:true,subtree:true});
+    window.__radarThemeObserver=observer;
+  }
+})();
+</script>
+"""
+st.html(
+    _theme_widget.replace('{{DARK_CAT_B64}}',_dark_cat_b64)
+                 .replace('{{LIGHT_CAT_B64}}',_cat_head_b64)
+                 .replace('{{HAS_DARK_CAT}}','true' if _dark_cat_b64 else 'false'),
+    unsafe_allow_javascript=True
+)
+
 # Independent left-edge settings control replaces the fragile native sidebar opener.
 with st.popover(' ', help='데이터 연결 및 설정 열기'):
     st.header('데이터 연결')
