@@ -273,6 +273,25 @@ df['wallet_competition_percentile']=float('nan')
 if mask.any():df.loc[mask,'wallet_competition_percentile']=df.loc[mask,'active_wallets_7d'].rank(pct=True,method='average')*100
 
 
+def compact_usd(x):
+    if pd.isna(x): return '—'
+    x=float(x)
+    if abs(x)>=1e9:return f'${x/1e9:,.2f}B'
+    if abs(x)>=1e6:return f'${x/1e6:,.2f}M'
+    if abs(x)>=1e3:return f'${x/1e3:,.1f}K'
+    return f'${x:,.0f}'
+
+def integer_fmt(x):
+    return '—' if pd.isna(x) else f'{float(x):,.0f}'
+
+def readable_metrics(frame, rename):
+    result=frame.copy()
+    for field in ['volume_24h_usd','volume_7d_usd','oi_usd']:
+        if field in result:result[field]=result[field].map(compact_usd)
+    for field in ['active_wallets_7d','weekly_points']:
+        if field in result:result[field]=result[field].map(integer_fmt)
+    return result.rename(columns=rename)
+
 st.caption('API 갱신 시각: '+datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')+' · 무료 데이터의 범위와 실제 갱신 간격은 거래소마다 다릅니다')
 st.markdown('<div class="radar-hint"><b>빈집 탐지 원칙</b> · 거래량/OI가 적은 것과 포인트 경쟁률이 낮은 것은 다릅니다. 활성 지갑·배분 풀 미확보 프로젝트에는 임의 점수를 부여하지 않습니다.</div>',unsafe_allow_html=True)
 st.write('')
@@ -298,8 +317,35 @@ with radar_tabs[0]:
     elif order=='OI 낮은 순':watched=watched.sort_values('oi_usd',ascending=True,na_position='last')
     elif order=='24H 거래량 순':watched=watched.sort_values('volume_24h_usd',ascending=False,na_position='last')
     viewcols=['watch_name','상태','volume_24h_usd','volume_7d_usd','oi_usd','active_wallets_7d','weekly_points']
-    st.dataframe(watched[viewcols].rename(columns={'watch_name':'프로젝트','volume_24h_usd':'24H Volume ($)','volume_7d_usd':'7D Volume ($)','oi_usd':'현재 OI ($)','active_wallets_7d':'7D 지갑','weekly_points':'주간 포인트'}),hide_index=True,use_container_width=True,height=445)
+    st.dataframe(readable_metrics(watched[viewcols], rename={'watch_name':'프로젝트','volume_24h_usd':'24H Volume ($)','volume_7d_usd':'7D Volume ($)','oi_usd':'현재 OI ($)','active_wallets_7d':'7D 지갑','weekly_points':'주간 포인트'})),hide_index=True,use_container_width=True,height=445)
     st.caption('미확보 수치는 0이 아닙니다. 거래량/OI가 있어도 포인트 효율을 계산할 수 있다는 뜻은 아닙니다.')
+    st.markdown('#### 📊 관심 거래소 시장 규모 비교')
+    chart_left, chart_right=st.columns(2)
+    with chart_left:
+        vol=watched.dropna(subset=['volume_24h_usd']).sort_values('volume_24h_usd')
+        if vol.empty:st.info('24시간 거래량 데이터 미확보')
+        else:
+            fig=px.bar(vol,x='volume_24h_usd',y='watch_name',orientation='h',
+                       color_discrete_sequence=['#35cdbf'],
+                       labels={'volume_24h_usd':'24H 거래량 (USD)','watch_name':''})
+            fig.update_layout(height=max(240,110+len(vol)*46),margin=dict(l=0,r=8,t=5,b=0),
+                              paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',
+                              font_color='#e6edf7',showlegend=False)
+            fig.update_xaxes(tickformat='~s',gridcolor='#304055')
+            st.plotly_chart(fig,use_container_width=True)
+    with chart_right:
+        oi_chart=watched.dropna(subset=['oi_usd']).sort_values('oi_usd')
+        if oi_chart.empty:st.info('OI 데이터 미확보')
+        else:
+            fig=px.bar(oi_chart,x='oi_usd',y='watch_name',orientation='h',
+                       color_discrete_sequence=['#799bf2'],
+                       labels={'oi_usd':'현재 OI (USD)','watch_name':''})
+            fig.update_layout(height=max(240,110+len(oi_chart)*46),margin=dict(l=0,r=8,t=5,b=0),
+                              paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',
+                              font_color='#e6edf7',showlegend=False)
+            fig.update_xaxes(tickformat='~s',gridcolor='#304055')
+            st.plotly_chart(fig,use_container_width=True)
+    st.caption('그래프는 데이터가 확보된 거래소만 보여주며, Volume과 OI는 파밍 경쟁률 점수가 아닙니다.')
     with st.expander('관심 거래소별 데이터 출처 및 수집 상태'):
         st.dataframe(watched[['watch_name','volume_source','oi_source','market_data_time']].rename(columns={'watch_name':'거래소','volume_source':'거래량 출처','oi_source':'OI 출처','market_data_time':'데이터 조회 시각'}),hide_index=True,use_container_width=True)
     st.download_button('관심 프로젝트 데이터 CSV',watched.to_csv(index=False).encode('utf-8-sig'),'watchlist_metrics.csv','text/csv')
@@ -336,7 +382,7 @@ with radar_tabs[2]:
     for col in sc:
         if col not in v:v[col]=None
     st.caption(f'검색 결과 {len(v):,}개 · 목록 등록일은 실제 서비스 출시일과 다를 수 있음')
-    st.dataframe(v[sc].rename(columns={'name':'거래소','chains':'체인','listed_date':'목록 등록일','volume_24h_usd':'24H Volume','volume_7d_usd':'7D Volume','oi_usd':'OI','active_wallets_7d':'7D 지갑','weekly_points':'주간 포인트'}),hide_index=True,use_container_width=True,height=570)
+    st.dataframe(readable_metrics(v[sc], rename={'name':'거래소','chains':'체인','listed_date':'목록 등록일','volume_24h_usd':'24H Volume','volume_7d_usd':'7D Volume','oi_usd':'OI','active_wallets_7d':'7D 지갑','weekly_points':'주간 포인트'})),hide_index=True,use_container_width=True,height=570)
     st.download_button('스캐너 CSV 내보내기',v[sc].to_csv(index=False).encode('utf-8-sig'),'perp_scanner.csv','text/csv')
 with radar_tabs[3]:
     st.subheader('데이터 연결 현황')
@@ -371,4 +417,4 @@ with radar_tabs[4]:
         c3.metric('활동 점유율',f'{mine/whole*100:.4f}%')
     else:st.warning('전체 활동량과 포인트 풀을 확인하세요.')
 st.divider()
-st.caption('v0.5 · Read-only research dashboard · 에어드랍 수익 보장 없음 · 주문/지갑 서명 기능 없음')
+st.caption('v0.6 · Read-only research dashboard · 에어드랍 수익 보장 없음 · 주문/지갑 서명 기능 없음')
