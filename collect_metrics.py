@@ -67,6 +67,23 @@ def pacifica_oi():
     if not values:raise ValueError("No USD-denominated open interest values")
     return {"oi_usd":sum(values),"markets":len(values)}
 
+def nado_oi():
+    import ccxt
+    exchange=ccxt.nado({"enableRateLimit":True,"timeout":16000})
+    records=exchange.fetch_open_interests()
+    if isinstance(records,dict):records=list(records.values())
+    if not isinstance(records,list):raise ValueError("Expected CCXT open interest records")
+    values=[]
+    for record in records:
+        if not isinstance(record,dict):continue
+        amount=numeric(record.get("openInterestValue"))
+        if amount is None:
+            info=record.get("info")
+            if isinstance(info,dict):amount=numeric(info.get("open_interest_usd"))
+        if amount is not None and amount>=0:values.append(amount)
+    if not values:raise ValueError("No explicit USD open interest notional in Nado records")
+    return {"oi_usd":sum(values),"markets":len(values)}
+
 def hyperliquid():
     payload=json.dumps({"type":"metaAndAssetCtxs"}).encode()
     req=urllib.request.Request("https://api.hyperliquid.xyz/info",headers={**HEADERS,"Content-Type":"application/json"},data=payload)
@@ -81,7 +98,8 @@ def main():
        ("Variational","Official Omni API",variational),
        ("StandX","Official public overview",standx),
        ("Pacifica","Official public market info (market count only)",pacifica),
-       ("Pacifica OI","CCXT unified fetchOpenInterests",pacifica_oi),
+       ("Pacifica","CCXT unified fetchOpenInterests",pacifica_oi),
+       ("Nado","CCXT unified fetchOpenInterests",nado_oi),
        ("Arcus","Public REST market list (market count only)",arcus),
        ("Hyperliquid","Official info API",hyperliquid)]
     rows=[]
