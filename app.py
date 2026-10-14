@@ -130,7 +130,11 @@ def fetch_arcus_markets():
         price=number(m.get('markPrice'))
         if size is not None and price is not None:
             values.append(size*price)
+    volumes=[number(m.get('volume24hNotional')) for m in perpetuals]
+    volumes=[v for v in volumes if v is not None and v>=0]
     return {'markets':len(perpetuals),'oi_usd':sum(values) if values else None,
+            'volume_24h_usd':sum(volumes) if volumes else None,
+            'volume_source':'Arcus official /v1/markets · sum perpetual volume24hNotional',
             'oi_source':'Arcus markets API · perpetual one-sided OI × mark price'}
 
 @st.cache_data(ttl=900,show_spinner=False)
