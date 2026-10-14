@@ -135,6 +135,31 @@ def fetch_entropy_hip3():
         'market_data_time':datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
     }
 
+@st.cache_data(ttl=300, show_spinner=False)
+def fetch_robinhood_lighter():
+    """Robinhood Chain Lighter ONLY, never general Lighter mainnet.
+
+    Public order-book details report per-market OI as contracts. Require a
+    clearly identified mark price and market size metadata before USD conversion.
+    """
+    url='https://api.rh.lighter.xyz/api/v1/exchangeStats'
+    stats=api_get(url)
+    if not isinstance(stats,dict):raise ValueError('RH Lighter exchangeStats invalid')
+    payload=stats.get('data',stats)
+    if not isinstance(payload,dict):raise ValueError('RH Lighter metrics payload invalid')
+    volume=number(payload.get('daily_usd_volume'))
+    if volume is None:
+        quotes=payload.get('order_book_stats')
+        if isinstance(quotes,list):
+            parts=[number(x.get('daily_quote_token_volume')) for x in quotes if isinstance(x,dict)]
+            parts=[p for p in parts if p is not None and p>=0]
+            if parts:volume=sum(parts)
+    # Quote volume is always 24-hour US dollar notional, not number of trades.
+    if volume is None or volume<0:raise ValueError('No explicit RH Lighter 24h USD volume')
+    return {'volume_24h_usd':volume,
+            'volume_source':'Robinhood Chain-only Lighter official exchangeStats',
+            'market_data_time':datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}
+
 @st.cache_data(ttl=900, show_spinner=False)
 def fetch_standx():
     """Official StandX public market overview: 24h quote volume and current OI."""
@@ -859,6 +884,8 @@ with st.spinner('공개 데이터 수집 중…'):
     except Exception as e: nado_stats=None;errors.append(f'Nado CCXT: {e}')
     try: entropy_stats=fetch_entropy_hip3()
     except Exception as e: entropy_stats=None;errors.append(f'Entropy HIP-3: {e}')
+    try: robinhood_lighter_stats=fetch_robinhood_lighter()
+    except Exception as e: robinhood_lighter_stats=None;errors.append(f'Robinhood Lighter: {e}')
     try: pro=fetch_pro_derivatives(pro_key) if pro_key else pd.DataFrame()
     except Exception as e: pro=pd.DataFrame();errors.append(f'DefiLlama Pro: {e}')
 
@@ -881,6 +908,14 @@ df['is_watchlist']=df['watch_name'].notna().fillna(False).astype(bool)
 
 df=merge_exact(df,oi,'_oi')
 df=merge_exact(df,pro,'_pro')
+# Keep Robinhood Chain Lighter isolated from general Lighter.
+if robinhood_lighter_stats:
+    rh_mask=df['watch_name'].eq('robinhoodchain.lighter')
+    if rh_mask.any():
+        for field,value in robinhood_lighter_stats.items():
+            if value is not None:
+                if field not in df.columns:df[field]=None
+                df.loc[rh_mask,field]=value
 # Entropy io is a distinct HIP-3 venue. Never merge Hyperliquid's default market.
 if entropy_stats:
     entropy_mask=df['watch_name'].eq('Entropy')
