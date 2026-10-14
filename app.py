@@ -621,6 +621,14 @@ html,body,[data-testid="stApp"],[data-testid="stApp"] *,
  .radar-banner h1{font-size:38px!important}
  [data-testid="stApp"] h2,[data-testid="stApp"] h3{font-size:20px!important}
 }
+
+/* Market-activity proxy: compact two-line congestion cell. */
+.radar-rank-table th:last-child,.radar-rank-table td:last-child{
+ min-width:135px;text-align:center;vertical-align:middle}
+.congestion-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.congestion-cell strong{font-size:15px!important;font-weight:700!important;color:#6b432a}
+.pumpkin-meter{font-size:19px!important;letter-spacing:1px;white-space:nowrap;line-height:1.2}
+.pumpkin-empty{color:#cdb58b;font-size:15px}
 </style>""",unsafe_allow_html=True)
 # Keep the exact uploaded 1200×1600 JPEG in the repository (no lossy re-encoding).
 # Scale to the viewport height rather than covering its width, which greatly
@@ -1092,6 +1100,29 @@ with radar_tabs[0]:
         watched['oi_weekly_change_pct']=float('nan')
     watched['volume_oi_ratio']=watched['volume_24h_usd']/watched['oi_usd'].replace(0,float('nan'))
     watched.loc[watched['oi_usd']<=0,'volume_oi_ratio']=float('nan')
+    # This is a *relative market-activity proxy*, not a trader count or a
+    # prediction of rewards. Never assign a score to markets with missing data.
+    valid_market=(watched['volume_24h_usd']>0)&(watched['oi_usd']>0)
+    watched['activity_congestion']=float('nan')
+    if valid_market.sum()>=2:
+        group=watched.loc[valid_market]
+        vol_rank=group['volume_24h_usd'].rank(pct=True,method='average')
+        oi_rank=group['oi_usd'].rank(pct=True,method='average')
+        watched.loc[valid_market,'activity_congestion']=100*(0.6*vol_rank+0.4*oi_rank)
+    def congestion_pumpkins(value):
+        if pd.isna(value):return '<span class="radar-missing">자료 부족</span>'
+        score=float(value)
+        if score>=80:label='매우 혼잡'
+        elif score>=60:label='혼잡'
+        elif score>=40:label='보통'
+        elif score>=20:label='낮음'
+        else:label='매우 낮음'
+        count=max(1,min(5,6-math.ceil(score/20)))
+        return ('<div class="congestion-cell"><strong>'+label+'</strong>'
+                '<div class="pumpkin-meter" aria-label="호박 '+str(count)+'개 / 5개">'
+                +'🎃'*count+'<span class="pumpkin-empty">'+'·'*(5-count)+'</span>'
+                '</div></div>')
+
     st.subheader('거래소별 거래량 · OI')
     # Two compact reference rows, deliberately not part of the farming rankings.
     if not benchmarks.empty:
@@ -1133,18 +1164,18 @@ with radar_tabs[0]:
     for _,entry in rank.iterrows():
         row_oi_text=compact_usd(entry['oi_usd'])
         ratio=f"{entry['volume_oi_ratio']:.2f}×" if pd.notna(entry['volume_oi_ratio']) else '—'
-        oi_delta=f"{entry['oi_weekly_change_pct']:+.1f}%" if pd.notna(entry['oi_weekly_change_pct']) else '—'
-        traders=integer_fmt(entry['active_wallets_7d'])
         body.append('<tr><td class="rank-no">'+table_cell(int(entry['#']))+'</td>'
                     '<td class="rank-name">'+exchange_logo_html(entry['watch_name'])+'</td>'
                     '<td>'+volume_bar(entry['volume_24h_usd'])+'</td>'
                     '<td>'+table_cell(row_oi_text)+'</td>'
                     '<td>'+table_cell(ratio)+'</td>'
-                    '<td>'+table_cell(oi_delta)+'</td>'
-                    '<td>'+table_cell(traders)+'</td></tr>')
-    table_header='<div class="radar-table-wrap"><table class="radar-rank-table"><thead><tr><th>#</th><th>Exchange</th><th>24H Volume</th><th>Open Interest</th><th>Vol / OI</th><th>OI 7D</th><th>7D Traders</th></tr></thead><tbody>'
+                    '<td>'+congestion_pumpkins(entry['activity_congestion'])+'</td></tr>')
+    table_header=('<div class="radar-table-wrap"><table class="radar-rank-table"><thead><tr>'
+                  '<th>#</th><th>Exchange</th><th>24H Volume</th>'
+                  '<th>Open Interest</th><th>Vol / OI</th><th>혼잡도</th>'
+                  '</tr></thead><tbody>')
     st.markdown(table_header+''.join(body)+'</tbody></table></div>',unsafe_allow_html=True)
-    st.caption('Vol/OI는 거래 회전율에 가까운 시장 활동 지표입니다. 파밍 수익률이나 활성 지갑 수의 대체치는 아닙니다. OI 7D는 일주일 전 기록이 있는 경우에만 표시합니다.')
+    st.caption('추정 혼잡도: 값이 확보된 관심 거래소 간 24H Volume 순위 60% + 현재 OI 순위 40%. 호박이 많을수록 상대적으로 덜 붐비는 시장입니다. 실제 트레이더 수·파밍 수익률을 뜻하지 않으며, 데이터 부족 시 평가하지 않습니다.')
     chart_a,chart_b=st.columns(2)
     with chart_a:
         st.markdown('#### 24H Volume Rankings')
