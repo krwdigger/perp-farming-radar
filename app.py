@@ -424,7 +424,7 @@ div[data-testid="stAlert"] p,div[data-testid="stAlert"] div{color:#67462a!import
 .radar-volume-cell span{min-width:80px;text-align:right;font-weight:750;font-size:15px;color:#674028!important}
 .radar-missing{color:#987f6a}
 .exchange-cell{display:inline-flex;align-items:center;gap:10px;vertical-align:middle}
-.exchange-logo,.exchange-monogram{width:30px;height:30px;min-width:30px;border-radius:50%;object-fit:contain}
+.exchange-logo,.exchange-monogram{width:32px;height:32px;min-width:32px;border-radius:50%;object-fit:cover;background:#fff7e8}
 .exchange-monogram{display:inline-flex;align-items:center;justify-content:center;background:#f2dfbf;color:#80512c;font-size:14px;font-weight:700}
 .benchmark-wrap{margin:5px 0 18px}
 .benchmark-wrap .radar-rank-table tbody td{padding:12px 14px}
@@ -893,9 +893,15 @@ def round_exchange_logo(name, url):
     avatar.save(output,format='PNG')
     return 'data:image/png;base64,'+base64.b64encode(output.getvalue()).decode('ascii')
 
+# Verified HelloTrade emblem from the project's own @hellotradeapp profile.
+# Unlike Google favicon lookup this is the full 400x400 branded symbol.
+HELLOTRADE_LOGO_URL = 'https://pbs.twimg.com/profile_images/2015857547530403841/yrpPGBWa_400x400.png'
+
 def exchange_logo_url(name):
+    if str(name).strip().lower() in ('hello.trade','hellotrade','hello trade'):
+        return HELLOTRADE_LOGO_URL
     # Official-site favicons for projects absent or mismatched in DefiLlama.
-    official={'StandX':'standx.com','Entropy':'entropy.io','hello.trade':'hello.trade'}
+    official={'StandX':'standx.com','Entropy':'entropy.io'}
     if name in official:
         return 'https://www.google.com/s2/favicons?domain='+official[name]+'&sz=128'
     candidates = {
