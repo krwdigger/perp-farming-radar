@@ -460,14 +460,14 @@ with radar_tabs[0]:
     f1,f2,f3=st.columns([2,1,1])
     search=f1.text_input('거래소 검색',placeholder='Variational, StandX, Nado…',key='watch_search')
     choice=f2.selectbox('데이터',['전체','24H Volume 확보','OI 확보','7D 지갑 확보'],key='watch_data_filter')
-    order=f3.selectbox('정렬',['24H Volume ↓','OI ↓','OI ↑','7D 지갑 변화 ↑','7D 지갑 변화 ↓'],key='watch_order')
+    order=f3.selectbox('정렬',['24H Volume ↓','거래량/OI ↓','거래량/OI ↑','OI ↓','OI ↑','7D 지갑 변화 ↑','7D 지갑 변화 ↓'],key='watch_order')
     display=watched.copy()
     if search:display=display[display['watch_name'].astype(str).str.contains(search,case=False,regex=False)]
     if choice=='24H Volume 확보':display=display[display['volume_24h_usd'].notna()]
     elif choice=='OI 확보':display=display[display['oi_usd'].notna()]
     elif choice=='7D 지갑 확보':display=display[display['active_wallets_7d'].notna()]
     sort_column,ascending={
-      '24H Volume ↓':('volume_24h_usd',False),'OI ↓':('oi_usd',False),
+      '24H Volume ↓':('volume_24h_usd',False),'거래량/OI ↓':('volume_oi_ratio_24h',False),'거래량/OI ↑':('volume_oi_ratio_24h',True),'OI ↓':('oi_usd',False),
       'OI ↑':('oi_usd',True),'7D 지갑 변화 ↑':('wallet_change_pct',False),
       '7D 지갑 변화 ↓':('wallet_change_pct',True)}[order]
     display=display.sort_values(sort_column,ascending=ascending,na_position='last').reset_index(drop=True)
