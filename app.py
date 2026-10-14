@@ -1053,40 +1053,14 @@ html.radar-dark [data-testid="stAppViewContainer"]{
 html.radar-dark [data-testid="stMain"],
 html.radar-dark [data-testid="stMainBlockContainer"]{background-color:transparent!important}
 </style>"""
-# Dark background is precomposited: 75% plum tint on ordinary surfaces,
-# but preserve luminous yellow/orange jack-o-lantern cutouts.  No extra CSS
-# overlay is added, to avoid inadvertently obscuring the cutout glow.
-@st.cache_data(show_spinner=False)
-def _make_dark_background(photo):
-    import numpy as np
-    from PIL import ImageFilter
-    with Image.open(BytesIO(photo)) as im:
-        pixels = np.asarray(im.convert('RGB'), dtype=np.float32)
-    r, g, b = pixels[:,:,0], pixels[:,:,1], pixels[:,:,2]
-    flame = (
-        np.clip((r - 185) / 50, 0, 1) *
-        np.clip((g - 130) / 65, 0, 1) *
-        np.clip((g - b - 30) / 55, 0, 1) *
-        np.clip((115 - (r-g)) / 45, 0, 1)
-    )
-    glow = np.asarray(
-        Image.fromarray(np.uint8(flame * 255), 'L').filter(
-            ImageFilter.GaussianBlur(10)), dtype=np.float32
-    ) / 255
-    keep = np.clip(flame * .98 + glow * .24, 0, 1)[:,:,None]
-    dark = pixels * .25 + np.array([19,14,23], dtype=np.float32) * .75
-    result = np.clip(dark * (1-keep) + pixels * keep, 0, 255).astype('uint8')
-    out = BytesIO()
-    Image.fromarray(result,'RGB').save(out, format='WEBP', quality=87)
-    return base64.b64encode(out.getvalue()).decode('ascii')
-
+# Dark mode uses the separately uploaded pumpkin photograph.
 _dark_asset = DATA_DIR / 'assets' / 'pumpkin_dark.webp'
 if _dark_asset.is_file():
-    _photo = _make_dark_background(_dark_asset.read_bytes())
+    _dark_image = base64.b64encode(_dark_asset.read_bytes()).decode('ascii')
     _theme_css += (
         '<style>'
         'html.radar-dark body [data-testid="stAppViewContainer"]{'
-        'background-image:url("data:image/webp;base64,'+_photo+'")!important;'
+        'background-image:url("data:image/webp;base64,'+_dark_image+'")!important;'
         'background-color:#17121a!important;'
         'background-position:center top!important;'
         'background-size:auto min(100vh, 1600px)!important;'
@@ -1095,10 +1069,9 @@ if _dark_asset.is_file():
         'background-blend-mode:normal!important;'
         '}'
         'html.radar-dark body [data-testid="stAppViewContainer"] [data-testid="stMain"],'
-        'html.radar-dark body [data-testid="stAppViewContainer"] [data-testid="stMainBlockContainer"]{'
-        'background:transparent!important;}'
+        'html.radar-dark body [data-testid="stAppViewContainer"] [data-testid="stMainBlockContainer"]{background:transparent!important;}'
         'html.radar-dark body [data-testid="stAppViewContainer"] .block-container{'
-        'background:rgba(23,18,26,.88)!important;}'
+        'background:rgba(23,18,26,.92)!important;}'
         '</style>'
     )
 st.markdown(_theme_css, unsafe_allow_html=True)
