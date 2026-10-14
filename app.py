@@ -283,29 +283,31 @@ st.markdown("""<style>
 html,body,[data-testid="stApp"],[class*="css"]{font-family:'DM Sans','Noto Sans KR',sans-serif}
 [data-testid="stAppViewContainer"]{background:linear-gradient(160deg,#f8efdf 0%,#fbf5e9 38%,#f7edd8 100%);color:#573d2d}
 [data-testid="stSidebar"]{background:#f7e9d1;border-right:1px solid #dfc39d}
-/* Independent fixed settings control: does not depend on native sidebar DOM. */
+/* The sole left-edge settings opener; eliminate native and popover chevrons. */
 [data-testid="stSidebarCollapsedControl"],
 [data-testid="collapsedControl"],
 [data-testid="stSidebarCollapseButton"],
-[data-testid="stSidebarNavCollapseButton"]{display:none!important;}
-[data-testid="stHeader"]{background:transparent!important;}
+[data-testid="stSidebarNavCollapseButton"]{display:none!important}
+[data-testid="stHeader"]{background:transparent!important}
 [data-testid="stPopover"]{
-    position:fixed!important;
-    left:0!important;
-    top:6px!important;
-    z-index:2147483000!important;
-    width:auto!important;
-    margin:0!important;
-    padding:0!important;
+ position:fixed!important;left:0!important;top:6px!important;
+ width:34px!important;min-width:34px!important;margin:0!important;padding:0!important;
+ z-index:2147483000!important;transform:none!important;
 }
-/* Rebuilt single-edge toggle: no Streamlit chevron or duplicate label. */
-[data-testid="stSidebarCollapsedControl"],[data-testid="collapsedControl"],
-[data-testid="stSidebarCollapseButton"],[data-testid="stSidebarNavCollapseButton"]{display:none!important}
-[data-testid="stPopover"]{position:fixed!important;left:0!important;top:6px!important;z-index:2147483000!important;margin:0!important;padding:0!important;width:32px!important;min-width:32px!important}
-[data-testid="stPopover"] button{position:relative!important;display:block!important;width:32px!important;min-width:32px!important;height:38px!important;min-height:38px!important;padding:0!important;margin:0!important;border:0!important;border-radius:0 8px 8px 0!important;background:rgba(255,248,233,.96)!important;color:#774824!important;font-size:0!important;box-shadow:0 2px 5px rgba(88,47,18,.14)!important}
-[data-testid="stPopover"] button > *{visibility:hidden!important}
-[data-testid="stPopover"] button::after{content:"›"!important;position:absolute!important;left:9px!important;top:0!important;height:38px!important;display:flex!important;align-items:center!important;justify-content:center!important;font:700 27px/1 Arial,sans-serif!important;color:#774824!important;visibility:visible!important}
-[data-testid="stPopover"] button:hover{background:#f6e4c3!important}
+[data-testid="stPopover"] button{
+ position:relative!important;display:flex!important;align-items:center!important;
+ justify-content:center!important;width:34px!important;min-width:34px!important;
+ height:38px!important;min-height:38px!important;padding:0!important;margin:0!important;
+ border:1px solid #cea87a!important;border-left:0!important;border-radius:0 9px 9px 0!important;
+ background:#fff6e6!important;color:#784624!important;
+ font:700 23px/1 Arial,sans-serif!important;box-shadow:0 2px 7px rgba(90,50,22,.13)!important;
+}
+[data-testid="stPopover"] button::before,[data-testid="stPopover"] button::after{content:none!important;display:none!important}
+[data-testid="stPopover"] button svg,
+[data-testid="stPopover"] button span[data-testid="stIconMaterial"],
+[data-testid="stPopover"] button span[class*="material"],
+[data-testid="stPopover"] button [data-baseweb="icon"]{display:none!important}
+[data-testid="stPopover"] button:hover{background:#efdab7!important}
 .block-container{max-width:1500px;padding-top:1.8rem;padding-bottom:4rem}
 h1,h2,h3{color:#573d2d!important;letter-spacing:-.025em;font-weight:700!important}
 h1{font-size:2.35rem!important}
@@ -472,6 +474,41 @@ div[data-testid="stAlert"] svg,[data-testid="stAlert"] [data-testid="stIconMater
 [data-testid="stApp"] [role="progressbar"]{
   accent-color:#B96831!important;
 }
+
+/* Remove residual blue backgrounds, focus rings and select menus from Streamlit. */
+:root{accent-color:#b76931}
+[data-testid="stApp"] input,[data-testid="stApp"] textarea,
+[data-testid="stApp"] [data-baseweb="input"]>div,
+[data-testid="stApp"] [data-baseweb="select"]>div,
+[data-testid="stApp"] [data-testid="stFileUploaderDropzone"],
+[data-testid="stApp"] [data-testid="stNumberInput"]>div{
+  background:#fff8e9!important;background-color:#fff8e9!important;
+  border-color:#d5b486!important;color:#533723!important;box-shadow:none!important}
+[data-testid="stApp"] input::placeholder{color:#93745a!important;opacity:1!important}
+[data-testid="stApp"] input:focus,[data-testid="stApp"] textarea:focus,
+[data-testid="stApp"] [data-baseweb="input"]:focus-within,
+[data-testid="stApp"] [data-baseweb="select"]:focus-within{
+ outline-color:#b76931!important;border-color:#b76931!important;
+ box-shadow:0 0 0 1px #b76931!important}
+[data-testid="stApp"] [data-testid="stTextInput"] svg,
+[data-testid="stApp"] [data-testid="stSelectbox"] svg{fill:#815330!important;color:#815330!important}
+[data-baseweb="popover"] [role="listbox"],[data-baseweb="popover"] [role="option"]{
+ background:#fff8e9!important;color:#5c3e29!important}
+[data-baseweb="popover"] [role="option"]:hover,
+[data-baseweb="popover"] [role="option"][aria-selected="true"]{
+ background:#eddbbd!important;color:#5c3e29!important}
+[data-testid="stApp"] [data-testid="stSlider"] [role="slider"],
+[data-testid="stApp"] [role="progressbar"]{accent-color:#b76931!important}
+[data-testid="stTabs"] [role="tablist"]{border-bottom-color:#d6b589!important}
+[data-testid="stTabs"] [role="tab"]{font-size:15px!important;color:#69442b!important;font-weight:700!important}
+[data-testid="stTabs"] [role="tab"][aria-selected="true"]{
+ color:#a25129!important;border-bottom:3px solid #b76d36!important}
+[data-testid="stButton"] button,[data-testid="stDownloadButton"] button,
+[data-testid="stFileUploaderDropzone"] button{
+ background:#f0ddbd!important;border-color:#d0a876!important;color:#684229!important}
+[data-testid="stDataFrame"]{background:#fff9ef!important;color:#573b28!important}
+[data-testid="stApp"] [data-testid="stPlotlyChart"]{
+ background:rgba(255,248,236,.55)!important}
 </style>""",unsafe_allow_html=True)
 # Keep the exact uploaded 1200×1600 JPEG in the repository (no lossy re-encoding).
 # Scale to the viewport height rather than covering its width, which greatly
@@ -507,7 +544,7 @@ st.markdown(
 )
 
 # Independent left-edge settings control replaces the fragile native sidebar opener.
-with st.popover(' ', help='데이터 연결 및 설정 열기'):
+with st.popover('❯', help='데이터 연결 및 설정 열기'):
     st.header('데이터 연결')
     pro_key=st.text_input('DefiLlama Pro API key (선택)', type='password', help='유료 derivatives 거래량 API용. 키는 저장하지 않습니다.')
     use_hl=st.checkbox('Hyperliquid 시장 데이터 불러오기', value=True)
@@ -701,7 +738,29 @@ def readable_metrics(frame, rename):
         if field in result:result[field]=result[field].map(integer_fmt)
     return result.rename(columns=rename)
 
-radar_tabs=st.tabs(['🎃 관심 거래소','🐿️ 경쟁 비교','🍄 전체 스캐너','🍁 데이터 출처'])
+def harvest_linear_bar(fig, values, height=360):
+    """Explicit linear USD ticks: equal value differences have equal pixel spacing."""
+    import math
+    valid=[float(v) for v in values if pd.notna(v) and float(v)>=0]
+    maximum=max(valid) if valid else 1.0
+    rough=max(maximum/5.0,1.0)
+    decade=10**math.floor(math.log10(rough))
+    increment=next((k*decade for k in (1,2,2.5,5,10) if k*decade>=rough),10*decade)
+    axis_end=max(6*increment,math.ceil(maximum/increment+1)*increment)
+    tick_values=[i*increment for i in range(int(axis_end/increment)+1)]
+    fig.update_layout(
+        height=height,margin=dict(l=6,r=88,t=15,b=46),
+        showlegend=False,font=dict(size=14,color='#61432d'),
+        paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(255,248,233,.28)',
+        xaxis=dict(type='linear',range=[0,axis_end],tickmode='array',
+                   tickvals=tick_values,ticktext=[compact_usd(n) for n in tick_values],
+                   ticks='outside',tickcolor='#a07750',showticklabels=True,
+                   showgrid=True,gridcolor='#e2cda9',zeroline=False,
+                   tickfont=dict(size=13,color='#62432c'),title_font=dict(size=14,color='#62432c')),
+        yaxis=dict(tickfont=dict(size=13,color='#62432c'),showgrid=False))
+    return fig
+
+radar_tabs=st.tabs(['🧸 관심 거래소','🐿️ 경쟁 비교','🦊 전체 스캐너','🍁 데이터 출처'])
 @st.cache_data(ttl=300,show_spinner=False)
 def load_public_market_history():
     url='https://raw.githubusercontent.com/krwdigger/perp-farming-radar/main/data/market_snapshots.csv'
@@ -901,19 +960,12 @@ with radar_tabs[0]:
             st.info('거래량 데이터가 확보되면 차트가 표시됩니다.')
         else:
             fig=px.bar(v,x='volume_24h_usd',y='watch_name',orientation='h',
-                       text='volume_24h_usd',color_discrete_sequence=['#b96c32'],
+                       color_discrete_sequence=['#b36732'],
                        labels={'volume_24h_usd':'24H Volume (USD)','watch_name':''})
-            fig.update_traces(texttemplate='%{text:$,.3s}',textposition='outside',cliponaxis=False)
-            fig.update_layout(
-                height=max(280,len(v)*54+80),margin=dict(l=4,r=95,t=18,b=40),
-                paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(255,249,236,0.64)',
-                showlegend=False,font=dict(size=13,color='#65452d'),
-                xaxis=dict(type='linear',rangemode='tozero',tickmode='auto',nticks=6,
-                           tickformat='~s',tickprefix='$',showgrid=True,gridcolor='#ddc9ac',
-                           ticks='outside',showticklabels=True,
-                           tickfont=dict(size=13,color='#63452f'),
-                           title_font=dict(size=14,color='#63452f')),
-                yaxis=dict(tickfont=dict(size=13,color='#62432b'),showgrid=False))
+            fig.update_traces(text=v['volume_24h_usd'].map(compact_usd).tolist(),
+                              texttemplate='%{text}',textposition='outside',cliponaxis=False,
+                              marker_line_width=0)
+            harvest_linear_bar(fig,v['volume_24h_usd'],height=max(310,len(v)*56+100))
             st.plotly_chart(fig,use_container_width=True,theme=None)
     with chart_b:
         st.markdown('#### Open Interest Rankings')
@@ -922,19 +974,12 @@ with radar_tabs[0]:
             st.info('OI 데이터가 확보되면 차트가 표시됩니다.')
         else:
             fig=px.bar(v,x='oi_usd',y='watch_name',orientation='h',
-                       text='oi_usd',color_discrete_sequence=['#d59b54'],
+                       color_discrete_sequence=['#d2944c'],
                        labels={'oi_usd':'Open Interest (USD)','watch_name':''})
-            fig.update_traces(texttemplate='%{text:$,.3s}',textposition='outside',cliponaxis=False)
-            fig.update_layout(
-                height=max(280,len(v)*54+80),margin=dict(l=4,r=95,t=18,b=40),
-                paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(255,249,236,0.64)',
-                showlegend=False,font=dict(size=13,color='#65452d'),
-                xaxis=dict(type='linear',rangemode='tozero',tickmode='auto',nticks=6,
-                           tickformat='~s',tickprefix='$',showgrid=True,gridcolor='#ddc9ac',
-                           ticks='outside',showticklabels=True,
-                           tickfont=dict(size=13,color='#63452f'),
-                           title_font=dict(size=14,color='#63452f')),
-                yaxis=dict(tickfont=dict(size=13,color='#62432b'),showgrid=False))
+            fig.update_traces(text=v['oi_usd'].map(compact_usd).tolist(),
+                              texttemplate='%{text}',textposition='outside',cliponaxis=False,
+                              marker_line_width=0)
+            harvest_linear_bar(fig,v['oi_usd'],height=max(310,len(v)*56+100))
             st.plotly_chart(fig,use_container_width=True,theme=None)
     st.markdown('#### 시장 위치 분석')
     both=watched.dropna(subset=['volume_24h_usd','oi_usd']).copy()
@@ -1024,14 +1069,13 @@ with radar_tabs[1]:
     with ca:
         st.markdown('#### A · 7일 활성 지갑')
         v=df.dropna(subset=['active_wallets_7d']).sort_values('active_wallets_7d').tail(20)
-        if v.empty:st.info('활성 지갑 데이터 미확보 · 온체인 지갑 분석 연동 필요')
+        if v.empty:
+            st.info('활성 지갑 데이터 미확보 · 온체인 지갑 분석 연동 필요')
         else:
             fig=px.bar(v,x='active_wallets_7d',y='name',orientation='h',
-                       color_discrete_sequence=['#B46736'])
-            fig.update_layout(height=max(280,len(v)*37+80),
-                              margin=dict(l=10,r=32,t=10,b=30),
-                              xaxis=dict(ticks='outside',showgrid=True,tickfont=dict(size=13)),
-                              yaxis=dict(tickfont=dict(size=12)))
+                       color_discrete_sequence=['#a36b43'],labels={'active_wallets_7d':'7D Traders','name':''})
+            fig.update_traces(marker_line_width=0)
+            harvest_linear_bar(fig,v['active_wallets_7d'],height=max(330,len(v)*36+90))
             st.plotly_chart(fig,use_container_width=True,theme=None)
     with cb:
         st.markdown('#### B · OI 규모 상위 20개')
@@ -1040,16 +1084,9 @@ with radar_tabs[1]:
             st.info('OI 데이터 미확보')
         else:
             fig=px.bar(v,x='oi_usd',y='name',orientation='h',
-                       labels={'oi_usd':'OI USD','name':'DEX'},
-                       color_discrete_sequence=['#C38B43'])
-            fig.update_layout(
-                height=560,paper_bgcolor='rgba(0,0,0,0)',
-                plot_bgcolor='rgba(255,249,236,0.64)',font_color='#65452d',
-                xaxis=dict(type='linear',rangemode='tozero',tickprefix='$',
-                           tickformat='~s',ticks='outside',showgrid=True,
-                           gridcolor='#DDC9AC',nticks=6),
-                yaxis=dict(tickfont=dict(size=12))
-            )
+                       color_discrete_sequence=['#be773e'],labels={'oi_usd':'OI (USD)','name':''})
+            fig.update_traces(marker_line_width=0)
+            harvest_linear_bar(fig,v['oi_usd'],height=max(330,len(v)*36+90))
             st.plotly_chart(fig,use_container_width=True,theme=None)
     st.info('현재 OI는 시간가중 OI 포인트와 다릅니다. 낮은 OI = 저경쟁 파밍이라고 가정하지 않습니다.')
 with radar_tabs[2]:
