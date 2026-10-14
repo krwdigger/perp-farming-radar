@@ -51,7 +51,10 @@ def arcus():
     for m in perps:
         size=numeric(m.get("openInterest"));price=numeric(m.get("markPrice"))
         if size is not None and price is not None:notionals.append(size*price)
-    return dict(markets=len(perps),oi_usd=sum(notionals) if notionals else None)
+    volume=[numeric(m.get("volume24hNotional")) for m in perps]
+    volume=[v for v in volume if v is not None and v>=0]
+    return dict(markets=len(perps),oi_usd=sum(notionals) if notionals else None,
+                volume_24h_usd=sum(volume) if volume else None)
 
 def pacifica_oi():
     import ccxt
@@ -100,7 +103,7 @@ def main():
        ("Pacifica","Official public market info (market count only)",pacifica),
        ("Pacifica","CCXT unified fetchOpenInterests",pacifica_oi),
        ("Nado","CCXT unified fetchOpenInterests",nado_oi),
-       ("Arcus","Public REST market list (market count only)",arcus),
+       ("Arcus","Official /v1/markets perpetual 24h notional",arcus),
        ("Hyperliquid","Official info API",hyperliquid)]
     rows=[]
     for venue,source,fn in probes:
