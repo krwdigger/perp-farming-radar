@@ -785,6 +785,15 @@ html,body,[data-testid="stApp"],[data-testid="stApp"] *,
  width:14px!important;height:16px!important;line-height:16px!important;
 }
 [data-testid="stExpander"] details[open] summary::before{content:"▾"!important}
+
+/* Hide Streamlit's decorative heading permalink icons. */
+[data-testid="stHeaderActionElements"],
+[data-testid="stMarkdownContainer"] a.header-anchor,
+[data-testid="stMarkdownContainer"] .header-anchor,
+[data-testid="stMarkdownContainer"] a[href^="#"]:has(svg),
+[data-testid="stHeadingWithActionElements"] [data-testid="stHeaderActionElements"]{
+ display:none!important;visibility:hidden!important;
+}
 </style>""",unsafe_allow_html=True)
 # Keep the exact uploaded 1200×1600 JPEG in the repository (no lossy re-encoding).
 # Scale to the viewport height rather than covering its width, which greatly
