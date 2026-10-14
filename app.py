@@ -133,6 +133,30 @@ def fetch_arcus_markets():
     return {'markets':len(perpetuals),'oi_usd':sum(values) if values else None,
             'oi_source':'Arcus markets API · perpetual one-sided OI × mark price'}
 
+@st.cache_data(ttl=900,show_spinner=False)
+def fetch_nado_ccxt():
+    """CCXT official Nado adapter. Only aggregate explicitly reported OI USD fields."""
+    import ccxt
+    client=ccxt.nado({'enableRateLimit':True,'timeout':16000})
+    try:
+        market_data=client.fetch_open_interests()
+        if isinstance(market_data,dict): market_data=list(market_data.values())
+        if not isinstance(market_data,list):raise ValueError('Nado OI response is not a list')
+        oi_values=[]
+        for item in market_data:
+            if not isinstance(item,dict):continue
+            amt=number(item.get('openInterestValue'))
+            if amt is None:
+                info=item.get('info')
+                if isinstance(info,dict):amt=number(info.get('open_interest_usd'))
+            if amt is not None:oi_values.append(amt)
+        if not oi_values:raise ValueError('No reported USD open interest fields')
+        return {'oi_usd':sum(oi_values),'oi_source':'Nado via CCXT fetchOpenInterests (reported USD OI)',
+                'market_data_time':datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}
+    finally:
+        close=getattr(client,'close',None)
+        if callable(close):close()
+
 @st.cache_data(ttl=900, show_spinner=False)
 def fetch_pro_derivatives(key):
     payload=api_get('https://pro-api.llama.fi/' + key.strip() + '/api/overview/derivatives',
@@ -203,7 +227,7 @@ with st.sidebar:
     uploaded=st.file_uploader('프로젝트별 포인트·참여자 CSV', type='csv')
     st.download_button('CSV 템플릿 다운로드', (DATA_DIR/'manual_metrics.csv').read_bytes(), 'manual_metrics.csv', mime='text/csv')
     if st.button('API 캐시 새로고침'):
-        fetch_catalog.clear();fetch_oi.clear();fetch_hyperliquid.clear();fetch_standx.clear();fetch_variational.clear();fetch_pacifica_markets.clear();fetch_arcus_markets.clear();fetch_pro_derivatives.clear();st.rerun()
+        fetch_catalog.clear();fetch_oi.clear();fetch_hyperliquid.clear();fetch_standx.clear();fetch_variational.clear();fetch_pacifica_markets.clear();fetch_arcus_markets.clear();fetch_nado_ccxt.clear();fetch_pro_derivatives.clear();st.rerun()
     st.divider()
     st.caption('관심 프로젝트 11개는 기본 등록됩니다. 이름 중복은 거래소별 실제 엔드포인트 확인 전까지 자동 통합하지 않습니다.')
     st.caption('활성 사용자 수는 현재 범용 무료 API에서 자동으로 가져오지 못합니다. 확인 가능한 프로젝트별 데이터를 CSV로 연결해야 합니다.')
@@ -225,6 +249,8 @@ with st.spinner('공개 데이터 수집 중…'):
     except Exception as e: pacifica_markets=None;errors.append(f'Pacifica markets: {e}')
     try: arcus_stats=fetch_arcus_markets()
     except Exception as e: arcus_stats=None;errors.append(f'Arcus markets: {e}')
+    try: nado_stats=fetch_nado_ccxt()
+    except Exception as e: nado_stats=None;errors.append(f'Nado CCXT: {e}')
     try: pro=fetch_pro_derivatives(pro_key) if pro_key else pd.DataFrame()
     except Exception as e: pro=pd.DataFrame();errors.append(f'DefiLlama Pro: {e}')
 
@@ -268,6 +294,12 @@ if arcus_stats:
         for field,value in arcus_stats.items():
             if field not in df.columns:df[field]=None
             df.loc[arcus_mask,field]=value
+if nado_stats:
+    nado_mask=df['watch_name'].eq('Nado')
+    if nado_mask.any():
+        for field,value in nado_stats.items():
+            if field not in df.columns:df[field]=None
+            df.loc[nado_mask,field]=value
 if hl:
     hk=norm(hl['name'])
     mask=df['_id']==hk
@@ -546,6 +578,7 @@ with radar_tabs[3]:
       {'소스':'DefiLlama 프로토콜 목록','항목':'Perp DEX 목록','상태':'연결 성공' if not catalog.empty else '실패','캐시':'15분'},
       {'소스':'DefiLlama OI 개요','항목':'OI','상태':'연결 성공' if not oi.empty else '실패','캐시':'15분'},
       {'소스':'Variational Omni 공식 API','항목':'24H Volume / OI','상태':'연결 성공' if va else '실패','캐시':'5분'},
+      {'소스':'Nado / CCXT','항목':'현재 OI','상태':'연결 성공' if nado_stats else '실패/응답 확인 필요','캐시':'15분'},
       {'소스':'StandX 공식 API','항목':'24H Volume / OI','상태':'연결 성공' if sx else '실패','캐시':'15분'},
       {'소스':'Hyperliquid 공식 API','항목':'24H Volume / OI','상태':'연결 성공' if hl else '미사용/실패','캐시':'2분'},
       {'소스':'DefiLlama Pro','항목':'7D Volume','상태':'연결 성공' if not pro.empty else '유료 키 필요' if not pro_key else '실패','캐시':'15분'},
