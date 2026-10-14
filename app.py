@@ -1004,6 +1004,100 @@ html.radar-dark .js-plotly-plot .paper{fill:var(--night-panel)!important}
 
 #radar-dark-toggle .radar-pumpkin-unlit{display:inline-block;filter:grayscale(1) brightness(.7);margin-right:5px;font-size:18px;vertical-align:-2px}
 #radar-dark-toggle .radar-pumpkin-lit{display:inline-block;filter:drop-shadow(0 0 5px #ffb647);margin-right:5px;font-size:18px;vertical-align:-2px}
+
+/* Dark v3: final component overrides; avoid native light-themed portals. */
+html.radar-dark [data-testid="stAppViewContainer"],
+html.radar-dark [data-testid="stMain"],
+html.radar-dark [data-testid="stMainBlockContainer"]{background-color:#130f17!important;color:#f3e5d6!important}
+html.radar-dark [data-testid="stApp"] .block-container{background:#17131c!important}
+html.radar-dark [data-testid="stPopover"],
+html.radar-dark [data-baseweb="popover"],
+html.radar-dark [data-baseweb="popover"] > div,
+html.radar-dark [data-baseweb="popover"] > div > div,
+html.radar-dark [data-testid="stPopoverContent"],
+html.radar-dark [role="dialog"],
+html.radar-dark [role="dialog"] > div{
+ background-color:#231c29!important;color:#f4e4d2!important;
+ border-color:#70513c!important;box-shadow:0 14px 36px #0008!important}
+html.radar-dark [data-baseweb="popover"] [data-testid="stVerticalBlock"],
+html.radar-dark [data-baseweb="popover"] [data-testid="stElementContainer"],
+html.radar-dark [data-baseweb="popover"] [data-testid="stFileUploader"],
+html.radar-dark [data-baseweb="popover"] [data-testid="stFileUploaderDropzone"],
+html.radar-dark [data-testid="stFileUploaderDropzone"] section,
+html.radar-dark [data-testid="stFileUploader"] section{
+ background:#2c2330!important;color:#f4e4d2!important;border-color:#76513b!important}
+html.radar-dark [data-baseweb="popover"] h1,
+html.radar-dark [data-baseweb="popover"] h2,
+html.radar-dark [data-baseweb="popover"] h3,
+html.radar-dark [data-baseweb="popover"] label,
+html.radar-dark [data-baseweb="popover"] p,
+html.radar-dark [data-baseweb="popover"] span,
+html.radar-dark [data-testid="stFileUploader"] label,
+html.radar-dark [data-testid="stFileUploader"] small{color:#f0ddca!important}
+html.radar-dark [data-baseweb="select"],
+html.radar-dark [data-baseweb="select"] > div,
+html.radar-dark [data-baseweb="select"] > div > div,
+html.radar-dark [data-baseweb="input"] > div,
+html.radar-dark [data-testid="stApp"] input,
+html.radar-dark [data-baseweb="menu"],
+html.radar-dark [role="listbox"],
+html.radar-dark [role="option"],
+html.radar-dark [data-baseweb="popover"] [role="listbox"],
+html.radar-dark [data-baseweb="popover"] [role="option"]{
+ background-color:#302634!important;color:#f6e7d8!important;border-color:#765b49!important}
+html.radar-dark [role="option"] *,
+html.radar-dark [data-baseweb="select"] span{color:#f6e7d8!important}
+html.radar-dark [role="option"]:hover,
+html.radar-dark [role="option"][aria-selected="true"]{background:#493342!important}
+html.radar-dark [data-testid="stApp"] button:not(#radar-dark-toggle):not(#radar-edge-toggle),
+html.radar-dark [data-baseweb="popover"] button,
+html.radar-dark [data-testid="stFileUploader"] button{
+ background:#3b2937!important;border:1px solid #aa7750!important;
+ color:#ffead5!important;opacity:1!important}
+html.radar-dark [data-testid="stApp"] button:disabled,
+html.radar-dark [data-baseweb="popover"] button:disabled{
+ background:#302834!important;color:#b6a194!important;border-color:#615044!important;opacity:1!important}
+html.radar-dark .radar-rank-table thead th,
+html.radar-dark table thead th{background:#3b2b32!important;color:#f6dfc5!important;border-color:#6d5040!important}
+html.radar-dark .radar-rank-table td,
+html.radar-dark table tbody td{background:#211b27!important;color:#f4e6d8!important;border-color:#59453e!important}
+html.radar-dark .radar-rank-table tbody tr:hover td{background:#332736!important}
+html.radar-dark .farming-tier,
+html.radar-dark .farming-tier span{font-weight:800!important}
+html.radar-dark .farming-tier.tier-s{background:#875022!important;color:#fff0d6!important}
+html.radar-dark .farming-tier.tier-a{background:#6c4929!important;color:#ffe6be!important}
+html.radar-dark .farming-tier.tier-b{background:#514137!important;color:#f7e2cc!important}
+html.radar-dark .farming-tier.tier-c,
+html.radar-dark .farming-tier.tier-d{background:#3c3537!important;color:#e5cdbb!important}
+html.radar-dark [data-testid="stDataFrame"],
+html.radar-dark [data-testid="stDataFrame"]>div,
+html.radar-dark [data-testid="stDataFrame"] [data-testid="stDataFrameResizable"],
+html.radar-dark [data-testid="stTable"]{background-color:#231c29!important;color:#f0ddca!important}
+html.radar-dark [data-testid="stDataFrame"] canvas{
+ filter:invert(.87) hue-rotate(177deg) saturate(.6) contrast(1.12)!important}
+html.radar-dark [data-testid="stAlert"],
+html.radar-dark [role="alert"]{background:#302632!important;color:#f0dcc6!important;border:1px solid #79563f!important}
+html.radar-dark [data-testid="stAlert"] *,
+html.radar-dark [role="alert"] *{color:#e9d1b8!important}
+html.radar-dark .stPlotlyChart,
+html.radar-dark [data-testid="stPlotlyChart"],
+html.radar-dark .js-plotly-plot,
+html.radar-dark .js-plotly-plot .plot-container,
+html.radar-dark .js-plotly-plot .svg-container{background:#241e2a!important;border-radius:12px!important}
+html.radar-dark .js-plotly-plot svg.main-svg{background:#241e2a!important}
+html.radar-dark .js-plotly-plot .bglayer rect.bg{fill:#241e2a!important}
+html.radar-dark .js-plotly-plot .gridlayer path{stroke:#5d4b46!important;stroke-opacity:.6!important}
+html.radar-dark .js-plotly-plot .xtick text,
+html.radar-dark .js-plotly-plot .ytick text,
+html.radar-dark .js-plotly-plot .g-xtitle text,
+html.radar-dark .js-plotly-plot .g-ytitle text,
+html.radar-dark .js-plotly-plot .annotation-text{fill:#f0dbc7!important}
+html.radar-dark .js-plotly-plot .hoverlayer rect{fill:#302632!important;stroke:#bb8151!important}
+html.radar-dark .js-plotly-plot .hoverlayer text{fill:#fff1de!important}
+html.radar-dark [data-testid="stWidgetLabel"] *,
+html.radar-dark [data-testid="stCaptionContainer"] *,
+html.radar-dark [data-testid="stDownloadButton"] *,
+html.radar-dark .farming-ranking *{color:#dfc2aa!important}
 </style>
 <script>
 (() => {
