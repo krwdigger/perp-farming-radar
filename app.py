@@ -142,29 +142,34 @@ def fmt_money(x):
 
 
 st.markdown("""<style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-html,body,[class*="css"],[data-testid="stApp"]{font-family:Inter,'Pretendard',sans-serif}
-[data-testid="stAppViewContainer"]{background:radial-gradient(ellipse 980px 490px at 60% -200px,#193d4e,transparent 80%),#090f1a;color:#e9f2ff}
-[data-testid="stSidebar"]{background:#0e1827;border-right:1px solid #23384d}
-.block-container{max-width:1480px;padding-top:1.7rem;padding-bottom:4rem}
-h1,h2,h3{color:#f1f7ff;letter-spacing:-.035em}
-h1{font-size:2.3rem!important;font-weight:800!important}
-[data-testid="stMetric"]{background:#122033;border:1px solid #2b4056;border-radius:15px;padding:15px 18px}
-[data-testid="stMetricLabel"]{color:#9cb4c9}
-[data-testid="stMetricValue"]{color:#e2f4ff}
-[data-testid="stDataFrame"]{border:1px solid #2b4055;border-radius:12px;overflow:hidden}
-.stTabs [data-baseweb="tab-list"]{gap:10px;border-bottom:1px solid #274054}
-.stTabs [data-baseweb="tab"]{border-radius:9px;color:#bad0e3}
-.radar-banner{background:linear-gradient(110deg,#123847,#132336);padding:23px 28px;border:1px solid #31566b;border-radius:18px;margin-bottom:19px}
-.radar-overline{font-weight:800;letter-spacing:.17em;color:#53dbca;font-size:12px}
-.radar-description{font-size:13px;color:#b9c9d9;margin-top:6px}
-.radar-chip{display:inline-block;background:#163c40;color:#6fe0c7;padding:5px 10px;border-radius:40px;margin-top:12px;font-size:11px;font-weight:800}
-.radar-hint{padding:11px 14px;background:#132237;border-left:3px solid #478fac;border-radius:7px;color:#b5c9dd;font-size:13px}
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap');
+html,body,[data-testid="stApp"],[class*="css"]{font-family:'DM Sans','Noto Sans KR',sans-serif}
+[data-testid="stAppViewContainer"]{background:linear-gradient(160deg,#f0f5f7 0%,#f8f7f3 38%,#f5f3ee 100%);color:#505c66}
+[data-testid="stSidebar"]{background:#eff3f3;border-right:1px solid #d8e0e3}
+.block-container{max-width:1500px;padding-top:1.8rem;padding-bottom:4rem}
+h1,h2,h3{color:#485760!important;letter-spacing:-.025em;font-weight:700!important}
+h1{font-size:2.35rem!important}
+p,li,[data-testid="stCaptionContainer"]{color:#65737d}
+[data-testid="stMetric"]{background:#ffffffdf;border:1px solid #dce4e7;border-radius:16px;padding:18px 20px;box-shadow:0 5px 24px #a7b8c313}
+[data-testid="stMetricLabel"]{color:#78858d}
+[data-testid="stMetricValue"]{color:#4a606d}
+[data-testid="stDataFrame"]{border:1px solid #d7e0e4;border-radius:13px;overflow:hidden}
+.stTabs [data-baseweb="tab-list"]{gap:12px;border-bottom:1px solid #d7e0e3}
+.stTabs [data-baseweb="tab"]{color:#65737d;border-radius:10px}
+.stTabs [aria-selected="true"]{color:#557f97!important}
+[data-testid="stSidebar"] label,[data-testid="stSidebar"] p{color:#647580}
+.radar-banner{background:linear-gradient(115deg,#edf5f9,#f7f7f3 67%,#eaf0f2);padding:28px 32px;border:1px solid #d9e3e7;border-radius:18px;margin-bottom:22px}
+.radar-overline{font-weight:700;letter-spacing:.17em;color:#7594a6;font-size:11px}
+.radar-banner h1{color:#586771!important;font-size:2.4rem!important;font-weight:700!important}
+.radar-description{font-size:14px;color:#7b8992;margin-top:11px}
+.radar-chip{display:inline-block;background:#e5eff5;color:#7194a8;padding:6px 12px;border-radius:30px;margin-top:15px;font-size:11px;font-weight:700}
+.radar-hint{padding:14px 18px;background:#ecf3f7;border-left:3px solid #a5bfd0;border-radius:9px;color:#607685;font-size:13px}
+.radar-hint b{color:#566b79}
 </style>""",unsafe_allow_html=True)
-st.markdown("""<div class="radar-banner"><div class="radar-overline">PERP DEX INTELLIGENCE / MARKET RESEARCH</div>
-<h1 style="margin:6px 0 0">◈ Perp Farming Radar</h1>
-<div class="radar-description">관심 거래소 · 시장 지표 · 파밍 경쟁도 · 데이터 신뢰도를 한눈에</div>
-<div class="radar-chip">● LIVE API · source-aware analytics</div></div>""",unsafe_allow_html=True)
+st.markdown("""<div class="radar-banner"><div class="radar-overline">PERP DEX INTELLIGENCE / WEEKLY RESEARCH</div>
+<h1 style="margin:8px 0 2px">Perp Farming Radar</h1>
+<div class="radar-description">참여자 밀집도와 포인트 파밍 효율을 추적하는 리서치 대시보드</div>
+<div class="radar-chip">● LIVE MARKET DATA · CLOUD DANCER EDITION</div></div>""",unsafe_allow_html=True)
 
 with st.sidebar:
     st.header('데이터 연결')
@@ -326,24 +331,24 @@ with radar_tabs[0]:
         if vol.empty:st.info('24시간 거래량 데이터 미확보')
         else:
             fig=px.bar(vol,x='volume_24h_usd',y='watch_name',orientation='h',
-                       color_discrete_sequence=['#35cdbf'],
+                       color_discrete_sequence=['#8cb6c9'],
                        labels={'volume_24h_usd':'24H 거래량 (USD)','watch_name':''})
             fig.update_layout(height=max(240,110+len(vol)*46),margin=dict(l=0,r=8,t=5,b=0),
                               paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',
-                              font_color='#e6edf7',showlegend=False)
-            fig.update_xaxes(tickformat='~s',gridcolor='#304055')
+                              font_color='#647682',showlegend=False)
+            fig.update_xaxes(tickformat='~s',gridcolor='#e2e7e9')
             st.plotly_chart(fig,use_container_width=True)
     with chart_right:
         oi_chart=watched.dropna(subset=['oi_usd']).sort_values('oi_usd')
         if oi_chart.empty:st.info('OI 데이터 미확보')
         else:
             fig=px.bar(oi_chart,x='oi_usd',y='watch_name',orientation='h',
-                       color_discrete_sequence=['#799bf2'],
+                       color_discrete_sequence=['#b7abb7'],
                        labels={'oi_usd':'현재 OI (USD)','watch_name':''})
             fig.update_layout(height=max(240,110+len(oi_chart)*46),margin=dict(l=0,r=8,t=5,b=0),
                               paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',
-                              font_color='#e6edf7',showlegend=False)
-            fig.update_xaxes(tickformat='~s',gridcolor='#304055')
+                              font_color='#647682',showlegend=False)
+            fig.update_xaxes(tickformat='~s',gridcolor='#e2e7e9')
             st.plotly_chart(fig,use_container_width=True)
     st.caption('그래프는 데이터가 확보된 거래소만 보여주며, Volume과 OI는 파밍 경쟁률 점수가 아닙니다.')
     with st.expander('관심 거래소별 데이터 출처 및 수집 상태'):
@@ -363,7 +368,7 @@ with radar_tabs[1]:
         if v.empty:st.info('OI 데이터 미확보')
         else:
             fig=px.bar(v,x='oi_usd',y='name',orientation='h',labels={'oi_usd':'OI USD','name':'DEX'})
-            fig.update_layout(height=560,paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',font_color='#c5d6e7')
+            fig.update_layout(height=560,paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',font_color='#647682')
             st.plotly_chart(fig,use_container_width=True)
     st.info('현재 OI는 시간가중 OI 포인트와 다릅니다. 낮은 OI = 저경쟁 파밍이라고 가정하지 않습니다.')
 with radar_tabs[2]:
@@ -417,4 +422,4 @@ with radar_tabs[4]:
         c3.metric('활동 점유율',f'{mine/whole*100:.4f}%')
     else:st.warning('전체 활동량과 포인트 풀을 확인하세요.')
 st.divider()
-st.caption('v0.6 · Read-only research dashboard · 에어드랍 수익 보장 없음 · 주문/지갑 서명 기능 없음')
+st.caption('v0.7 Cloud Dancer · Read-only research dashboard · 에어드랍 수익 보장 없음 · 주문/지갑 서명 기능 없음')
