@@ -339,6 +339,20 @@ def fmt_money(x):
     return f'${x:,.0f}'
 
 
+# Hide Streamlit's built-in app toolbar while keeping the custom
+# theme and data-connection controls unchanged.
+st.markdown("""
+<style>
+[data-testid="stToolbar"],
+[data-testid="stMainMenu"],
+[data-testid="stStatusWidget"],
+[data-testid="stDecoration"],
+[data-testid="stAppDeployButton"]{
+ display:none!important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 st.markdown("""<style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap');
 html,body,[data-testid="stApp"],[class*="css"]{font-family:'DM Sans','Noto Sans KR',sans-serif}
