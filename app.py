@@ -317,7 +317,7 @@ with radar_tabs[0]:
     elif order=='OI 낮은 순':watched=watched.sort_values('oi_usd',ascending=True,na_position='last')
     elif order=='24H 거래량 순':watched=watched.sort_values('volume_24h_usd',ascending=False,na_position='last')
     viewcols=['watch_name','상태','volume_24h_usd','volume_7d_usd','oi_usd','active_wallets_7d','weekly_points']
-    st.dataframe(readable_metrics(watched[viewcols], rename={'watch_name':'프로젝트','volume_24h_usd':'24H Volume ($)','volume_7d_usd':'7D Volume ($)','oi_usd':'현재 OI ($)','active_wallets_7d':'7D 지갑','weekly_points':'주간 포인트'})),hide_index=True,use_container_width=True,height=445)
+    st.dataframe(readable_metrics(watched[viewcols], rename={'watch_name':'프로젝트','volume_24h_usd':'24H Volume ($)','volume_7d_usd':'7D Volume ($)','oi_usd':'현재 OI ($)','active_wallets_7d':'7D 지갑','weekly_points':'주간 포인트'}),hide_index=True,use_container_width=True,height=445)
     st.caption('미확보 수치는 0이 아닙니다. 거래량/OI가 있어도 포인트 효율을 계산할 수 있다는 뜻은 아닙니다.')
     st.markdown('#### 📊 관심 거래소 시장 규모 비교')
     chart_left, chart_right=st.columns(2)
@@ -382,7 +382,7 @@ with radar_tabs[2]:
     for col in sc:
         if col not in v:v[col]=None
     st.caption(f'검색 결과 {len(v):,}개 · 목록 등록일은 실제 서비스 출시일과 다를 수 있음')
-    st.dataframe(readable_metrics(v[sc], rename={'name':'거래소','chains':'체인','listed_date':'목록 등록일','volume_24h_usd':'24H Volume','volume_7d_usd':'7D Volume','oi_usd':'OI','active_wallets_7d':'7D 지갑','weekly_points':'주간 포인트'})),hide_index=True,use_container_width=True,height=570)
+    st.dataframe(readable_metrics(v[sc], rename={'name':'거래소','chains':'체인','listed_date':'목록 등록일','volume_24h_usd':'24H Volume','volume_7d_usd':'7D Volume','oi_usd':'OI','active_wallets_7d':'7D 지갑','weekly_points':'주간 포인트'}),hide_index=True,use_container_width=True,height=570)
     st.download_button('스캐너 CSV 내보내기',v[sc].to_csv(index=False).encode('utf-8-sig'),'perp_scanner.csv','text/csv')
 with radar_tabs[3]:
     st.subheader('데이터 연결 현황')
