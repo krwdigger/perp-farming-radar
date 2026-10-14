@@ -511,18 +511,6 @@ def readable_metrics(frame, rename):
         if field in result:result[field]=result[field].map(integer_fmt)
     return result.rename(columns=rename)
 
-st.caption('API 갱신 시각: '+datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')+' · 무료 데이터의 범위와 실제 갱신 간격은 거래소마다 다릅니다')
-st.markdown('<div class="radar-hint"><b>빈집 탐지 원칙</b> · 거래량/OI가 적은 것과 포인트 경쟁률이 낮은 것은 다릅니다. 활성 지갑·배분 풀 미확보 프로젝트에는 임의 점수를 부여하지 않습니다.</div>',unsafe_allow_html=True)
-st.write('')
-k1,k2,k3,k4,k5=st.columns(5)
-k1.metric('추적 프로젝트',f'{len(df):,}')
-k2.metric('거래량 데이터',f"{df[['volume_24h_usd','volume_7d_usd']].notna().any(axis=1).sum():,}")
-k3.metric('OI 데이터',f"{df['oi_usd'].notna().sum():,}")
-k4.metric('7D 활성 지갑',f"{df['active_wallets_7d'].notna().sum():,}")
-k5.metric('주간 포인트',f"{df['weekly_points'].notna().sum():,}")
-if errors:
-    with st.expander('⚠️ 일부 API 조회 오류'):
-        for e in errors:st.write(e)
 radar_tabs=st.tabs(['⭐ 관심 거래소','📈 경쟁 비교','🔎 전체 스캐너','🔌 데이터 출처','🧮 포인트 계산기'])
 @st.cache_data(ttl=300,show_spinner=False)
 def load_public_market_history():
@@ -560,25 +548,7 @@ with radar_tabs[0]:
         watched['oi_weekly_change_pct']=float('nan')
     watched['volume_oi_ratio']=watched['volume_24h_usd']/watched['oi_usd'].replace(0,float('nan'))
     watched.loc[watched['oi_usd']<=0,'volume_oi_ratio']=float('nan')
-    valid=watched[watched['volume_24h_usd'].notna()|watched['oi_usd'].notna()]
-    st.markdown("""<style>
-    .market-title{font-size:26px;font-weight:750;color:#354c5a;letter-spacing:-.04em;margin:0 0 4px}
-    .market-sub{font-size:13px;color:#7a8990;margin-bottom:18px}
-    .radar-kicker{font-size:11px;font-weight:750;letter-spacing:.12em;color:#8196a2;margin-bottom:8px}
-    .radar-total{font-size:27px;font-weight:750;color:#344e5e;letter-spacing:-.035em}
-    .radar-foot{font-size:12px;color:#81939c;margin-top:5px}
-    .radar-panel{padding:18px 20px;border:1px solid #dde5e7;border-radius:15px;background:#fdfdfb}
-    </style><div class="market-title">Perp DEX Market Overview</div>
-    <div class="market-sub">거래량과 미결제약정으로 비교하는 파밍 시장 지도 · 공개 데이터 기반</div>""",unsafe_allow_html=True)
-    def summary_card(name,value,foot):
-        st.markdown('<div class="radar-panel"><div class="radar-kicker">'+name+'</div><div class="radar-total">'+value+'</div><div class="radar-foot">'+foot+'</div></div>',unsafe_allow_html=True)
-    m1,m2,m3,m4=st.columns(4)
-    with m1:summary_card('24H VOLUME · 관측 거래소',compact_usd(watched['volume_24h_usd'].sum(min_count=1)),'확보된 거래소만 합산')
-    with m2:summary_card('OPEN INTEREST · 관측 거래소',compact_usd(watched['oi_usd'].sum(min_count=1)),'확보된 거래소만 합산')
-    with m3:summary_card('MARKET COVERAGE',str(len(valid))+' / '+str(len(watched)),'거래량 또는 OI 확인')
-    with m4:
-        ratio=watched['volume_oi_ratio'].dropna()
-        summary_card('24H VOLUME / OI',f'{ratio.median():.2f}×' if len(ratio) else '—','동일 거래소별 비율의 중앙값')
+    st.subheader('거래소별 거래량 · OI')
     # Two compact reference rows, deliberately not part of the farming rankings.
     if not benchmarks.empty:
         st.caption('시장 규모 비교군 · Hyperliquid / Lighter')
@@ -587,7 +557,6 @@ with radar_tabs[0]:
         benchmarks['Vol / OI']=(benchmarks['volume_24h_usd']/benchmarks['oi_usd'].replace(0,float('nan'))).map(lambda v:f'{v:.2f}×' if pd.notna(v) else '—')
         st.dataframe(benchmarks[['watch_name','24H Volume','Open Interest','Vol / OI']].rename(columns={'watch_name':'비교군'}),
                      hide_index=True,use_container_width=True,height=112)
-    st.markdown('#### 거래소별 거래량 · OI')
     control1,control2,control3=st.columns([2,1,1])
     search=control1.text_input('거래소 검색',placeholder='Variational / StandX / Pacifica',key='market_search')
     display_mode=control2.selectbox('지표',['전체','Volume 확보','OI 확보','Volume + OI 확보'],key='market_metric')
@@ -722,6 +691,9 @@ with radar_tabs[2]:
     st.dataframe(readable_metrics(v[sc], rename={'name':'거래소','chains':'체인','listed_date':'목록 등록일','volume_24h_usd':'24H Volume','volume_7d_usd':'7D Volume','oi_usd':'OI','active_wallets_7d':'7D 지갑','weekly_points':'주간 포인트'}),hide_index=True,use_container_width=True,height=570)
     st.download_button('스캐너 CSV 내보내기',v[sc].to_csv(index=False).encode('utf-8-sig'),'perp_scanner.csv','text/csv')
 with radar_tabs[3]:
+    if errors:
+        with st.expander('API 오류 상세',expanded=False):
+            for error in errors:st.write(error)
     st.subheader('데이터 연결 현황')
     st.markdown('### 관심 프로젝트 11개 · 미연동 사유')
     st.caption('공개 문서 검토 기준 · 프로젝트 전체 사용자 수/포인트 정보는 API 접근 가능성과 별개입니다. Dune에서 확인 가능한 것은 인덱싱된 체인·컨트랙트 이벤트로 한정됩니다.')
