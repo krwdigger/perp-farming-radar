@@ -266,29 +266,35 @@ st.markdown("""<style>
 html,body,[data-testid="stApp"],[class*="css"]{font-family:'DM Sans','Noto Sans KR',sans-serif}
 [data-testid="stAppViewContainer"]{background:linear-gradient(160deg,#f0f5f7 0%,#f8f7f3 38%,#f5f3ee 100%);color:#505c66}
 [data-testid="stSidebar"]{background:#eff3f3;border-right:1px solid #d8e0e3}
-/* Collapsed opener: shift the actual arrow glyph, not just its header box.
-   Streamlit may position the wrapper at x=0 while retaining icon padding. */
-[data-testid="stHeader"] {left:0!important;right:0!important;width:100%!important;padding-left:0!important}
+/* Independent fixed settings control: does not depend on native sidebar DOM. */
 [data-testid="stSidebarCollapsedControl"],
-[data-testid="collapsedControl"] {
-  left:0!important; margin-left:0!important;padding-left:0!important;
-  transform:none!important;z-index:2147483000!important;
+[data-testid="collapsedControl"],
+[data-testid="stSidebarCollapseButton"],
+[data-testid="stSidebarNavCollapseButton"]{display:none!important;}
+[data-testid="stHeader"]{background:transparent!important;}
+[data-testid="stPopover"]{
+    position:fixed!important;
+    left:0!important;
+    top:6px!important;
+    z-index:2147483000!important;
+    width:auto!important;
+    margin:0!important;
+    padding:0!important;
 }
-[data-testid="stSidebarCollapsedControl"] button,
-[data-testid="collapsedControl"] button {
-  margin-left:0!important;padding-left:0!important;justify-content:flex-start!important;
+[data-testid="stPopover"] > button,
+[data-testid="stPopover"] > div > button {
+    min-height:34px!important;
+    padding:5px 11px!important;
+    margin:0!important;
+    border-radius:0 9px 9px 0!important;
+    border:1px solid #b8cbd6!important;
+    border-left:0!important;
+    background:#ffffff!important;
+    color:#304e61!important;
+    font-size:13px!important;
+    font-weight:700!important;
+    box-shadow:0 2px 8px rgba(46,73,91,.12)!important;
 }
-/* Move the rendered arrow 24px left even if the parent uses its own layout. */
-[data-testid="stSidebarCollapsedControl"] svg,
-[data-testid="collapsedControl"] svg,
-[data-testid="stSidebarCollapsedControl"] span[data-testid="stIconMaterial"],
-[data-testid="collapsedControl"] span[data-testid="stIconMaterial"],
-header[data-testid="stHeader"] button[data-testid="baseButton-headerNoPadding"]:first-child svg,
-header[data-testid="stHeader"] button[data-testid="baseButton-headerNoPadding"]:first-child span[data-testid="stIconMaterial"] {
-  position:relative!important;left:-24px!important;transform:translateX(-24px)!important;
-  margin-left:0!important;
-}
-[data-testid="stSidebarCollapseButton"] {margin-left:0!important;}
 .block-container{max-width:1500px;padding-top:1.8rem;padding-bottom:4rem}
 h1,h2,h3{color:#485760!important;letter-spacing:-.025em;font-weight:700!important}
 h1{font-size:2.35rem!important}
@@ -320,7 +326,8 @@ st.markdown("""<div class="radar-banner">
 <div class="radar-description">참여자 밀집도와 포인트 파밍 효율을 추적하는 리서치 대시보드</div>
 <div class="radar-chip">● LIVE MARKET DATA · CLOUD DANCER EDITION</div></div>""",unsafe_allow_html=True)
 
-with st.sidebar:
+# Independent left-edge settings control replaces the fragile native sidebar opener.
+with st.popover('☰ 설정', help='데이터 연결 및 설정 열기'):
     st.header('데이터 연결')
     pro_key=st.text_input('DefiLlama Pro API key (선택)', type='password', help='유료 derivatives 거래량 API용. 키는 저장하지 않습니다.')
     use_hl=st.checkbox('Hyperliquid 시장 데이터 불러오기', value=True)
