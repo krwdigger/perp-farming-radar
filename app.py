@@ -16,7 +16,7 @@ import plotly.express as px
 import requests
 import streamlit as st
 
-st.set_page_config(page_title='Perp Farming Radar', page_icon='🤔', layout='wide', initial_sidebar_state='collapsed')
+st.set_page_config(page_title='빈집털이', page_icon='🤔', layout='wide', initial_sidebar_state='collapsed')
 
 DATA_DIR = Path(__file__).resolve().parent
 SNAPSHOT_FILE = DATA_DIR / 'radar_snapshots.csv'
@@ -332,7 +332,7 @@ p,li,[data-testid="stCaptionContainer"]{color:#65737d}
 [data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"]{padding:8px!important}
 </style>""",unsafe_allow_html=True)
 st.markdown("""<div class="radar-banner">
-<h1 style="margin:8px 0 2px">Perp Farming Radar</h1>
+<h1 style="margin:8px 0 2px">빈집털이</h1>
 <div class="radar-description">참여자 밀집도와 포인트 파밍 효율을 추적하는 리서치 대시보드</div>
 <div class="radar-chip">● LIVE MARKET DATA · CLOUD DANCER EDITION</div></div>""",unsafe_allow_html=True)
 
