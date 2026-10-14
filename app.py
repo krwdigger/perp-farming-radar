@@ -1055,24 +1055,28 @@ html.radar-dark [data-testid="stMainBlockContainer"]{background-color:transparen
 </style>"""
 # The supplied photograph is darkened by 75%; warm, illuminated face
 # openings are preserved at the original brightness with a soft glow.
-# Keep the dark-mode image in an external asset rather than an oversized
-# base64 style tag; use a versioned URL so browser caches cannot retain
-# the previous photo after the repository asset is replaced.
-_dark_photo_url = 'https://raw.githubusercontent.com/krwdigger/perp-farming-radar/main/assets/pumpkin_dark.webp?v=bfa76487'
-_theme_css += f"""<style>
-html.radar-dark body [data-testid="stAppViewContainer"]{{
- background-image: url("{_dark_photo_url}")!important;
- background-color:#17121a!important;
- background-position:center top!important;
- background-size:auto min(100vh, 1600px)!important;
- background-repeat:repeat-x!important;
- background-attachment:scroll!important;
- background-blend-mode:normal!important;
-}}
-html.radar-dark body [data-testid="stAppViewContainer"] [data-testid="stMain"],
-html.radar-dark body [data-testid="stAppViewContainer"] [data-testid="stMainBlockContainer"]{{background:transparent!important}}
-html.radar-dark body [data-testid="stAppViewContainer"] .block-container{{background:rgba(23,18,26,.92)!important}}
-</style>"""
+# Apply the versioned dark photograph from the repository directly as an
+# inline asset, without relying on a remote raw.githubusercontent.com request.
+# The image retains the LIGHT background's exact size, repeat and positioning.
+_dark_pumpkin_file = DATA_DIR / 'assets' / 'pumpkin_dark.webp'
+if _dark_pumpkin_file.is_file():
+    _dark_pumpkin_data = base64.b64encode(_dark_pumpkin_file.read_bytes()).decode('ascii')
+    _theme_css += (
+        '<style>'
+        'html.radar-dark [data-testid="stAppViewContainer"]{'
+        'background-image:url("data:image/webp;base64,'+_dark_pumpkin_data+'")!important;'
+        'background-color:#17121a!important;'
+        'background-position:center top!important;'
+        'background-size:auto min(100vh, 1600px)!important;'
+        'background-repeat:repeat-x!important;'
+        'background-attachment:scroll!important;'
+        'background-blend-mode:normal!important;'
+        '}'
+        'html.radar-dark [data-testid="stMain"],'
+        'html.radar-dark [data-testid="stMainBlockContainer"]{background:transparent!important;}'
+        'html.radar-dark [data-testid="stAppViewContainer"] .block-container{background:rgba(23,18,26,.92)!important;}'
+        '</style>'
+    )
 st.markdown(_theme_css, unsafe_allow_html=True)
 
 st.components.v1.html("""
