@@ -1123,8 +1123,7 @@ with radar_tabs[0]:
         st.info('현재 거래량과 OI가 모두 확보된 거래소가 없어 좌표를 표시할 수 없습니다.')
     else:
         import math
-        # True market coordinates remain on linear axes. When nearby venue
-        # logos need displacement, a dotted leader points to real coordinates.
+        # Keep true coordinates on linear axes; resize crowded logos in place.
         xmax=float(both['oi_usd'].max())*1.17
         ymax=float(both['volume_24h_usd'].max())*1.20
         xmin=-0.105*xmax
