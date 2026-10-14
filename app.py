@@ -646,6 +646,39 @@ html,body,[data-testid="stApp"],[data-testid="stApp"] *,
 .tier-s{background:#ecd2a1;color:#6d3b16}.tier-a{background:#eddfbd;color:#825021}
 .tier-b{background:#f0e8d3;color:#6b563a}.tier-c{background:#f0eee6;color:#706d62}
 .tier-d{background:#eee8e5;color:#7a635c}.tier-unknown{color:#947b69}
+
+/* Stable accordion layout: prevent label/icon collisions and stray text bleed. */
+[data-testid="stExpander"]{position:relative!important;isolation:isolate!important;
+ overflow:hidden!important;border:1px solid #d8b98c!important;
+ border-radius:10px!important;background:#fff8eb!important}
+[data-testid="stExpander"] details{width:100%!important;max-width:100%!important}
+[data-testid="stExpander"] summary,
+[data-testid="stExpander"] [data-testid="stExpanderToggleIcon"]{
+ box-sizing:border-box!important}
+[data-testid="stExpander"] summary{
+ position:relative!important;display:flex!important;align-items:center!important;
+ justify-content:flex-start!important;gap:12px!important;
+ min-height:49px!important;height:auto!important;padding:11px 17px!important;
+ white-space:normal!important;overflow:hidden!important;
+ background:#fff7e8!important;color:#65442d!important
+}
+[data-testid="stExpander"] summary p,
+[data-testid="stExpander"] summary span:not([data-testid="stIconMaterial"]){
+ position:relative!important;display:inline-block!important;max-width:100%!important;
+ margin:0!important;white-space:normal!important;line-height:1.5!important;
+ font:600 15px/1.5 'Noto Sans KR','DM Sans',sans-serif!important;
+ letter-spacing:0!important;color:#65442d!important;overflow-wrap:anywhere!important
+}
+[data-testid="stExpander"] summary svg,
+[data-testid="stExpander"] [data-testid="stExpanderToggleIcon"]{
+ position:static!important;transform:none;
+ flex:0 0 16px!important;width:16px!important;height:16px!important;
+ margin:0!important;color:#9c643d!important
+}
+[data-testid="stExpander"] [data-testid="stExpanderDetails"]{
+ padding:12px 18px!important;overflow-wrap:anywhere!important
+}
+[data-testid="stExpander"] summary:hover{background:#f4e3c8!important}
 </style>""",unsafe_allow_html=True)
 # Keep the exact uploaded 1200×1600 JPEG in the repository (no lossy re-encoding).
 # Scale to the viewport height rather than covering its width, which greatly
