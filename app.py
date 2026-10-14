@@ -123,7 +123,15 @@ def fetch_arcus_markets():
     rows=data if isinstance(data,list) else data.get('markets') if isinstance(data,dict) else None
     if not isinstance(rows,list):
         raise ValueError('Arcus API market-list schema unverified')
-    return len(rows)
+    perpetuals=[r for r in rows if isinstance(r,dict) and r.get('type')=='PERPETUAL']
+    values=[]
+    for m in perpetuals:
+        size=number(m.get('openInterest'))
+        price=number(m.get('markPrice'))
+        if size is not None and price is not None:
+            values.append(size*price)
+    return {'markets':len(perpetuals),'oi_usd':sum(values) if values else None,
+            'oi_source':'Arcus markets API · perpetual one-sided OI × mark price'}
 
 @st.cache_data(ttl=900, show_spinner=False)
 def fetch_pro_derivatives(key):
@@ -215,8 +223,8 @@ with st.spinner('공개 데이터 수집 중…'):
     except Exception as e: va=None;errors.append(f'Variational: {e}')
     try: pacifica_markets=fetch_pacifica_markets()
     except Exception as e: pacifica_markets=None;errors.append(f'Pacifica markets: {e}')
-    try: arcus_markets=fetch_arcus_markets()
-    except Exception as e: arcus_markets=None;errors.append(f'Arcus markets: {e}')
+    try: arcus_stats=fetch_arcus_markets()
+    except Exception as e: arcus_stats=None;errors.append(f'Arcus markets: {e}')
     try: pro=fetch_pro_derivatives(pro_key) if pro_key else pd.DataFrame()
     except Exception as e: pro=pd.DataFrame();errors.append(f'DefiLlama Pro: {e}')
 
@@ -254,6 +262,12 @@ if va:
         for field, value in va.items():
             if field not in df.columns: df[field] = None
             df.loc[va_mask, field] = value
+if arcus_stats:
+    arcus_mask=df['watch_name'].eq('Arcus')
+    if arcus_mask.any():
+        for field,value in arcus_stats.items():
+            if field not in df.columns:df[field]=None
+            df.loc[arcus_mask,field]=value
 if hl:
     hk=norm(hl['name'])
     mask=df['_id']==hk
@@ -511,8 +525,8 @@ with radar_tabs[3]:
     checks=[
       {'거래소':'Pacifica','상태':'시장 목록 조회 성공' if pacifica_markets is not None else '연결 실패/응답 변경',
        '확인된 시장 수':pacifica_markets,'의미':'상장된 마켓 개수만 의미. 거래량·OI·지갑 수 아님'},
-      {'거래소':'Arcus','상태':'시장 목록 조회 성공' if arcus_markets is not None else '연결 실패/응답 변경',
-       '확인된 시장 수':arcus_markets,'의미':'공개 마켓 목록 확인. 거래량·포인트 지표 아님'}
+      {'거래소':'Arcus','상태':'시장/OI 조회 성공' if arcus_stats is not None else '연결 실패/응답 변경',
+       '확인된 시장 수':arcus_stats.get('markets') if arcus_stats else None,'의미':'PERPETUAL 한쪽 OI×가격만 집계. 거래량·포인트 아님'}
     ]
     st.dataframe(pd.DataFrame(checks),hide_index=True,use_container_width=True)
     st.info('정확한 빈집 순위는 활성 거래자와 포인트 배분 데이터가 충분히 확보될 때만 제공할 수 있습니다. Dune 무료 API도 쿼리 실행 한도·체인 지원 여부를 확인해야 합니다.')
