@@ -1001,6 +1001,9 @@ html.radar-dark .js-plotly-plot text{fill:var(--night-ink)!important}
 html.radar-dark .js-plotly-plot .hoverlayer .hovertext rect{fill:#302534!important;stroke:#b47c4a!important}
 html.radar-dark .js-plotly-plot .hoverlayer .hovertext text{fill:#fff2e2!important}
 html.radar-dark .js-plotly-plot .paper{fill:var(--night-panel)!important}
+
+#radar-dark-toggle .radar-pumpkin-unlit{display:inline-block;filter:grayscale(1) brightness(.7);margin-right:5px;font-size:18px;vertical-align:-2px}
+#radar-dark-toggle .radar-pumpkin-lit{display:inline-block;filter:drop-shadow(0 0 5px #ffb647);margin-right:5px;font-size:18px;vertical-align:-2px}
 </style>
 <script>
 (() => {
@@ -1017,7 +1020,7 @@ html.radar-dark .js-plotly-plot .paper{fill:var(--night-panel)!important}
   const lightCat='data:image/webp;base64,{{LIGHT_CAT_B64}}';
   function apply(isDark){
     document.documentElement.classList.toggle('radar-dark',isDark);
-    button.textContent=isDark?'🎃 DARK':'◯ LIGHT';
+    button.innerHTML=isDark?'<span class="radar-pumpkin-lit" aria-hidden="true">🎃</span> DARK':'<span class="radar-pumpkin-unlit" aria-hidden="true">🎃</span> LIGHT';
     button.setAttribute('aria-pressed',String(isDark));
     // Banner images switch through CSS bound to html.radar-dark.
   }
