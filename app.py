@@ -43,19 +43,17 @@ html.radar-theme-preview-light [data-testid="stAppViewContainer"] .block-contain
 </style>
 <script>
 (() => {
- const key='radar.instant.theme';
  function findButton(target) {
    const button=target?.closest?.('.st-key-theme_action_v3 button');
    return button || null;
  }
  if (!window.__radarThemePreviewHandler) {
    window.__radarThemePreviewHandler=(event)=>{
-     if(!findButton(event.target))return;
-     const dark=!(document.documentElement.classList.contains('radar-theme-preview-dark') ||
-       localStorage.getItem(key)==='dark');
+     const button=findButton(event.target);
+     if(!button)return;
+     const dark=(button.textContent||'').includes('LIGHT');
      document.documentElement.classList.toggle('radar-theme-preview-dark',dark);
      document.documentElement.classList.toggle('radar-theme-preview-light',!dark);
-     try{localStorage.setItem(key,dark?'dark':'light')}catch(_){}
    };
    document.addEventListener('pointerdown',window.__radarThemePreviewHandler,true);
  }
