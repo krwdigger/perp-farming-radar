@@ -266,24 +266,29 @@ st.markdown("""<style>
 html,body,[data-testid="stApp"],[class*="css"]{font-family:'DM Sans','Noto Sans KR',sans-serif}
 [data-testid="stAppViewContainer"]{background:linear-gradient(160deg,#f0f5f7 0%,#f8f7f3 38%,#f5f3ee 100%);color:#505c66}
 [data-testid="stSidebar"]{background:#eff3f3;border-right:1px solid #d8e0e3}
-/* Explicit negative horizontal offset: previous left:0 rules did not visibly move the opener. */
-header[data-testid="stHeader"]{left:0!important;right:0!important;width:100%!important;margin:0!important;padding-left:0!important}
+/* Collapsed opener: shift the actual arrow glyph, not just its header box.
+   Streamlit may position the wrapper at x=0 while retaining icon padding. */
+[data-testid="stHeader"] {left:0!important;right:0!important;width:100%!important;padding-left:0!important}
 [data-testid="stSidebarCollapsedControl"],
-[data-testid="collapsedControl"]{
-    position:fixed!important;top:6px!important;left:-18px!important;right:auto!important;
-    margin:0!important;padding:0!important;transform:none!important;
-    z-index:2147483000!important;
+[data-testid="collapsedControl"] {
+  left:0!important; margin-left:0!important;padding-left:0!important;
+  transform:none!important;z-index:2147483000!important;
 }
 [data-testid="stSidebarCollapsedControl"] button,
-[data-testid="collapsedControl"] button,
-header[data-testid="stHeader"] button[data-testid="baseButton-headerNoPadding"]:first-child{
-    position:fixed!important;top:6px!important;left:-18px!important;right:auto!important;
-    margin:0!important;padding:0!important;transform:none!important;
-    z-index:2147483001!important;width:32px!important;min-width:32px!important;
-    height:32px!important;display:flex!important;align-items:center!important;justify-content:center!important;
+[data-testid="collapsedControl"] button {
+  margin-left:0!important;padding-left:0!important;justify-content:flex-start!important;
 }
-[data-testid="stSidebarCollapseButton"]{margin-left:0!important}
-[data-testid="stSidebarHeader"]{padding-left:0!important}
+/* Move the rendered arrow 24px left even if the parent uses its own layout. */
+[data-testid="stSidebarCollapsedControl"] svg,
+[data-testid="collapsedControl"] svg,
+[data-testid="stSidebarCollapsedControl"] span[data-testid="stIconMaterial"],
+[data-testid="collapsedControl"] span[data-testid="stIconMaterial"],
+header[data-testid="stHeader"] button[data-testid="baseButton-headerNoPadding"]:first-child svg,
+header[data-testid="stHeader"] button[data-testid="baseButton-headerNoPadding"]:first-child span[data-testid="stIconMaterial"] {
+  position:relative!important;left:-24px!important;transform:translateX(-24px)!important;
+  margin-left:0!important;
+}
+[data-testid="stSidebarCollapseButton"] {margin-left:0!important;}
 .block-container{max-width:1500px;padding-top:1.8rem;padding-bottom:4rem}
 h1,h2,h3{color:#485760!important;letter-spacing:-.025em;font-weight:700!important}
 h1{font-size:2.35rem!important}
