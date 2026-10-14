@@ -798,15 +798,15 @@ def harvest_linear_bar(fig, values, height=360, money=True):
     maximum=max(valid) if valid else 1.0
     rough=max(maximum/5.0,1.0)
     decade=10**math.floor(math.log10(rough))
-    increment=next((k*decade for k in (10,5,2.5,2,1) if k*decade<=rough),decade)
-    axis_end=max(5*increment,math.ceil(maximum/increment+0.35)*increment)
+    increment=next((k*decade for k in (1,2,2.5,5,10) if k*decade>=rough),10*decade)
+    axis_end=max(4*increment,math.ceil(maximum/increment+0.35)*increment)
     tick_values=[i*increment for i in range(int(axis_end/increment)+1)]
     fig.update_layout(
         height=height,margin=dict(l=178,r=105,t=18,b=62),
         showlegend=False,font=dict(size=14,color='#61432d'),
         paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(255,248,233,.28)',
         xaxis=dict(type='linear',range=[0,axis_end],tickmode='array',
-                   tickvals=tick_values,ticktext=[compact_usd(n) if money else f'{n:,.0f}' for n in tick_values],
+                   tickvals=tick_values,ticktext=[(f'${n/1e9:g}B' if n>=1e9 else f'${n/1e6:g}M' if n>=1e6 else f'${n/1e3:g}K' if n>=1e3 else f'${n:,.0f}') if money else f'{n:,.0f}' for n in tick_values],
                    ticks='outside',tickcolor='#a07750',showticklabels=True,
                    showgrid=True,gridcolor='#e2cda9',zeroline=False,
                    tickfont=dict(size=13,color='#62432c'),title_font=dict(size=14,color='#62432c')),
