@@ -848,10 +848,46 @@ st.html("""
     button.title = '데이터 연결 설정 열기';
     document.body.appendChild(button);
   }
+  // Override BaseWeb's computed floating placement after the popover opens.
+  // Its trigger remains in the Streamlit content column, whereas our actual
+  // button sits at the viewport's left edge.
+  function positionSettingsPanel() {
+    const trigger = document.querySelector('[data-testid="stPopover"] button');
+    if (!trigger) return;
+    const candidates = [...document.querySelectorAll(
+      '[data-baseweb="popover"],[data-testid="stPopoverContent"],[role="dialog"]'
+    )];
+    for (const panel of candidates) {
+      const text = panel.textContent || '';
+      if (!text.includes('데이터 연결') || !text.includes('API')) continue;
+      // The portal's floating wrapper commonly holds the computed transform.
+      // Also position the panel for Streamlit versions whose content is positioned.
+      const floating = panel.closest('[data-baseweb="popover"]') || panel;
+      for (const node of [floating, panel]) {
+        node.style.setProperty('position', 'fixed', 'important');
+        node.style.setProperty('left', '8px', 'important');
+        node.style.setProperty('top', '55px', 'important');
+        node.style.setProperty('right', 'auto', 'important');
+        node.style.setProperty('bottom', 'auto', 'important');
+        node.style.setProperty('transform', 'none', 'important');
+        node.style.setProperty('margin', '0', 'important');
+        node.style.setProperty('max-height', 'calc(100vh - 65px)', 'important');
+      }
+    }
+  }
   button.onclick = () => {
     const trigger = document.querySelector('[data-testid="stPopover"] button');
     if (trigger) trigger.click();
+    requestAnimationFrame(positionSettingsPanel);
   };
+  // Streamlit can mount the floating panel a frame after the click.
+  if (!window.__radarSettingsPanelObserver) {
+    const watcher = new MutationObserver(() => {
+      requestAnimationFrame(positionSettingsPanel);
+    });
+    watcher.observe(document.body, {childList:true,subtree:true});
+    window.__radarSettingsPanelObserver = watcher;
+  }
 })();
 </script>
 """, unsafe_allow_javascript=True)
