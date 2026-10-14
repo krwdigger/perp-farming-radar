@@ -899,109 +899,8 @@ html.radar-dark [data-testid="stTabs"] [role="tab"],html.radar-dark [data-testid
 html.radar-dark [data-testid="stTabs"] [role="tab"][aria-selected="true"]{border-bottom-color:#f1a558!important}
 html.radar-dark [data-testid="stExpander"] summary{background:#2b202c!important}
 html.radar-dark [data-testid="stApp"] a{color:#ffbd7e!important}
-html.radar-dark .js-plotly-plot .main-svg,html.radar-dark .js-plotly-plot .bg{background:transparent!important;fill:#241d28!important}
-html.radar-dark .js-plotly-plot text{fill:#e8d4be!important}
-html.radar-dark .js-plotly-plot .gridlayer path{stroke:#604a3e!important}
-html.radar-dark [data-testid="stAlert"]{background:#34252b!important;border-color:#624936!important}
-@media(max-width:650px){#radar-dark-toggle{top:10px!important;right:12px!important;padding:7px 11px!important}}
-
-/* Dark-mode contrast system. Applies to native Streamlit and custom HTML. */
-html.radar-dark{
- --night-bg:#110e14;--night-panel:#211a24;--night-surface:#29212b;
- --night-input:#302634;--night-head:#382a31;--night-line:#674e3e;
- --night-ink:#f4e5d6;--night-muted:#d0b9a3;--night-accent:#f3a45b;
- color-scheme:dark;
-}
-html.radar-dark [data-testid="stApp"],
-html.radar-dark [data-testid="stAppViewContainer"]{background-color:#110e14!important;color:var(--night-ink)!important}
-html.radar-dark [data-testid="stAppViewContainer"] .block-container{background:rgba(20,16,24,.95)!important}
-html.radar-dark [data-testid="stPopover"] [data-testid="stPopoverBody"],
-html.radar-dark [data-baseweb="popover"],
-html.radar-dark [data-baseweb="popover"]>div,
-html.radar-dark [data-baseweb="popover"] [data-testid="stVerticalBlock"],
-html.radar-dark [data-testid="stPopoverContent"],
-html.radar-dark [role="dialog"]{
- background:var(--night-panel)!important;color:var(--night-ink)!important;border-color:var(--night-line)!important;
-}
-html.radar-dark [data-baseweb="popover"] h1,
-html.radar-dark [data-baseweb="popover"] h2,
-html.radar-dark [data-baseweb="popover"] h3,
-html.radar-dark [data-baseweb="popover"] p,
-html.radar-dark [data-baseweb="popover"] label,
-html.radar-dark [data-baseweb="popover"] span{color:var(--night-ink)!important}
-html.radar-dark [data-testid="stFileUploader"],html.radar-dark [data-testid="stFileUploaderDropzone"],
-html.radar-dark [data-testid="stFileUploader"] section{
- background:var(--night-surface)!important;color:var(--night-ink)!important;border-color:var(--night-line)!important;
-}
-html.radar-dark [data-testid="stFileUploader"] small,html.radar-dark [data-testid="stFileUploader"] span{color:var(--night-muted)!important}
-html.radar-dark [data-testid="stAlert"],
-html.radar-dark [data-testid="stNotification"],
-html.radar-dark [data-testid="stMetric"],html.radar-dark [data-testid="stExpander"],
-html.radar-dark [data-testid="stExpander"] details,
-html.radar-dark [data-testid="stExpander"] summary,
-html.radar-dark .venue-rank-chart,html.radar-dark .market-chart-panel,
-html.radar-dark .radar-table-wrap{
- background:var(--night-panel)!important;color:var(--night-ink)!important;border-color:var(--night-line)!important;
- box-shadow:none!important;
-}
-html.radar-dark .radar-rank-table,html.radar-dark .radar-rank-table tbody,
-html.radar-dark .radar-rank-table tbody tr,html.radar-dark .radar-rank-table tbody td{
- background:#211a24!important;color:var(--night-ink)!important;border-color:#49382f!important;
-}
-html.radar-dark .radar-rank-table thead th{background:var(--night-head)!important;color:#ffe1be!important;border-color:var(--night-line)!important}
-html.radar-dark .radar-rank-table tbody tr:hover td{background:#312530!important}
-html.radar-dark .radar-rank-table .rank-name,
-html.radar-dark .radar-rank-table .rank-no,
-html.radar-dark .exchange-cell,html.radar-dark .congestion-cell strong,
-html.radar-dark .funding-col,html.radar-dark .investor-col,
-html.radar-dark .venue-rank-name,
-html.radar-dark .venue-rank-value,html.radar-dark .venue-rank-ticks,
-html.radar-dark .venue-rank-axis{color:var(--night-ink)!important}
-html.radar-dark .radar-bar-track{background:#594133!important}
-html.radar-dark [data-testid="stApp"] input,
-html.radar-dark [data-testid="stApp"] textarea,
-html.radar-dark [data-baseweb="input"],
-html.radar-dark [data-baseweb="input"]>div,
-html.radar-dark [data-baseweb="select"]>div,
-html.radar-dark [data-baseweb="select"] [data-baseweb="select"]{
- background:var(--night-input)!important;color:var(--night-ink)!important;border-color:var(--night-line)!important;
-}
-html.radar-dark input::placeholder,html.radar-dark textarea::placeholder{color:#bb9e87!important;opacity:1!important}
-html.radar-dark [data-baseweb="popover"] [role="listbox"],
-html.radar-dark [data-baseweb="popover"] [role="option"],
-html.radar-dark [data-baseweb="menu"],
-html.radar-dark [role="listbox"],html.radar-dark [role="option"]{
- background:var(--night-surface)!important;color:var(--night-ink)!important;border-color:var(--night-line)!important;
-}
-html.radar-dark [role="option"]:hover,html.radar-dark [aria-selected="true"][role="option"]{background:#4b3540!important}
-html.radar-dark [data-testid="stApp"] button:not(#radar-dark-toggle):not(#radar-edge-toggle),
-html.radar-dark [data-baseweb="popover"] button{
- background:#392b35!important;color:var(--night-ink)!important;border-color:#986a43!important;
-}
-html.radar-dark [data-testid="stApp"] button:disabled,
-html.radar-dark [data-baseweb="popover"] button:disabled{
- background:#29232b!important;color:#ad9988!important;opacity:1!important;border-color:#5c4a40!important
-}
-html.radar-dark [data-testid="stApp"] [data-testid="stDataFrame"],
-html.radar-dark [data-testid="stApp"] [data-testid="stTable"]{background:var(--night-panel)!important;border-color:var(--night-line)!important}
-html.radar-dark [data-testid="stDataFrame"] canvas{filter:brightness(.88) contrast(1.08)}
-html.radar-dark [data-testid="stApp"] [data-testid="stCaptionContainer"] *,
-html.radar-dark [data-testid="stApp"] small{color:var(--night-muted)!important}
-html.radar-dark .farming-tier.tier-s{background:#77481f!important;color:#ffe4bb!important}
-html.radar-dark .farming-tier.tier-a{background:#674727!important;color:#fce1ba!important}
-html.radar-dark .farming-tier.tier-b{background:#4a3934!important;color:#f3deca!important}
-html.radar-dark .farming-tier.tier-c,
-html.radar-dark .farming-tier.tier-d{background:#383035!important;color:#dfc9b9!important}
-html.radar-dark [data-testid="stTabs"] [role="tab"][aria-selected="true"]{border-bottom-color:var(--night-accent)!important}
-html.radar-dark .js-plotly-plot .main-svg,
-html.radar-dark .js-plotly-plot .svg-container,
-html.radar-dark .js-plotly-plot .bg{background:transparent!important;fill:var(--night-panel)!important}
-html.radar-dark .js-plotly-plot .gridlayer path{stroke:#5e4b43!important}
-html.radar-dark .js-plotly-plot text{fill:var(--night-ink)!important}
-html.radar-dark .js-plotly-plot .hoverlayer .hovertext rect{fill:#302534!important;stroke:#b47c4a!important}
-html.radar-dark .js-plotly-plot .hoverlayer .hovertext text{fill:#fff2e2!important}
-html.radar-dark .js-plotly-plot .paper{fill:var(--night-panel)!important}
-
+/* Let Plotly own SVG geometry, backgrounds and axes.
+   Previous !important SVG fill rules interfered with chart rendering. */
 #radar-dark-toggle .radar-pumpkin-unlit{display:inline-block;filter:grayscale(1) brightness(.7);margin-right:5px;font-size:18px;vertical-align:-2px}
 #radar-dark-toggle .radar-pumpkin-lit{display:inline-block;filter:drop-shadow(0 0 5px #ffb647);margin-right:5px;font-size:18px;vertical-align:-2px}
 
@@ -1073,27 +972,12 @@ html.radar-dark [data-testid="stDataFrame"],
 html.radar-dark [data-testid="stDataFrame"]>div,
 html.radar-dark [data-testid="stDataFrame"] [data-testid="stDataFrameResizable"],
 html.radar-dark [data-testid="stTable"]{background-color:#231c29!important;color:#f0ddca!important}
-html.radar-dark [data-testid="stDataFrame"] canvas{
- filter:invert(.87) hue-rotate(177deg) saturate(.6) contrast(1.12)!important}
+html.radar-dark [data-testid="stDataFrame"] canvas{filter:none!important}
 html.radar-dark [data-testid="stAlert"],
 html.radar-dark [role="alert"]{background:#302632!important;color:#f0dcc6!important;border:1px solid #79563f!important}
 html.radar-dark [data-testid="stAlert"] *,
 html.radar-dark [role="alert"] *{color:#e9d1b8!important}
-html.radar-dark .stPlotlyChart,
-html.radar-dark [data-testid="stPlotlyChart"],
-html.radar-dark .js-plotly-plot,
-html.radar-dark .js-plotly-plot .plot-container,
-html.radar-dark .js-plotly-plot .svg-container{background:#241e2a!important;border-radius:12px!important}
-html.radar-dark .js-plotly-plot svg.main-svg{background:#241e2a!important}
-html.radar-dark .js-plotly-plot .bglayer rect.bg{fill:#241e2a!important}
-html.radar-dark .js-plotly-plot .gridlayer path{stroke:#5d4b46!important;stroke-opacity:.6!important}
-html.radar-dark .js-plotly-plot .xtick text,
-html.radar-dark .js-plotly-plot .ytick text,
-html.radar-dark .js-plotly-plot .g-xtitle text,
-html.radar-dark .js-plotly-plot .g-ytitle text,
-html.radar-dark .js-plotly-plot .annotation-text{fill:#f0dbc7!important}
-html.radar-dark .js-plotly-plot .hoverlayer rect{fill:#302632!important;stroke:#bb8151!important}
-html.radar-dark .js-plotly-plot .hoverlayer text{fill:#fff1de!important}
+html.radar-dark [data-testid="stPlotlyChart"]{background:#241e2a!important;border-radius:12px!important}
 html.radar-dark [data-testid="stWidgetLabel"] *,
 html.radar-dark [data-testid="stCaptionContainer"] *,
 html.radar-dark [data-testid="stDownloadButton"] *,
@@ -1164,6 +1048,24 @@ html [data-testid="stAppViewContainer"] .block-container{
 }
 </style>"""
 st.markdown(_theme_css, unsafe_allow_html=True)
+# Override chart colors at the Plotly figure layer rather than SVG CSS.
+def readable_plotly(fig):
+    bg = '#241e2a' if _dark_now else '#fff8ed'
+    fg = '#f5e6d8' if _dark_now else '#573d2d'
+    grid = '#5c4b4e' if _dark_now else '#dfc6a5'
+    fig.update_layout(
+        paper_bgcolor=bg, plot_bgcolor=bg,
+        font=dict(color=fg, family='Noto Sans KR, sans-serif'),
+        xaxis=dict(tickfont=dict(color=fg), title_font=dict(color=fg),
+                   gridcolor=grid, linecolor=grid, zerolinecolor=grid),
+        yaxis=dict(tickfont=dict(color=fg), title_font=dict(color=fg),
+                   gridcolor=grid, linecolor=grid, zerolinecolor=grid),
+        hoverlabel=dict(bgcolor=bg, font=dict(color=fg)),
+    )
+    for annotation in fig.layout.annotations:
+        annotation.font = dict(color=fg, size=14)
+    return fig
+
 
 st.markdown("""
 <style>
@@ -2038,7 +1940,7 @@ with radar_tabs[0]:
                            text='<b>24H Volume (USD)</b>',
                            font=dict(family='Noto Sans KR, DM Sans, sans-serif',size=15,color='#573a26'))
         st.plotly_chart(
-            fig,use_container_width=True,theme=None,
+            readable_plotly(fig),use_container_width=True,theme=None,
             config={'displayModeBar':False,'scrollZoom':False,
                     'responsive':True})
         st.caption('가로축 OI · 세로축 24시간 거래량: 선형 눈금이며 로고는 실제 데이터 좌표에 표시됩니다. 가까운 거래소는 로고 크기만 자동으로 줄어듭니다.')
@@ -2062,7 +1964,7 @@ with radar_tabs[1]:
                        color_discrete_sequence=['#a36b43'],labels={'active_wallets_7d':'7D Traders','name':''})
             fig.update_traces(marker_line_width=0)
             harvest_linear_bar(fig,v['active_wallets_7d'],height=max(330,len(v)*36+90),money=False)
-            st.plotly_chart(fig,use_container_width=True,theme=None)
+            st.plotly_chart(readable_plotly(fig),use_container_width=True,theme=None)
     with cb:
         st.markdown('#### B · OI 규모 상위 20개')
         v=df.dropna(subset=['oi_usd']).nlargest(20,'oi_usd').sort_values('oi_usd')
