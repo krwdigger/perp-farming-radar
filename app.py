@@ -512,6 +512,38 @@ def latest_oi_weekly_change(data,venue):
     if previous.empty or previous.iloc[-1]['oi_usd']<=0:return float('nan')
     return (now['oi_usd']/previous.iloc[-1]['oi_usd']-1)*100
 
+def exchange_logo_url(name):
+    candidates = {
+        'Lighter': ['lighter'], 'Hyperliquid': ['hyperliquid'],
+        'StandX': ['standx', 'standx perps'], 'Nado': ['nado'],
+        'Variational': ['variational'], 'Pacifica': ['pacifica'],
+        'Arcus': ['arcus'], 'QFEX': ['qfex'], 'N1': ['n1'],
+        'Entropy': ['entropy'], 'TxFlow': ['txflow'],
+        'robinhoodchain.lighter': [], 'hello.trade': ['hello.trade'],
+    }
+    logos = {}
+    if 'logo_url' in catalog.columns and 'name' in catalog.columns:
+        logos = {
+            norm(row['name']): row['logo_url']
+            for _, row in catalog.iterrows()
+            if isinstance(row.get('logo_url'), str) and row['logo_url'].startswith('https://')
+        }
+    url = next(
+        (logos.get(norm(n)) for n in candidates.get(name, [name]) if logos.get(norm(n))),
+        None
+    )
+    domains = {
+        'Hyperliquid': 'hyperliquid.xyz', 'Lighter': 'lighter.xyz',
+        'Variational': 'omni.variational.io', 'Nado': 'nado.finance',
+        'StandX': 'standx.com', 'Arcus': 'arcus.xyz',
+        'QFEX': 'qfex.com', 'TxFlow': 'txflow.com',
+        'Pacifica': 'pacifica.fi', 'hello.trade': 'hello.trade',
+        'robinhoodchain.lighter': 'robinhood.com', 'N1': 'n1.xyz',
+    }
+    if not url and name in domains:
+        url = f"https://www.google.com/s2/favicons?domain={domains[name]}&sz=64"
+    return url
+
 def exchange_logo_html(name):
     # DefiLlama catalog logos are actual exchange assets, never guessed.
     candidates={'Lighter':['lighter'],'Hyperliquid':['hyperliquid'],'StandX':['standx','standx perps'],'Nado':['nado'],'Variational':['variational'],
@@ -611,11 +643,11 @@ with radar_tabs[0]:
                     '<td>'+table_cell(traders)+'</td></tr>')
     st.markdown("""<style>
     .radar-table-wrap{width:100%;overflow-x:auto;border:1px solid #d8e2e6;border-radius:14px;background:#fffefa}
-    .radar-rank-table{width:100%;border-collapse:collapse;min-width:860px;font-size:15px;color:#405768}
+    .radar-rank-table{width:100%;border-collapse:collapse;min-width:920px;font-size:16px;color:#344f61}
     .radar-rank-table thead th{background:#edf3f6;color:#6d8190;text-align:left;
-        font-size:13px;font-weight:700;padding:16px 14px;white-space:nowrap}
+        font-size:14px;font-weight:700;padding:16px 14px;white-space:nowrap}
     .radar-rank-table tbody td{border-top:1px solid #e6ecee;padding:18px 14px;
-        font-variant-numeric:tabular-nums;white-space:nowrap}
+        font-variant-numeric:tabular-nums;white-space:nowrap;font-size:16px}
     .radar-rank-table tbody tr:hover{background:#f1f7fa}
     .radar-rank-table .rank-no{width:50px;color:#8799a4;font-weight:650}
     .radar-rank-table .rank-name{font-weight:730;color:#36586c;min-width:155px}
@@ -623,7 +655,7 @@ with radar_tabs[0]:
     .radar-volume-cell{display:flex;gap:12px;align-items:center;justify-content:space-between}
     .radar-bar-track{min-width:105px;flex:1;height:11px;background:#e3edf2;border-radius:8px;overflow:hidden}
     .radar-bar-fill{height:100%;background:#76a9c1;border-radius:8px}
-    .radar-volume-cell span{min-width:74px;text-align:right;font-weight:700}
+    .radar-volume-cell span{min-width:80px;text-align:right;font-weight:750;font-size:15px;color:#35556a}
     .radar-missing{color:#a5afb6}
     .exchange-cell{display:inline-flex;align-items:center;gap:10px;vertical-align:middle}
     .exchange-logo,.exchange-monogram{width:30px;height:30px;min-width:30px;border-radius:50%;object-fit:contain}
@@ -660,17 +692,50 @@ with radar_tabs[0]:
                               font_color='#647682',xaxis=dict(tickformat='~s',gridcolor='#e4e9e9'))
             st.plotly_chart(fig,use_container_width=True)
     st.markdown('#### 시장 위치 분석')
-    both=watched.dropna(subset=['volume_24h_usd','oi_usd'])
+    both=watched.dropna(subset=['volume_24h_usd','oi_usd']).copy()
     both=both[(both['volume_24h_usd']>0)&(both['oi_usd']>0)]
     if not both.empty:
-        fig=px.scatter(both,x='oi_usd',y='volume_24h_usd',text='watch_name',
-                       size='volume_24h_usd',size_max=43,log_x=True,log_y=True,
-                       labels={'oi_usd':'Open Interest ($)','volume_24h_usd':'24H Volume ($)'},
-                       color_discrete_sequence=['#7d9eae'])
-        fig.update_traces(textposition='top center')
-        fig.update_layout(height=375,margin=dict(t=25,l=10,r=20,b=10),
+        import math
+        fig=px.scatter(both,x='oi_usd',y='volume_24h_usd',hover_name='watch_name',
+                       log_x=True,log_y=True,
+                       labels={'oi_usd':'Open Interest ($)','volume_24h_usd':'24H Volume ($)'})
+        # Invisible data points keep native axis coordinates and mouse hover.
+        fig.update_traces(marker=dict(size=34,color='rgba(0,0,0,0)'),
+                          hovertemplate='<b>%{hovertext}</b><br>OI: $%{x:,.0f}<br>24H Volume: $%{y:,.0f}<extra></extra>')
+        # Place images in domain coordinates: their size remains consistent on log axes.
+        min_x,max_x=both['oi_usd'].min(),both['oi_usd'].max()
+        min_y,max_y=both['volume_24h_usd'].min(),both['volume_24h_usd'].max()
+        lx0,lx1=math.log10(min_x),math.log10(max_x)
+        ly0,ly1=math.log10(min_y),math.log10(max_y)
+        sx=max(lx1-lx0,0.5);sy=max(ly1-ly0,0.5)
+        # Plotly range is expressed in base-10 log coordinates.
+        xlo,xhi=lx0-0.18*sx,lx1+0.18*sx
+        ylo,yhi=ly0-0.25*sy,ly1+0.25*sy
+        for _,item in both.iterrows():
+            x=(math.log10(item['oi_usd'])-xlo)/(xhi-xlo)
+            y=(math.log10(item['volume_24h_usd'])-ylo)/(yhi-ylo)
+            logo=exchange_logo_url(item['watch_name'])
+            if logo:
+                fig.add_layout_image(dict(source=logo,xref='x domain',yref='y domain',x=x,y=y,
+                                         sizex=0.060,sizey=0.085,xanchor='center',yanchor='middle',
+                                         sizing='contain',layer='above'))
+            else:
+                fig.add_annotation(x=x,y=y,xref='x domain',yref='y domain',
+                                   text=html.escape(str(item['watch_name'])[:1].upper()),
+                                   showarrow=False,bgcolor='#dfebf1',bordercolor='#bbd3e0',
+                                   borderpad=7,font=dict(size=15,color='#36566b'))
+            fig.add_annotation(x=x,y=min(0.99,y+0.058),xref='x domain',yref='y domain',
+                               text=html.escape(str(item['watch_name'])),showarrow=False,
+                               font=dict(size=13,color='#385467'),
+                               bgcolor='rgba(255,255,255,0.85)',borderpad=2)
+        fig.update_layout(height=470,margin=dict(t=24,l=16,r=24,b=16),
+                          xaxis=dict(range=[xlo,xhi],title_font=dict(size=15),tickfont=dict(size=13),
+                                     gridcolor='#dfe7eb',showline=False),
+                          yaxis=dict(range=[ylo,yhi],title_font=dict(size=15),tickfont=dict(size=13),
+                                     gridcolor='#dfe7eb',showline=False),
                           paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',
-                          font_color='#647682')
+                          font=dict(family='Noto Sans KR, Arial',size=14,color='#42596b'),
+                          showlegend=False)
         st.plotly_chart(fig,use_container_width=True)
     with st.expander('데이터 제공 범위 및 미확보 항목'):
         coverage=watched[['watch_name','volume_source','oi_source']].copy()
