@@ -1042,12 +1042,14 @@ with radar_tabs[0]:
     else:
         import math
         # Genuine linear scales: equal money differences have equal on-screen spacing.
-        xmax=float(both['oi_usd'].max())*1.17
-        ymax=float(both['volume_24h_usd'].max())*1.22
+        xmax=float(both['oi_usd'].max())*1.12
+        ymax=float(both['volume_24h_usd'].max())*1.18
+        xmin=-0.105*xmax
+        ymin=-0.14*ymax
         def nice_tick(limit):
             rough=max(float(limit)/5,1)
             decade=10**math.floor(math.log10(rough))
-            return min((1,2,2.5,5,10),key=lambda v:abs(v*decade-rough))*decade
+            return next((k*decade for k in (10,5,2.5,2,1) if k*decade<=rough),decade)
         def usd_axis(v):
             if v>=1e9:return f'${v/1e9:g}B'
             if v>=1e6:return f'${v/1e6:g}M'
@@ -1061,46 +1063,50 @@ with radar_tabs[0]:
         fig=px.scatter(
             both,x='oi_usd',y='volume_24h_usd',hover_name='watch_name',
             labels={'oi_usd':'Open Interest (USD)','volume_24h_usd':'24H Volume (USD)'},
-            range_x=[0,xmax],range_y=[0,ymax]
+            range_x=[xmin,xmax],range_y=[ymin,ymax]
         )
         amounts=both['volume_24h_usd']
         vmin=float(amounts.min());vmax=float(amounts.max())
         def logo_diameter(value):
             normalized=(float(value)-vmin)/(vmax-vmin) if vmax>vmin else 0.5
-            return 46+28*math.sqrt(normalized)
+            return 48+25*math.sqrt(normalized)
         diameters=[logo_diameter(v) for v in amounts]
         # Visible markers mean the scatter survives if an external logo cannot render.
-        fig.update_traces(marker=dict(size=diameters,color='#db9a5f',
-                                      opacity=0.58,line=dict(color='#8b4b2d',width=1.5)),
+        fig.update_traces(marker=dict(size=diameters,color='rgba(0,0,0,0)',line=dict(width=0)),
                           hovertemplate='<b>%{hovertext}</b><br>OI: $%{x:,.0f}<br>24H Volume: $%{y:,.0f}<extra></extra>')
+        placed_labels=[]
         for _,entry in both.iterrows():
-            xp=float(entry['oi_usd'])/xmax
-            yp=float(entry['volume_24h_usd'])/ymax
+            xp=(float(entry['oi_usd'])-xmin)/(xmax-xmin)
+            yp=(float(entry['volume_24h_usd'])-ymin)/(ymax-ymin)
             diameter=logo_diameter(entry['volume_24h_usd'])
             try:
                 logo=round_exchange_logo(str(entry['watch_name']),exchange_logo_url(entry['watch_name']))
                 fig.add_layout_image(dict(
                     source=logo,xref='x domain',yref='y domain',x=xp,y=yp,
-                    sizex=diameter/880,sizey=diameter/405,
+                    sizex=diameter/930,sizey=diameter/420,
                     xanchor='center',yanchor='middle',sizing='contain',layer='above'))
             except Exception:
                 pass
-            fig.add_annotation(x=xp,y=min(0.98,yp+0.082),
+            close=sum(1 for px,py in placed_labels if abs(px-xp)<0.14 and abs(py-yp)<0.17)
+            placed_labels.append((xp,yp))
+            fig.add_annotation(x=xp,y=yp,
                                xref='x domain',yref='y domain',showarrow=False,
+                               xshift=48 if close%2 else 0,yshift=48+(close//2)*18,
                                text=html.escape(str(entry['watch_name'])),
                                font=dict(size=14,color='#603e2b',family='Arial'),
-                               bgcolor='rgba(255,249,237,0.92)',borderpad=3)
+                               bgcolor='rgba(255,249,237,0.96)',borderpad=4,
+                               bordercolor='#d7b994',borderwidth=1
         fig.update_layout(
-            height=545,margin=dict(t=28,l=26,r=36,b=32),
+            height=555,margin=dict(t=42,l=112,r=48,b=72),
             paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(255,249,236,0.64)',
             font=dict(family='Arial',size=14,color='#62472f'),showlegend=False,
-            xaxis=dict(type='linear',range=[0,xmax],tickmode='array',tickvals=xticks,
+            xaxis=dict(type='linear',range=[xmin,xmax],tickmode='array',tickvals=xticks,
                        ticktext=[usd_axis(v) for v in xticks],tickfont=dict(size=13,color='#64472f'),
                        title_font=dict(size=15,color='#604127'),
                        showgrid=True,gridcolor='#ddc8a8',gridwidth=1,
                        showline=True,linecolor='#aa855c',ticks='outside',
                        zeroline=True,zerolinecolor='#cbb492'),
-            yaxis=dict(type='linear',range=[0,ymax],tickmode='array',tickvals=yticks,
+            yaxis=dict(type='linear',range=[ymin,ymax],tickmode='array',tickvals=yticks,
                        ticktext=[usd_axis(v) for v in yticks],tickfont=dict(size=13,color='#64472f'),
                        title_font=dict(size=15,color='#604127'),
                        showgrid=True,gridcolor='#ddc8a8',gridwidth=1,
