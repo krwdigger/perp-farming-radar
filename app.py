@@ -1036,15 +1036,21 @@ with radar_tabs[1]:
     with cb:
         st.markdown('#### B · OI 규모 상위 20개')
         v=df.dropna(subset=['oi_usd']).nlargest(20,'oi_usd').sort_values('oi_usd')
-        if v.empty:st.info('OI 데이터 미확보')
+        if v.empty:
+            st.info('OI 데이터 미확보')
         else:
             fig=px.bar(v,x='oi_usd',y='name',orientation='h',
                        labels={'oi_usd':'OI USD','name':'DEX'},
                        color_discrete_sequence=['#C38B43'])
-            fig.update_layout(height=560,paper_bgcolor='rgba(0,0,0,0)',
-                              plot_bgcolor='rgba(255,249,236,0.64)',font_color='#65452d',
-                              xaxis=dict(type='linear',rangemode='tozero',
-                                         tickprefix='
+            fig.update_layout(
+                height=560,paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(255,249,236,0.64)',font_color='#65452d',
+                xaxis=dict(type='linear',rangemode='tozero',tickprefix='$',
+                           tickformat='~s',ticks='outside',showgrid=True,
+                           gridcolor='#DDC9AC',nticks=6),
+                yaxis=dict(tickfont=dict(size=12))
+            )
+            st.plotly_chart(fig,use_container_width=True,theme=None)
     st.info('현재 OI는 시간가중 OI 포인트와 다릅니다. 낮은 OI = 저경쟁 파밍이라고 가정하지 않습니다.')
 with radar_tabs[2]:
     st.subheader('전체 거래소 탐색')
