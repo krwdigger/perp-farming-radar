@@ -563,6 +563,64 @@ div[data-testid="stAlert"] svg,[data-testid="stAlert"] [data-testid="stIconMater
 [data-testid="stTabs"] [role="tab"]::before{
  transition:none!important;animation:none!important;
 }
+
+/* Consistent typography across Streamlit, custom ranking tables and plots. */
+:root{
+ --radar-font:'Noto Sans KR','DM Sans',sans-serif;
+ --radar-body:15px;
+ --radar-small:13px;
+ --radar-section:22px;
+ --radar-project:15px;
+}
+html,body,[data-testid="stApp"],[data-testid="stApp"] *,
+[data-testid="stPopover"] *,[data-baseweb="popover"] *,
+[data-testid="stDataFrame"] *,[data-testid="stTabs"] *,
+.radar-rank-table,.radar-rank-table *{
+ font-family:var(--radar-font)!important;
+}
+[data-testid="stApp"] p,[data-testid="stApp"] li,
+[data-testid="stApp"] label,[data-testid="stApp"] input,
+[data-testid="stApp"] button,[data-testid="stApp"] textarea,
+[data-testid="stApp"] [data-baseweb="select"],
+[data-testid="stApp"] [data-testid="stWidgetLabel"]{
+ font-size:var(--radar-body)!important;
+ line-height:1.5!important;
+}
+[data-testid="stApp"] h2,[data-testid="stApp"] h3{
+ font-family:var(--radar-font)!important;
+ font-size:var(--radar-section)!important;
+ line-height:1.35!important;
+ font-weight:750!important;
+}
+[data-testid="stApp"] h4{
+ font-family:var(--radar-font)!important;
+ font-size:18px!important;line-height:1.4!important;font-weight:700!important;
+}
+[data-testid="stApp"] [data-testid="stCaptionContainer"],
+[data-testid="stApp"] [data-testid="stCaptionContainer"] p{
+ font-size:var(--radar-small)!important;line-height:1.55!important;
+}
+.radar-banner h1{font-family:var(--radar-font)!important;font-size:50px!important;line-height:1.15!important}
+.radar-rank-table thead th{font-size:14px!important;font-weight:700!important}
+.radar-rank-table tbody td{font-size:var(--radar-body)!important;line-height:1.4!important}
+.radar-rank-table .rank-name,
+.radar-rank-table .rank-name .exchange-cell,
+.radar-rank-table .rank-name .exchange-cell > span:last-child,
+.exchange-cell > span:last-child{
+ font-family:var(--radar-font)!important;font-size:var(--radar-project)!important;
+ line-height:1.4!important;font-weight:700!important;letter-spacing:0!important;
+}
+.radar-volume-cell span{font-size:var(--radar-body)!important}
+[data-testid="stTabs"] [role="tab"]{
+ font-family:var(--radar-font)!important;font-size:var(--radar-body)!important;
+ font-weight:700!important;
+}
+[data-testid="stMetricLabel"] p{font-size:var(--radar-small)!important}
+[data-testid="stMetricValue"]{font-size:28px!important;font-weight:700!important}
+@media(max-width:650px){
+ .radar-banner h1{font-size:38px!important}
+ [data-testid="stApp"] h2,[data-testid="stApp"] h3{font-size:20px!important}
+}
 </style>""",unsafe_allow_html=True)
 # Keep the exact uploaded 1200×1600 JPEG in the repository (no lossy re-encoding).
 # Scale to the viewport height rather than covering its width, which greatly
@@ -830,14 +888,14 @@ def harvest_linear_bar(fig, values, height=360, money=True):
     tick_values=[i*increment for i in range(int(axis_end/increment)+1)]
     fig.update_layout(
         height=height,margin=dict(l=178,r=105,t=18,b=62),
-        showlegend=False,font=dict(size=14,color='#61432d'),
+        showlegend=False,font=dict(family='Noto Sans KR, DM Sans, sans-serif',size=14,color='#61432d'),
         paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(255,248,233,.28)',
         xaxis=dict(type='linear',range=[0,axis_end],tickmode='array',
                    tickvals=tick_values,ticktext=[(f'${n/1e9:g}B' if n>=1e9 else f'${n/1e6:g}M' if n>=1e6 else f'${n/1e3:g}K' if n>=1e3 else f'${n:,.0f}') if money else f'{n:,.0f}' for n in tick_values],
                    ticks='outside',tickcolor='#a07750',showticklabels=True,
                    showgrid=True,gridcolor='#e2cda9',zeroline=False,
-                   tickfont=dict(size=13,color='#62432c'),title_font=dict(size=14,color='#62432c')),
-        yaxis=dict(tickfont=dict(size=13,color='#62432c'),showgrid=False,automargin=True,title=None))
+                   tickfont=dict(family='Noto Sans KR, DM Sans, sans-serif',size=13,color='#62432c'),title_font=dict(size=14,color='#62432c')),
+        yaxis=dict(tickfont=dict(family='Noto Sans KR, DM Sans, sans-serif',size=13,color='#62432c'),showgrid=False,automargin=True,title=None))
     return fig
 
 radar_tabs=st.tabs(['🧸 관심 거래소','🐿️ 경쟁 비교','🦊 전체 스캐너','🍁 데이터 출처'])
@@ -1218,18 +1276,18 @@ with radar_tabs[0]:
             paper_bgcolor='rgba(0,0,0,0)',
             plot_bgcolor='rgba(255,250,240,0.66)',
             showlegend=False,hovermode='closest',hoverdistance=36,
-            font=dict(family='Arial, Noto Sans KR, sans-serif',
+            font=dict(family='Noto Sans KR, DM Sans, sans-serif',
                       size=14,color='#60432e'),
             hoverlabel=dict(bgcolor='#fff9ec',bordercolor='#c19565',
-                            font=dict(family='Arial, sans-serif',
+                            font=dict(family='Noto Sans KR, DM Sans, sans-serif',
                                       size=15,color='#49311f'),align='left'),
             xaxis=dict(type='linear',range=[xmin,xmax],
                        tickmode='array',tickvals=xticks,
                        ticktext=[usd_tick(v) for v in xticks],
                        title=dict(text='Open Interest (USD)',
                                   standoff=16,
-                                  font=dict(family='Arial',size=15,color='#573a26')),
-                       tickfont=dict(family='Arial',size=13,color='#65472f'),
+                                  font=dict(family='Noto Sans KR, DM Sans, sans-serif',size=15,color='#573a26')),
+                       tickfont=dict(family='Noto Sans KR, DM Sans, sans-serif',size=13,color='#65472f'),
                        showgrid=True,gridcolor='#dfc6a5',gridwidth=1,
                        showline=True,linecolor='#ac855e',
                        zeroline=True,zerolinecolor='#cdb08b',
@@ -1238,7 +1296,7 @@ with radar_tabs[0]:
                        tickmode='array',tickvals=yticks,
                        ticktext=[usd_tick(v) for v in yticks],
                        title=None,
-                       tickfont=dict(family='Arial',size=13,color='#65472f'),
+                       tickfont=dict(family='Noto Sans KR, DM Sans, sans-serif',size=13,color='#65472f'),
                        showgrid=True,gridcolor='#dfc6a5',gridwidth=1,
                        showline=True,linecolor='#ac855e',
                        zeroline=True,zerolinecolor='#cdb08b',
@@ -1248,7 +1306,7 @@ with radar_tabs[0]:
         fig.add_annotation(x=0,y=1.12,xref='paper',yref='paper',
                            showarrow=False,xanchor='left',
                            text='<b>24H Volume (USD)</b>',
-                           font=dict(family='Arial',size=15,color='#573a26'))
+                           font=dict(family='Noto Sans KR, DM Sans, sans-serif',size=15,color='#573a26'))
         st.plotly_chart(
             fig,use_container_width=True,theme=None,
             config={'displayModeBar':False,'scrollZoom':False,
