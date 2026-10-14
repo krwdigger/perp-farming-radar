@@ -144,9 +144,9 @@ def fetch_robinhood_lighter():
     """
     url='https://api.rh.lighter.xyz/api/v1/exchangeStats'
     stats=api_get(url)
-    if not isinstance(stats,dict):raise ValueError('RH Lighter exchangeStats invalid')
+    if not isinstance(stats,dict):raise ValueError('Lighter RH exchangeStats invalid')
     payload=stats.get('data',stats)
-    if not isinstance(payload,dict):raise ValueError('RH Lighter metrics payload invalid')
+    if not isinstance(payload,dict):raise ValueError('Lighter RH metrics payload invalid')
     volume=number(payload.get('daily_usd_volume'))
     if volume is None:
         quotes=payload.get('order_book_stats')
@@ -155,7 +155,7 @@ def fetch_robinhood_lighter():
             parts=[p for p in parts if p is not None and p>=0]
             if parts:volume=sum(parts)
     # Quote volume is always 24-hour US dollar notional, not number of trades.
-    if volume is None or volume<0:raise ValueError('No explicit RH Lighter 24h USD volume')
+    if volume is None or volume<0:raise ValueError('No explicit Lighter RH 24h USD volume')
     return {'volume_24h_usd':volume,
             'volume_source':'Robinhood Chain-only Lighter official exchangeStats',
             'market_data_time':datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}
@@ -1227,7 +1227,7 @@ def exchange_logo_url(name):
     return url
 
 def display_venue_name(name):
-    return 'RH Lighter' if str(name)=='robinhoodchain.lighter' else str(name)
+    return 'Lighter RH' if str(name)=='robinhoodchain.lighter' else str(name)
 
 def exchange_logo_html(name):
     # DefiLlama catalog logos are actual exchange assets, never guessed.
@@ -1696,7 +1696,7 @@ with radar_tabs[3]:
       {'프로젝트':'Entropy','시장 데이터':'공식 소스 미확인','미확보 데이터':'전체','원인 구분':'자료 유료/비공개 여부도 미확인','Dune':'프로젝트/컨트랙트 식별 필요','자료':'https://dune.com/'},
       {'프로젝트':'QFEX','시장 데이터':'공개 market CLI 확인','미확보 데이터':'거래소 통합 거래량·OI·지갑·포인트','원인 구분':'무료 시장 명령 제공 · 직접 집계 구현 필요','Dune':'거래 엔진 거래 내역이 온체인인지 확인 필요','자료':'https://github.com/QFEX-org/cli'},
       {'프로젝트':'TxFlow','시장 데이터':'컨트랙트 매핑 대기','미확보 데이터':'전체','원인 구분':'이벤트/체인/주소 검증 필요','Dune':'트레이드 이벤트 있으면 SQL 집계 가능','자료':'https://dune.com/'},
-      {'프로젝트':'RH Lighter','시장 데이터':'전용 API 별도 조사','미확보 데이터':'거래량·OI·지갑·포인트','원인 구분':'일반 Lighter와 별도 시장 · 어댑터 미작성','Dune':'체인 입출금만으로 롤업 체결 복원 불가','자료':'https://docs.robinhood.com/chain/'},
+      {'프로젝트':'Lighter RH','시장 데이터':'전용 API 별도 조사','미확보 데이터':'거래량·OI·지갑·포인트','원인 구분':'일반 Lighter와 별도 시장 · 어댑터 미작성','Dune':'체인 입출금만으로 롤업 체결 복원 불가','자료':'https://docs.lighter.xyz/},
       {'프로젝트':'Pacifica','시장 데이터':'공식 무료 시장목록 조회','미확보 데이터':'집계 거래량·OI·활성 지갑·포인트','원인 구분':'무료 공개 API 있음 · 지표별 검증/집계 필요','Dune':'거래가 오프체인이면 실제 거래지갑 집계 한계','자료':'https://pacifica.gitbook.io/docs/api-documentation/api/rest-api/markets/get-market-info'},
       {'프로젝트':'hello.trade','시장 데이터':'공식 소스 미확인','미확보 데이터':'전체','원인 구분':'자료 유료/비공개 여부도 미확인','Dune':'프로젝트/컨트랙트 식별 필요','자료':'https://dune.com/'}
     ]
