@@ -1138,20 +1138,43 @@ html.radar-dark .farming-ranking *{color:#dfc2aa!important}
 if 'radar_dark_active' not in st.session_state:
     st.session_state.radar_dark_active = False
 
-def _switch_radar_theme():
-    st.session_state.radar_dark_active = not st.session_state.radar_dark_active
-
-_dark_now = st.session_state.radar_dark_active
-st.button(
+# Handle the click explicitly and rerun before rendering the page theme.
+# This avoids relying on browser-injected scripts or delayed style state.
+_dark_now = bool(st.session_state.radar_dark_active)
+if st.button(
     '🎃 DARK' if _dark_now else '🎃 LIGHT',
     key='radar_theme_button',
-    on_click=_switch_radar_theme,
-    help='다크모드 / 라이트모드 전환'
-)
+    help='다크모드 / 라이트모드 전환',
+):
+    st.session_state.radar_dark_active = not _dark_now
+    st.rerun()
+
+_dark_now = bool(st.session_state.radar_dark_active)
 _theme_css = _theme_widget.split('</style>', 1)[0] + '</style>'
 if _dark_now:
     _theme_css = _theme_css.replace('html.radar-dark', 'html')
-st.html(_theme_css)
+    # Dark rules must also take precedence over the older light-mode
+    # background styles defined earlier in this app.
+    _theme_css += """
+<style>
+html [data-testid="stAppViewContainer"],
+html [data-testid="stMain"],
+html [data-testid="stMainBlockContainer"],
+html [data-testid="stApp"] {
+ background-color:#130f17!important;
+ color:#f3e5d6!important;
+}
+html [data-testid="stAppViewContainer"]{
+ background-image:none!important;
+}
+html [data-testid="stAppViewContainer"] .block-container{
+ background:#17131c!important;
+ backdrop-filter:none!important;
+}
+</style>
+"""
+# HTML styles must be mounted in the main page, not in an isolated iframe.
+st.markdown(_theme_css, unsafe_allow_html=True)
 # Position the Streamlit widget wrapper, NOT the child label.
 # Right:18px is viewport-right, independent of the dashboard max-width.
 st.markdown("""
