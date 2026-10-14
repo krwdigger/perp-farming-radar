@@ -670,14 +670,14 @@ with radar_tabs[0]:
                 '</div><span>'+table_cell(compact_usd(value))+'</span></div>')
     body=[]
     for _,entry in rank.iterrows():
-        oi=compact_usd(entry['oi_usd'])
+        row_oi_text=compact_usd(entry['oi_usd'])
         ratio=f"{entry['volume_oi_ratio']:.2f}×" if pd.notna(entry['volume_oi_ratio']) else '—'
         oi_delta=f"{entry['oi_weekly_change_pct']:+.1f}%" if pd.notna(entry['oi_weekly_change_pct']) else '—'
         traders=integer_fmt(entry['active_wallets_7d'])
         body.append('<tr><td class="rank-no">'+table_cell(int(entry['#']))+'</td>'
                     '<td class="rank-name">'+exchange_logo_html(entry['watch_name'])+'</td>'
                     '<td>'+volume_bar(entry['volume_24h_usd'])+'</td>'
-                    '<td>'+table_cell(oi)+'</td>'
+                    '<td>'+table_cell(row_oi_text)+'</td>'
                     '<td>'+table_cell(ratio)+'</td>'
                     '<td>'+table_cell(oi_delta)+'</td>'
                     '<td>'+table_cell(traders)+'</td></tr>')
