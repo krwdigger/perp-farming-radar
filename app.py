@@ -738,7 +738,7 @@ def readable_metrics(frame, rename):
         if field in result:result[field]=result[field].map(integer_fmt)
     return result.rename(columns=rename)
 
-def harvest_linear_bar(fig, values, height=360):
+def harvest_linear_bar(fig, values, height=360, money=True):
     """Explicit linear USD ticks: equal value differences have equal pixel spacing."""
     import math
     valid=[float(v) for v in values if pd.notna(v) and float(v)>=0]
@@ -753,7 +753,7 @@ def harvest_linear_bar(fig, values, height=360):
         showlegend=False,font=dict(size=14,color='#61432d'),
         paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(255,248,233,.28)',
         xaxis=dict(type='linear',range=[0,axis_end],tickmode='array',
-                   tickvals=tick_values,ticktext=[compact_usd(n) for n in tick_values],
+                   tickvals=tick_values,ticktext=[compact_usd(n) if money else f'{n:,.0f}' for n in tick_values],
                    ticks='outside',tickcolor='#a07750',showticklabels=True,
                    showgrid=True,gridcolor='#e2cda9',zeroline=False,
                    tickfont=dict(size=13,color='#62432c'),title_font=dict(size=14,color='#62432c')),
@@ -1075,7 +1075,7 @@ with radar_tabs[1]:
             fig=px.bar(v,x='active_wallets_7d',y='name',orientation='h',
                        color_discrete_sequence=['#a36b43'],labels={'active_wallets_7d':'7D Traders','name':''})
             fig.update_traces(marker_line_width=0)
-            harvest_linear_bar(fig,v['active_wallets_7d'],height=max(330,len(v)*36+90))
+            harvest_linear_bar(fig,v['active_wallets_7d'],height=max(330,len(v)*36+90),money=False)
             st.plotly_chart(fig,use_container_width=True,theme=None)
     with cb:
         st.markdown('#### B · OI 규모 상위 20개')
