@@ -300,6 +300,13 @@ html,body,[data-testid="stApp"],[class*="css"]{font-family:'DM Sans','Noto Sans 
     font-weight:400!important;
     box-shadow:none!important;
 }
+/* Popover renders its own trailing chevron: keep only the custom » label. */
+[data-testid="stPopover"] > button [data-testid="stIconMaterial"],
+[data-testid="stPopover"] > div > button [data-testid="stIconMaterial"],
+[data-testid="stPopover"] > button svg,
+[data-testid="stPopover"] > div > button svg {
+    display:none!important;
+}
 [data-testid="stPopover"] > button:hover,
 [data-testid="stPopover"] > div > button:hover {
     background:#edf3f6!important;
