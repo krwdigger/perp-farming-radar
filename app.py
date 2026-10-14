@@ -837,11 +837,11 @@ if _pumpkin_asset.exists():
         'url("data:image/jpeg;base64,'+_pumpkin_b64+'")!important;'
         'background-position:center top!important;'
         'background-size:auto min(100vh, 1600px)!important;'
-        'background-attachment:fixed!important;'
+        'background-attachment:scroll!important;'
         'background-repeat:repeat-x!important;}'
         '[data-testid="stAppViewContainer"] .block-container{'
         'background:rgba(255,248,234,.88)!important;'
-        'backdrop-filter:blur(2px)!important;}'
+        'backdrop-filter:none!important;}'
         '</style>',unsafe_allow_html=True
     )
 
