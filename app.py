@@ -526,6 +526,8 @@ with radar_tabs[0]:
     watched=watched[watched['volume_24h_usd'].notna()|watched['oi_usd'].notna()|watched['volume_7d_usd'].notna()].copy()
     watched=pd.concat([comparison,watched],ignore_index=True)
     watched['comparison_reference']=watched['watch_name'].isin(['Hyperliquid','Lighter'])
+    benchmarks=watched[watched['comparison_reference']].copy()
+    watched=watched[~watched['comparison_reference']].copy()
     try:
         history=load_public_market_history()
         watched['oi_weekly_change_pct']=watched['watch_name'].map(lambda n:latest_oi_weekly_change(history,n))
@@ -553,6 +555,14 @@ with radar_tabs[0]:
     with m4:
         ratio=watched['volume_oi_ratio'].dropna()
         summary_card('24H VOLUME / OI',f'{ratio.median():.2f}×' if len(ratio) else '—','동일 거래소별 비율의 중앙값')
+    # Two compact reference rows, deliberately not part of the farming rankings.
+    if not benchmarks.empty:
+        st.caption('시장 규모 비교군 · Hyperliquid / Lighter')
+        benchmarks['24H Volume']=benchmarks['volume_24h_usd'].map(compact_usd)
+        benchmarks['Open Interest']=benchmarks['oi_usd'].map(compact_usd)
+        benchmarks['Vol / OI']=(benchmarks['volume_24h_usd']/benchmarks['oi_usd'].replace(0,float('nan'))).map(lambda v:f'{v:.2f}×' if pd.notna(v) else '—')
+        st.dataframe(benchmarks[['watch_name','24H Volume','Open Interest','Vol / OI']].rename(columns={'watch_name':'비교군'}),
+                     hide_index=True,use_container_width=True,height=112)
     st.markdown('#### 거래소별 거래량 · OI')
     control1,control2,control3=st.columns([2,1,1])
     search=control1.text_input('거래소 검색',placeholder='Variational / StandX / Pacifica',key='market_search')
@@ -565,9 +575,9 @@ with radar_tabs[0]:
     elif display_mode=='Volume + OI 확보':rank=rank[rank['volume_24h_usd'].notna()&rank['oi_usd'].notna()]
     col,ascending={'24H Volume ↓':('volume_24h_usd',False),'OI ↓':('oi_usd',False),'Volume/OI ↓':('volume_oi_ratio',False),'Volume/OI ↑':('volume_oi_ratio',True),'거래소명':('watch_name',True)}[sort]
     rank=rank.sort_values(col,ascending=ascending,na_position='last')
-    rank=rank.sort_values('comparison_reference',ascending=False,kind='stable').reset_index(drop=True)
+    rank=rank.reset_index(drop=True)
     rank.insert(0,'#',range(1,len(rank)+1))
-    rank['거래소']=rank['watch_name'].map(lambda n:'★ '+n if n in ('Hyperliquid','Lighter') else n)
+    rank['거래소']=rank['watch_name']
     rank['24H Volume']=rank['volume_24h_usd'].map(compact_usd)
     rank['Open Interest']=rank['oi_usd'].map(compact_usd)
     rank['Vol / OI']=rank['volume_oi_ratio'].map(lambda x:f'{x:.2f}×' if pd.notna(x) else '—')
