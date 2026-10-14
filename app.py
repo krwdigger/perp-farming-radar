@@ -1146,79 +1146,71 @@ with radar_tabs[0]:
         vmin=float(amounts.min())
         vmax=float(amounts.max())
 
-        def diameter_for(value):
-            fraction=(float(value)-vmin)/(vmax-vmin) if vmax>vmin else 0.5
-            return 46+26*math.sqrt(fraction)
+        def preferred_diameter(volume):
+            # Trade-volume weighting without disproportionately large logos.
+            fraction=(float(volume)-vmin)/(vmax-vmin) if vmax>vmin else 0.5
+            return 29+14*math.sqrt(fraction)
+
+        # Keep each logo centered exactly on its observed (OI, Volume) values.
+        # Shrink only when neighboring data points are too close on-screen.
+        markets=[]
+        for _,entry in both.iterrows():
+            oi_value=float(entry['oi_usd'])
+            vol_value=float(entry['volume_24h_usd'])
+            markets.append({
+                'name':str(entry['watch_name']),
+                'oi':oi_value,
+                'volume':vol_value,
+                'nx':(oi_value-xmin)/(xmax-xmin),
+                'ny':(vol_value-ymin)/(ymax-ymin),
+                'preferred':preferred_diameter(vol_value),
+            })
+
+        for index,item in enumerate(markets):
+            neighbor_distance=min(
+                (math.hypot((item['nx']-other['nx'])*930,
+                            (item['ny']-other['ny'])*395)
+                 for j,other in enumerate(markets) if j!=index),
+                default=999.0
+            )
+            # If two preferred circles would overlap, reduce BOTH diameters.
+            # 80% of nearest center distance leaves visible clearance.
+            item['diameter']=max(12.0,min(item['preferred'],
+                                          0.80*neighbor_distance-3.0))
 
         fig=go.Figure()
-        occupied=[]
-        # Prioritize large venues: keep their position accurate, arrange
-        # smaller crowded logos around them in display space.
-        for _,entry in both.sort_values('volume_24h_usd',ascending=False).iterrows():
-            name=str(entry['watch_name'])
-            true_x=float(entry['oi_usd'])
-            true_y=float(entry['volume_24h_usd'])
-            raw_x=(true_x-xmin)/(xmax-xmin)
-            raw_y=(true_y-ymin)/(ymax-ymin)
-            d=diameter_for(true_y)
-            xpad=d/2/920+0.014
-            ypad=d/2/395+0.014
-            offsets=[(0,0)]
-            for ring in range(1,5):
-                offsets.extend((dx*0.098*ring,dy*0.155*ring)
-                               for dx,dy in ((-1,0),(1,0),(0,1),(0,-1),
-                                             (-1,1),(1,1),(-1,-1),(1,-1)))
-            available=[]
-            fallback=[]
-            for dx,dy in offsets:
-                xx=min(max(raw_x+dx,xpad),1-xpad)
-                yy=min(max(raw_y+dy,ypad),1-ypad)
-                gap=min((math.hypot((xx-ox)*920,(yy-oy)*395)
-                         -(d+od)/2-13 for ox,oy,od in occupied),
-                        default=1000.0)
-                shift=math.hypot((xx-raw_x)*920,(yy-raw_y)*395)
-                item=(gap,-shift,xx,yy)
-                fallback.append(item)
-                if gap>=0:available.append(item)
-            if available:
-                _,_,display_x,display_y=max(available,key=lambda v:v[1])
-            else:
-                _,_,display_x,display_y=max(fallback,key=lambda v:(v[0],v[1]))
-            occupied.append((display_x,display_y,d))
-            shown_x=xmin+display_x*(xmax-xmin)
-            shown_y=ymin+display_y*(ymax-ymin)
-
-            if abs(display_x-raw_x)>0.015 or abs(display_y-raw_y)>0.023:
-                fig.add_shape(type='line',xref='x',yref='y',
-                              x0=true_x,y0=true_y,x1=shown_x,y1=shown_y,
-                              line=dict(color='rgba(146,93,56,.65)',width=1.5,
-                                        dash='dot'),layer='below')
-                fig.add_scatter(x=[true_x],y=[true_y],mode='markers',
-                                marker=dict(size=5,color='#a9683b'),
-                                showlegend=False,hoverinfo='skip')
-
+        for item in markets:
+            name=item['name']
+            actual_x=item['oi']
+            actual_y=item['volume']
+            diameter=item['diameter']
             tooltip=('<b>'+html.escape(name)+'</b><br>'
-                     +'OI: $'+f'{true_x:,.0f}'+'<br>'
-                     +'24H Volume: $'+f'{true_y:,.0f}'+'<extra></extra>')
-            # The hover target shares the displayed bubble location but
-            # deliberately reports the unmodified, actual market numbers.
-            fig.add_scatter(x=[shown_x],y=[shown_y],mode='markers',
-                            marker=dict(size=d+10,color='rgba(255,250,241,0.01)',
-                                        line=dict(width=0)),
-                            hovertemplate=tooltip,showlegend=False,name=name)
+                     +'OI: $'+f'{actual_x:,.0f}'+'<br>'
+                     +'24H Volume: $'+f'{actual_y:,.0f}'+'<extra></extra>')
+
+            # The hover target and circular image have identical data anchors.
+            fig.add_scatter(
+                x=[actual_x],y=[actual_y],mode='markers',showlegend=False,
+                marker=dict(size=max(18,diameter+5),
+                            color='rgba(255,250,241,0.01)',line=dict(width=0)),
+                hovertemplate=tooltip,name=name
+            )
             try:
                 logo=round_exchange_logo(name,exchange_logo_url(name))
                 fig.add_layout_image(dict(
                     source=logo,xref='x domain',yref='y domain',
-                    x=display_x,y=display_y,
-                    sizex=d/920,sizey=d/395,
+                    x=item['nx'],y=item['ny'],
+                    sizex=diameter/930,sizey=diameter/395,
                     xanchor='center',yanchor='middle',sizing='contain',
-                    layer='below'))
+                    layer='below'
+                ))
             except Exception:
-                fig.add_scatter(x=[shown_x],y=[shown_y],mode='markers',
-                                marker=dict(size=d,color='#c57c3a',
-                                            line=dict(color='#fff4e1',width=2)),
-                                hovertemplate=tooltip,showlegend=False)
+                fig.add_scatter(
+                    x=[actual_x],y=[actual_y],mode='markers',showlegend=False,
+                    marker=dict(size=diameter,color='#c57c3a',
+                                line=dict(color='#fff4e1',width=1.5)),
+                    hovertemplate=tooltip
+                )
 
         xticks=axis_ticks(xmax)
         yticks=axis_ticks(ymax)
@@ -1262,7 +1254,7 @@ with radar_tabs[0]:
             fig,use_container_width=True,theme=None,
             config={'displayModeBar':False,'scrollZoom':False,
                     'responsive':True})
-        st.caption('선형 눈금: 가로축 OI · 세로축 24시간 거래량. 겹침 방지를 위해 이동한 로고는 점선으로 실제 시장 좌표와 연결됩니다.')
+        st.caption('가로축 OI · 세로축 24시간 거래량: 선형 눈금이며 로고는 실제 데이터 좌표에 표시됩니다. 가까운 거래소는 로고 크기만 자동으로 줄어듭니다.')
     with st.expander('데이터 제공 범위 및 미확보 항목'):
         coverage=watched[['watch_name','volume_source','oi_source']].copy()
         coverage['Volume']=watched['volume_24h_usd'].map(lambda x:'확보' if pd.notna(x) else '미확보')
