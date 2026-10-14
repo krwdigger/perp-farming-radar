@@ -1068,80 +1068,146 @@ with radar_tabs[0]:
         st.info('현재 거래량과 OI가 모두 확보된 거래소가 없어 좌표를 표시할 수 없습니다.')
     else:
         import math
-        # Genuine linear scales: equal money differences have equal on-screen spacing.
-        xmax=float(both['oi_usd'].max())*1.12
-        ymax=float(both['volume_24h_usd'].max())*1.18
+        # True market coordinates remain on linear axes. When nearby venue
+        # logos need displacement, a dotted leader points to real coordinates.
+        xmax=float(both['oi_usd'].max())*1.17
+        ymax=float(both['volume_24h_usd'].max())*1.20
         xmin=-0.105*xmax
-        ymin=-0.14*ymax
-        def nice_tick(limit):
-            rough=max(float(limit)/5,1)
-            decade=10**math.floor(math.log10(rough))
-            return next((k*decade for k in (10,5,2.5,2,1) if k*decade<=rough),decade)
-        def usd_axis(v):
-            if v>=1e9:return f'${v/1e9:g}B'
-            if v>=1e6:return f'${v/1e6:g}M'
-            if v>=1e3:return f'${v/1e3:g}K'
-            return f'${v:,.0f}'
-        # Explicit values and positions make axes consistent and auditable.
-        xstep=nice_tick(xmax)
-        ystep=nice_tick(ymax)
-        xticks=[i*xstep for i in range(int(xmax/xstep)+1)]
-        yticks=[i*ystep for i in range(int(ymax/ystep)+1)]
-        fig=px.scatter(
-            both,x='oi_usd',y='volume_24h_usd',hover_name='watch_name',
-            labels={'oi_usd':'Open Interest (USD)','volume_24h_usd':'24H Volume (USD)'},
-            range_x=[xmin,xmax],range_y=[ymin,ymax]
-        )
+        ymin=-0.17*ymax
+
+        def axis_ticks(top):
+            estimate=max(float(top)/5,1)
+            decade=10**math.floor(math.log10(estimate))
+            step=next((n*decade for n in (1,2,2.5,5,10) if n*decade>=estimate),10*decade)
+            return [i*step for i in range(int(top/step)+1)]
+
+        def usd_tick(value):
+            if value>=1e9:return '$'+f'{value/1e9:g}B'
+            if value>=1e6:return '$'+f'{value/1e6:g}M'
+            if value>=1e3:return '$'+f'{value/1e3:g}K'
+            return '$'+f'{value:,.0f}'
+
         amounts=both['volume_24h_usd']
-        vmin=float(amounts.min());vmax=float(amounts.max())
-        def logo_diameter(value):
-            normalized=(float(value)-vmin)/(vmax-vmin) if vmax>vmin else 0.5
-            return 48+25*math.sqrt(normalized)
-        diameters=[logo_diameter(v) for v in amounts]
-        # Visible markers mean the scatter survives if an external logo cannot render.
-        fig.update_traces(marker=dict(size=diameters,color='rgba(0,0,0,0)',line=dict(width=0)),
-                          hovertemplate='<b>%{hovertext}</b><br>OI: $%{x:,.0f}<br>24H Volume: $%{y:,.0f}<extra></extra>')
-        placed_labels=[]
-        for _,entry in both.iterrows():
-            xp=(float(entry['oi_usd'])-xmin)/(xmax-xmin)
-            yp=(float(entry['volume_24h_usd'])-ymin)/(ymax-ymin)
-            diameter=logo_diameter(entry['volume_24h_usd'])
+        vmin=float(amounts.min())
+        vmax=float(amounts.max())
+
+        def diameter_for(value):
+            fraction=(float(value)-vmin)/(vmax-vmin) if vmax>vmin else 0.5
+            return 46+26*math.sqrt(fraction)
+
+        fig=go.Figure()
+        occupied=[]
+        # Prioritize large venues: keep their position accurate, arrange
+        # smaller crowded logos around them in display space.
+        for _,entry in both.sort_values('volume_24h_usd',ascending=False).iterrows():
+            name=str(entry['watch_name'])
+            true_x=float(entry['oi_usd'])
+            true_y=float(entry['volume_24h_usd'])
+            raw_x=(true_x-xmin)/(xmax-xmin)
+            raw_y=(true_y-ymin)/(ymax-ymin)
+            d=diameter_for(true_y)
+            xpad=d/2/920+0.014
+            ypad=d/2/395+0.014
+            offsets=[(0,0)]
+            for ring in range(1,5):
+                offsets.extend((dx*0.098*ring,dy*0.155*ring)
+                               for dx,dy in ((-1,0),(1,0),(0,1),(0,-1),
+                                             (-1,1),(1,1),(-1,-1),(1,-1)))
+            available=[]
+            fallback=[]
+            for dx,dy in offsets:
+                xx=min(max(raw_x+dx,xpad),1-xpad)
+                yy=min(max(raw_y+dy,ypad),1-ypad)
+                gap=min((math.hypot((xx-ox)*920,(yy-oy)*395)
+                         -(d+od)/2-13 for ox,oy,od in occupied),
+                        default=1000.0)
+                shift=math.hypot((xx-raw_x)*920,(yy-raw_y)*395)
+                item=(gap,-shift,xx,yy)
+                fallback.append(item)
+                if gap>=0:available.append(item)
+            if available:
+                _,_,display_x,display_y=max(available,key=lambda v:v[1])
+            else:
+                _,_,display_x,display_y=max(fallback,key=lambda v:(v[0],v[1]))
+            occupied.append((display_x,display_y,d))
+            shown_x=xmin+display_x*(xmax-xmin)
+            shown_y=ymin+display_y*(ymax-ymin)
+
+            if abs(display_x-raw_x)>0.015 or abs(display_y-raw_y)>0.023:
+                fig.add_shape(type='line',xref='x',yref='y',
+                              x0=true_x,y0=true_y,x1=shown_x,y1=shown_y,
+                              line=dict(color='rgba(146,93,56,.65)',width=1.5,
+                                        dash='dot'),layer='below')
+                fig.add_scatter(x=[true_x],y=[true_y],mode='markers',
+                                marker=dict(size=5,color='#a9683b'),
+                                showlegend=False,hoverinfo='skip')
+
+            tooltip=('<b>'+html.escape(name)+'</b><br>'
+                     +'OI: $'+f'{true_x:,.0f}'+'<br>'
+                     +'24H Volume: $'+f'{true_y:,.0f}'+'<extra></extra>')
+            # The hover target shares the displayed bubble location but
+            # deliberately reports the unmodified, actual market numbers.
+            fig.add_scatter(x=[shown_x],y=[shown_y],mode='markers',
+                            marker=dict(size=d+10,color='rgba(255,250,241,0.01)',
+                                        line=dict(width=0)),
+                            hovertemplate=tooltip,showlegend=False,name=name)
             try:
-                logo=round_exchange_logo(str(entry['watch_name']),exchange_logo_url(entry['watch_name']))
+                logo=round_exchange_logo(name,exchange_logo_url(name))
                 fig.add_layout_image(dict(
-                    source=logo,xref='x domain',yref='y domain',x=xp,y=yp,
-                    sizex=diameter/930,sizey=diameter/420,
-                    xanchor='center',yanchor='middle',sizing='contain',layer='above'))
+                    source=logo,xref='x domain',yref='y domain',
+                    x=display_x,y=display_y,
+                    sizex=d/920,sizey=d/395,
+                    xanchor='center',yanchor='middle',sizing='contain',
+                    layer='below'))
             except Exception:
-                pass
-            close=sum(1 for px,py in placed_labels if abs(px-xp)<0.14 and abs(py-yp)<0.17)
-            placed_labels.append((xp,yp))
-            fig.add_annotation(x=xp,y=yp,
-                               xref='x domain',yref='y domain',showarrow=False,
-                               xshift=48 if close%2 else 0,yshift=48+(close//2)*18,
-                               text=html.escape(str(entry['watch_name'])),
-                               font=dict(size=14,color='#603e2b',family='Arial'),
-                               bgcolor='rgba(255,249,237,0.96)',borderpad=4,
-                               bordercolor='#d7b994',borderwidth=1)
+                fig.add_scatter(x=[shown_x],y=[shown_y],mode='markers',
+                                marker=dict(size=d,color='#c57c3a',
+                                            line=dict(color='#fff4e1',width=2)),
+                                hovertemplate=tooltip,showlegend=False)
+
+        xticks=axis_ticks(xmax)
+        yticks=axis_ticks(ymax)
         fig.update_layout(
-            height=555,margin=dict(t=42,l=112,r=48,b=72),
-            paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(255,249,236,0.64)',
-            font=dict(family='Arial',size=14,color='#62472f'),showlegend=False,
-            xaxis=dict(type='linear',range=[xmin,xmax],tickmode='array',tickvals=xticks,
-                       ticktext=[usd_axis(v) for v in xticks],tickfont=dict(size=13,color='#64472f'),
-                       title_font=dict(size=15,color='#604127'),
-                       showgrid=True,gridcolor='#ddc8a8',gridwidth=1,
-                       showline=True,linecolor='#aa855c',ticks='outside',
-                       zeroline=True,zerolinecolor='#cbb492'),
-            yaxis=dict(type='linear',range=[ymin,ymax],tickmode='array',tickvals=yticks,
-                       ticktext=[usd_axis(v) for v in yticks],tickfont=dict(size=13,color='#64472f'),
-                       title_font=dict(size=15,color='#604127'),
-                       showgrid=True,gridcolor='#ddc8a8',gridwidth=1,
-                       showline=True,linecolor='#aa855c',ticks='outside',
-                       zeroline=True,zerolinecolor='#cbb492')
+            height=575,margin=dict(t=74,l=125,r=46,b=75),
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(255,250,240,0.66)',
+            showlegend=False,hovermode='closest',hoverdistance=36,
+            font=dict(family='Arial, Noto Sans KR, sans-serif',
+                      size=14,color='#60432e'),
+            hoverlabel=dict(bgcolor='#fff9ec',bordercolor='#c19565',
+                            font=dict(family='Arial, sans-serif',
+                                      size=15,color='#49311f'),align='left'),
+            xaxis=dict(type='linear',range=[xmin,xmax],
+                       tickmode='array',tickvals=xticks,
+                       ticktext=[usd_tick(v) for v in xticks],
+                       title=dict(text='Open Interest (USD)',
+                                  standoff=16,
+                                  font=dict(family='Arial',size=15,color='#573a26')),
+                       tickfont=dict(family='Arial',size=13,color='#65472f'),
+                       showgrid=True,gridcolor='#dfc6a5',gridwidth=1,
+                       showline=True,linecolor='#ac855e',
+                       zeroline=True,zerolinecolor='#cdb08b',
+                       ticks='outside',automargin=True),
+            yaxis=dict(type='linear',range=[ymin,ymax],
+                       tickmode='array',tickvals=yticks,
+                       ticktext=[usd_tick(v) for v in yticks],
+                       title=None,
+                       tickfont=dict(family='Arial',size=13,color='#65472f'),
+                       showgrid=True,gridcolor='#dfc6a5',gridwidth=1,
+                       showline=True,linecolor='#ac855e',
+                       zeroline=True,zerolinecolor='#cdb08b',
+                       ticks='outside',automargin=True)
         )
-        st.plotly_chart(fig,use_container_width=True,theme=None)
-        st.caption('가로축 OI · 세로축 24시간 거래량: 모두 선형 눈금입니다. 같은 금액 차이는 같은 거리로 표시됩니다. 원형 로고 크기는 거래량에 따라 달라집니다.')
+        # A horizontal caption is sharper than the former rotated Y title.
+        fig.add_annotation(x=0,y=1.12,xref='paper',yref='paper',
+                           showarrow=False,xanchor='left',
+                           text='<b>24H Volume (USD)</b>',
+                           font=dict(family='Arial',size=15,color='#573a26'))
+        st.plotly_chart(
+            fig,use_container_width=True,theme=None,
+            config={'displayModeBar':False,'scrollZoom':False,
+                    'responsive':True})
+        st.caption('선형 눈금: 가로축 OI · 세로축 24시간 거래량. 겹침 방지를 위해 이동한 로고는 점선으로 실제 시장 좌표와 연결됩니다.')
     with st.expander('데이터 제공 범위 및 미확보 항목'):
         coverage=watched[['watch_name','volume_source','oi_source']].copy()
         coverage['Volume']=watched['volume_24h_usd'].map(lambda x:'확보' if pd.notna(x) else '미확보')
