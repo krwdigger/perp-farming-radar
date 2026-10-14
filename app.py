@@ -264,8 +264,8 @@ def fmt_money(x):
 st.markdown("""<style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap');
 html,body,[data-testid="stApp"],[class*="css"]{font-family:'DM Sans','Noto Sans KR',sans-serif}
-[data-testid="stAppViewContainer"]{background:linear-gradient(160deg,#f0f5f7 0%,#f8f7f3 38%,#f5f3ee 100%);color:#505c66}
-[data-testid="stSidebar"]{background:#eff3f3;border-right:1px solid #d8e0e3}
+[data-testid="stAppViewContainer"]{background:linear-gradient(160deg,#f8efdf 0%,#fbf5e9 38%,#f7edd8 100%);color:#573d2d}
+[data-testid="stSidebar"]{background:#f7e9d1;border-right:1px solid #dfc39d}
 /* Independent fixed settings control: does not depend on native sidebar DOM. */
 [data-testid="stSidebarCollapsedControl"],
 [data-testid="collapsedControl"],
@@ -290,26 +290,26 @@ html,body,[data-testid="stApp"],[class*="css"]{font-family:'DM Sans','Noto Sans 
 [data-testid="stPopover"] button::after{content:"›"!important;position:absolute!important;left:9px!important;top:0!important;height:38px!important;display:flex!important;align-items:center!important;justify-content:center!important;font:700 27px/1 Arial,sans-serif!important;color:#774824!important;visibility:visible!important}
 [data-testid="stPopover"] button:hover{background:#f6e4c3!important}
 .block-container{max-width:1500px;padding-top:1.8rem;padding-bottom:4rem}
-h1,h2,h3{color:#485760!important;letter-spacing:-.025em;font-weight:700!important}
+h1,h2,h3{color:#573d2d!important;letter-spacing:-.025em;font-weight:700!important}
 h1{font-size:2.35rem!important}
-p,li,[data-testid="stCaptionContainer"]{color:#65737d}
-[data-testid="stMetric"]{background:#ffffffdf;border:1px solid #dce4e7;border-radius:16px;padding:18px 20px;box-shadow:0 5px 24px #a7b8c313}
-[data-testid="stMetricLabel"]{color:#78858d}
-[data-testid="stMetricValue"]{color:#4a606d}
-[data-testid="stDataFrame"]{border:1px solid #d7e0e4;border-radius:13px;overflow:hidden}
-.stTabs [data-baseweb="tab-list"]{gap:12px;border-bottom:1px solid #d7e0e3}
-.stTabs [data-baseweb="tab"]{color:#65737d;border-radius:10px}
-.stTabs [aria-selected="true"]{color:#557f97!important}
-[data-testid="stSidebar"] label,[data-testid="stSidebar"] p{color:#647580}
+p,li,[data-testid="stCaptionContainer"]{color:#785a41}
+[data-testid="stMetric"]{background:#fff8eb;border:1px solid #e4cba5;border-radius:16px;padding:18px 20px;box-shadow:0 5px 24px #a77b4c13}
+[data-testid="stMetricLabel"]{color:#8e6a48}
+[data-testid="stMetricValue"]{color:#63462d}
+[data-testid="stDataFrame"]{border:1px solid #dec6a4;border-radius:13px;overflow:hidden}
+.stTabs [data-baseweb="tab-list"]{gap:12px;border-bottom:1px solid #dec6a4}
+.stTabs [data-baseweb="tab"]{color:#785a41;border-radius:10px}
+.stTabs [aria-selected="true"]{color:#ac612d!important}
+[data-testid="stSidebar"] label,[data-testid="stSidebar"] p{color:#745435}
 .block-container{padding-top:1.25rem!important;padding-bottom:2rem!important}
 [data-testid="stHeader"]{height:2.25rem;background:transparent}
 .radar-banner{background:transparent!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;margin:10px 0 22px!important}
-.radar-overline{font-weight:700;letter-spacing:.17em;color:#7594a6;font-size:11px}
-.radar-banner h1{color:#405766!important;font-size:2.5rem!important;font-weight:800!important;line-height:1.15!important;letter-spacing:-.035em!important;margin:0!important}
-.radar-description{font-size:12px;color:#7b8992;margin-top:3px}
+.radar-overline{font-weight:700;letter-spacing:.17em;color:#9a632f;font-size:11px}
+.radar-banner h1{color:#563b27!important;font-size:2.5rem!important;font-weight:800!important;line-height:1.15!important;letter-spacing:-.035em!important;margin:0!important}
+.radar-description{font-size:12px;color:#826244;margin-top:3px}
 .radar-chip{display:none}
-.radar-hint{padding:14px 18px;background:#ecf3f7;border-left:3px solid #a5bfd0;border-radius:9px;color:#607685;font-size:13px}
-.radar-hint b{color:#566b79}
+.radar-hint{padding:14px 18px;background:#f9ead1;border-left:3px solid #cc9e63;border-radius:9px;color:#735036;font-size:13px}
+.radar-hint b{color:#67442b}
 [data-testid="stSidebar"]{min-width:230px!important;max-width:230px!important;width:230px!important}
 [data-testid="stSidebar"] [data-testid="stVerticalBlock"]{gap:.35rem}
 [data-testid="stSidebar"] h2{font-size:1.08rem!important}
@@ -836,9 +836,9 @@ with radar_tabs[0]:
                        color_discrete_sequence=['#b96c32'],labels={'volume_24h_usd':'USD','watch_name':''})
             fig.update_traces(texttemplate='%{text:$,.3s}',textposition='outside',cliponaxis=False)
             fig.update_layout(height=max(260,len(v)*52+70),margin=dict(l=0,r=90,t=8,b=20),
-                              paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',showlegend=False,
-                              font_color='#65452d',xaxis=dict(tickformat='~s',gridcolor='#ddc9ac',showgrid=True,ticks='outside',showticklabels=True,nticks=6,tickfont=dict(size=13,color='#63452f'),title_font=dict(size=14,color='#63452f'),type='linear',rangemode='tozero'))
-            st.plotly_chart(fig,use_container_width=True)
+                              paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(255,249,236,0.64)',showlegend=False,
+                              font_color='#65452d',xaxis=dict(tickformat='~s',tickprefix=''#ddc9ac',showgrid=True,ticks='outside',showticklabels=True,nticks=6,tickfont=dict(size=13,color='#63452f'),title_font=dict(size=14,color='#63452f'),type='linear',rangemode='tozero'))
+            st.plotly_chart(fig,use_container_width=True,theme=None)
     with chart_b:
         st.markdown('#### Open Interest Rankings')
         v=watched.dropna(subset=['oi_usd']).sort_values('oi_usd')
@@ -847,9 +847,24 @@ with radar_tabs[0]:
                        color_discrete_sequence=['#d59b54'],labels={'oi_usd':'USD','watch_name':''})
             fig.update_traces(texttemplate='%{text:$,.3s}',textposition='outside',cliponaxis=False)
             fig.update_layout(height=max(260,len(v)*52+70),margin=dict(l=0,r=90,t=8,b=20),
-                              paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',showlegend=False,
+                              paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(255,249,236,0.64)',showlegend=False,
                               font_color='#65452d',xaxis=dict(tickformat='~s',gridcolor='#ddc9ac',showgrid=True,ticks='outside',showticklabels=True,nticks=6,tickfont=dict(size=13,color='#63452f'),title_font=dict(size=14,color='#63452f'),type='linear',rangemode='tozero'))
-            st.plotly_chart(fig,use_container_width=True)
+            st.plotly_chart(fig,use_container_width=True,theme=None)
+,gridcolor='#ddc9ac',showgrid=True,ticks='outside',showticklabels=True,nticks=6,tickfont=dict(size=13,color='#63452f'),title_font=dict(size=14,color='#63452f'),type='linear',rangemode='tozero'))
+            st.plotly_chart(fig,use_container_width=True,theme=None)
+    with chart_b:
+        st.markdown('#### Open Interest Rankings')
+        v=watched.dropna(subset=['oi_usd']).sort_values('oi_usd')
+        if not v.empty:
+            fig=px.bar(v,x='oi_usd',y='watch_name',orientation='h',text='oi_usd',
+                       color_discrete_sequence=['#d59b54'],labels={'oi_usd':'USD','watch_name':''})
+            fig.update_traces(texttemplate='%{text:$,.3s}',textposition='outside',cliponaxis=False)
+            fig.update_layout(height=max(260,len(v)*52+70),margin=dict(l=0,r=90,t=8,b=20),
+                              paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(255,249,236,0.64)',showlegend=False,
+                              font_color='#65452d',xaxis=dict(tickformat='~s',tickprefix=''#ddc9ac',showgrid=True,ticks='outside',showticklabels=True,nticks=6,tickfont=dict(size=13,color='#63452f'),title_font=dict(size=14,color='#63452f'),type='linear',rangemode='tozero'))
+            st.plotly_chart(fig,use_container_width=True,theme=None)
+,gridcolor='#ddc9ac',showgrid=True,ticks='outside',showticklabels=True,nticks=6,tickfont=dict(size=13,color='#63452f'),title_font=dict(size=14,color='#63452f'),type='linear',rangemode='tozero'))
+            st.plotly_chart(fig,use_container_width=True,theme=None)
     st.markdown('#### 시장 위치 분석')
     both=watched.dropna(subset=['volume_24h_usd','oi_usd']).copy()
     both=both[(both['volume_24h_usd']>0)&(both['oi_usd']>0)]
