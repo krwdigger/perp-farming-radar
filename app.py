@@ -904,6 +904,103 @@ html.radar-dark .js-plotly-plot text{fill:#e8d4be!important}
 html.radar-dark .js-plotly-plot .gridlayer path{stroke:#604a3e!important}
 html.radar-dark [data-testid="stAlert"]{background:#34252b!important;border-color:#624936!important}
 @media(max-width:650px){#radar-dark-toggle{top:10px!important;right:12px!important;padding:7px 11px!important}}
+
+/* Dark-mode contrast system. Applies to native Streamlit and custom HTML. */
+html.radar-dark{
+ --night-bg:#110e14;--night-panel:#211a24;--night-surface:#29212b;
+ --night-input:#302634;--night-head:#382a31;--night-line:#674e3e;
+ --night-ink:#f4e5d6;--night-muted:#d0b9a3;--night-accent:#f3a45b;
+ color-scheme:dark;
+}
+html.radar-dark [data-testid="stApp"],
+html.radar-dark [data-testid="stAppViewContainer"]{background-color:#110e14!important;color:var(--night-ink)!important}
+html.radar-dark [data-testid="stAppViewContainer"] .block-container{background:rgba(20,16,24,.95)!important}
+html.radar-dark [data-testid="stPopover"] [data-testid="stPopoverBody"],
+html.radar-dark [data-baseweb="popover"],
+html.radar-dark [data-baseweb="popover"]>div,
+html.radar-dark [data-baseweb="popover"] [data-testid="stVerticalBlock"],
+html.radar-dark [data-testid="stPopoverContent"],
+html.radar-dark [role="dialog"]{
+ background:var(--night-panel)!important;color:var(--night-ink)!important;border-color:var(--night-line)!important;
+}
+html.radar-dark [data-baseweb="popover"] h1,
+html.radar-dark [data-baseweb="popover"] h2,
+html.radar-dark [data-baseweb="popover"] h3,
+html.radar-dark [data-baseweb="popover"] p,
+html.radar-dark [data-baseweb="popover"] label,
+html.radar-dark [data-baseweb="popover"] span{color:var(--night-ink)!important}
+html.radar-dark [data-testid="stFileUploader"],html.radar-dark [data-testid="stFileUploaderDropzone"],
+html.radar-dark [data-testid="stFileUploader"] section{
+ background:var(--night-surface)!important;color:var(--night-ink)!important;border-color:var(--night-line)!important;
+}
+html.radar-dark [data-testid="stFileUploader"] small,html.radar-dark [data-testid="stFileUploader"] span{color:var(--night-muted)!important}
+html.radar-dark [data-testid="stAlert"],
+html.radar-dark [data-testid="stNotification"],
+html.radar-dark [data-testid="stMetric"],html.radar-dark [data-testid="stExpander"],
+html.radar-dark [data-testid="stExpander"] details,
+html.radar-dark [data-testid="stExpander"] summary,
+html.radar-dark .venue-rank-chart,html.radar-dark .market-chart-panel,
+html.radar-dark .radar-table-wrap{
+ background:var(--night-panel)!important;color:var(--night-ink)!important;border-color:var(--night-line)!important;
+ box-shadow:none!important;
+}
+html.radar-dark .radar-rank-table,html.radar-dark .radar-rank-table tbody,
+html.radar-dark .radar-rank-table tbody tr,html.radar-dark .radar-rank-table tbody td{
+ background:#211a24!important;color:var(--night-ink)!important;border-color:#49382f!important;
+}
+html.radar-dark .radar-rank-table thead th{background:var(--night-head)!important;color:#ffe1be!important;border-color:var(--night-line)!important}
+html.radar-dark .radar-rank-table tbody tr:hover td{background:#312530!important}
+html.radar-dark .radar-rank-table .rank-name,
+html.radar-dark .radar-rank-table .rank-no,
+html.radar-dark .exchange-cell,html.radar-dark .congestion-cell strong,
+html.radar-dark .funding-col,html.radar-dark .investor-col,
+html.radar-dark .venue-rank-name,
+html.radar-dark .venue-rank-value,html.radar-dark .venue-rank-ticks,
+html.radar-dark .venue-rank-axis{color:var(--night-ink)!important}
+html.radar-dark .radar-bar-track{background:#594133!important}
+html.radar-dark [data-testid="stApp"] input,
+html.radar-dark [data-testid="stApp"] textarea,
+html.radar-dark [data-baseweb="input"],
+html.radar-dark [data-baseweb="input"]>div,
+html.radar-dark [data-baseweb="select"]>div,
+html.radar-dark [data-baseweb="select"] [data-baseweb="select"]{
+ background:var(--night-input)!important;color:var(--night-ink)!important;border-color:var(--night-line)!important;
+}
+html.radar-dark input::placeholder,html.radar-dark textarea::placeholder{color:#bb9e87!important;opacity:1!important}
+html.radar-dark [data-baseweb="popover"] [role="listbox"],
+html.radar-dark [data-baseweb="popover"] [role="option"],
+html.radar-dark [data-baseweb="menu"],
+html.radar-dark [role="listbox"],html.radar-dark [role="option"]{
+ background:var(--night-surface)!important;color:var(--night-ink)!important;border-color:var(--night-line)!important;
+}
+html.radar-dark [role="option"]:hover,html.radar-dark [aria-selected="true"][role="option"]{background:#4b3540!important}
+html.radar-dark [data-testid="stApp"] button:not(#radar-dark-toggle):not(#radar-edge-toggle),
+html.radar-dark [data-baseweb="popover"] button{
+ background:#392b35!important;color:var(--night-ink)!important;border-color:#986a43!important;
+}
+html.radar-dark [data-testid="stApp"] button:disabled,
+html.radar-dark [data-baseweb="popover"] button:disabled{
+ background:#29232b!important;color:#ad9988!important;opacity:1!important;border-color:#5c4a40!important
+}
+html.radar-dark [data-testid="stApp"] [data-testid="stDataFrame"],
+html.radar-dark [data-testid="stApp"] [data-testid="stTable"]{background:var(--night-panel)!important;border-color:var(--night-line)!important}
+html.radar-dark [data-testid="stDataFrame"] canvas{filter:brightness(.88) contrast(1.08)}
+html.radar-dark [data-testid="stApp"] [data-testid="stCaptionContainer"] *,
+html.radar-dark [data-testid="stApp"] small{color:var(--night-muted)!important}
+html.radar-dark .farming-tier.tier-s{background:#77481f!important;color:#ffe4bb!important}
+html.radar-dark .farming-tier.tier-a{background:#674727!important;color:#fce1ba!important}
+html.radar-dark .farming-tier.tier-b{background:#4a3934!important;color:#f3deca!important}
+html.radar-dark .farming-tier.tier-c,
+html.radar-dark .farming-tier.tier-d{background:#383035!important;color:#dfc9b9!important}
+html.radar-dark [data-testid="stTabs"] [role="tab"][aria-selected="true"]{border-bottom-color:var(--night-accent)!important}
+html.radar-dark .js-plotly-plot .main-svg,
+html.radar-dark .js-plotly-plot .svg-container,
+html.radar-dark .js-plotly-plot .bg{background:transparent!important;fill:var(--night-panel)!important}
+html.radar-dark .js-plotly-plot .gridlayer path{stroke:#5e4b43!important}
+html.radar-dark .js-plotly-plot text{fill:var(--night-ink)!important}
+html.radar-dark .js-plotly-plot .hoverlayer .hovertext rect{fill:#302534!important;stroke:#b47c4a!important}
+html.radar-dark .js-plotly-plot .hoverlayer .hovertext text{fill:#fff2e2!important}
+html.radar-dark .js-plotly-plot .paper{fill:var(--night-panel)!important}
 </style>
 <script>
 (() => {
@@ -920,7 +1017,7 @@ html.radar-dark [data-testid="stAlert"]{background:#34252b!important;border-colo
   const lightCat='data:image/webp;base64,{{LIGHT_CAT_B64}}';
   function apply(isDark){
     document.documentElement.classList.toggle('radar-dark',isDark);
-    button.textContent=isDark?'☀️ 라이트모드':'🌙 다크모드';
+    button.textContent=isDark?'🎃 DARK':'◯ LIGHT';
     button.setAttribute('aria-pressed',String(isDark));
     // Banner images switch through CSS bound to html.radar-dark.
   }
