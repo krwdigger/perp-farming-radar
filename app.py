@@ -818,14 +818,9 @@ if _pumpkin_asset.exists():
     )
 
 # Embedded photo-derived cursor: original transparent paw, scaled to browser-friendly dimensions.
-_cursor_file = DATA_DIR / 'assets' / 'cat_paw_cursor.b64'
+_cursor_file = DATA_DIR / 'assets' / 'cat_paw_cursor_hq.b64'
 if _cursor_file.is_file():
     _paw_base64 = _cursor_file.read_text(encoding='utf-8').strip()
-    _paw_picture = Image.open(BytesIO(base64.b64decode(_paw_base64))).convert('RGBA')
-    _paw_picture = _paw_picture.resize((48, 51), Image.Resampling.LANCZOS)
-    _paw_output = BytesIO()
-    _paw_picture.save(_paw_output, format='PNG')
-    _paw_base64 = base64.b64encode(_paw_output.getvalue()).decode('ascii')
     st.markdown(
         '<style>'
         'html,body,[data-testid="stApp"],[data-testid="stApp"] *{'
