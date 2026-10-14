@@ -831,39 +831,44 @@ with radar_tabs[0]:
     with chart_a:
         st.markdown('#### 24H Volume Rankings')
         v=watched.dropna(subset=['volume_24h_usd']).sort_values('volume_24h_usd')
-        if not v.empty:
-            fig=px.bar(v,x='volume_24h_usd',y='watch_name',orientation='h',text='volume_24h_usd',
-                       color_discrete_sequence=['#b96c32'],labels={'volume_24h_usd':'USD','watch_name':''})
+        if v.empty:
+            st.info('거래량 데이터가 확보되면 차트가 표시됩니다.')
+        else:
+            fig=px.bar(v,x='volume_24h_usd',y='watch_name',orientation='h',
+                       text='volume_24h_usd',color_discrete_sequence=['#b96c32'],
+                       labels={'volume_24h_usd':'24H Volume (USD)','watch_name':''})
             fig.update_traces(texttemplate='%{text:$,.3s}',textposition='outside',cliponaxis=False)
-            fig.update_layout(height=max(260,len(v)*52+70),margin=dict(l=0,r=90,t=8,b=20),
-                              paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(255,249,236,0.64)',showlegend=False,
-                              font_color='#65452d',xaxis=dict(tickformat='~s',tickprefix=''#ddc9ac',showgrid=True,ticks='outside',showticklabels=True,nticks=6,tickfont=dict(size=13,color='#63452f'),title_font=dict(size=14,color='#63452f'),type='linear',rangemode='tozero'))
+            fig.update_layout(
+                height=max(280,len(v)*54+80),margin=dict(l=4,r=95,t=18,b=40),
+                paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(255,249,236,0.64)',
+                showlegend=False,font=dict(size=13,color='#65452d'),
+                xaxis=dict(type='linear',rangemode='tozero',tickmode='auto',nticks=6,
+                           tickformat='~s',tickprefix='$',showgrid=True,gridcolor='#ddc9ac',
+                           ticks='outside',showticklabels=True,
+                           tickfont=dict(size=13,color='#63452f'),
+                           title_font=dict(size=14,color='#63452f')),
+                yaxis=dict(tickfont=dict(size=13,color='#62432b'),showgrid=False))
             st.plotly_chart(fig,use_container_width=True,theme=None)
     with chart_b:
         st.markdown('#### Open Interest Rankings')
         v=watched.dropna(subset=['oi_usd']).sort_values('oi_usd')
-        if not v.empty:
-            fig=px.bar(v,x='oi_usd',y='watch_name',orientation='h',text='oi_usd',
-                       color_discrete_sequence=['#d59b54'],labels={'oi_usd':'USD','watch_name':''})
+        if v.empty:
+            st.info('OI 데이터가 확보되면 차트가 표시됩니다.')
+        else:
+            fig=px.bar(v,x='oi_usd',y='watch_name',orientation='h',
+                       text='oi_usd',color_discrete_sequence=['#d59b54'],
+                       labels={'oi_usd':'Open Interest (USD)','watch_name':''})
             fig.update_traces(texttemplate='%{text:$,.3s}',textposition='outside',cliponaxis=False)
-            fig.update_layout(height=max(260,len(v)*52+70),margin=dict(l=0,r=90,t=8,b=20),
-                              paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(255,249,236,0.64)',showlegend=False,
-                              font_color='#65452d',xaxis=dict(tickformat='~s',gridcolor='#ddc9ac',showgrid=True,ticks='outside',showticklabels=True,nticks=6,tickfont=dict(size=13,color='#63452f'),title_font=dict(size=14,color='#63452f'),type='linear',rangemode='tozero'))
-            st.plotly_chart(fig,use_container_width=True,theme=None)
-,gridcolor='#ddc9ac',showgrid=True,ticks='outside',showticklabels=True,nticks=6,tickfont=dict(size=13,color='#63452f'),title_font=dict(size=14,color='#63452f'),type='linear',rangemode='tozero'))
-            st.plotly_chart(fig,use_container_width=True,theme=None)
-    with chart_b:
-        st.markdown('#### Open Interest Rankings')
-        v=watched.dropna(subset=['oi_usd']).sort_values('oi_usd')
-        if not v.empty:
-            fig=px.bar(v,x='oi_usd',y='watch_name',orientation='h',text='oi_usd',
-                       color_discrete_sequence=['#d59b54'],labels={'oi_usd':'USD','watch_name':''})
-            fig.update_traces(texttemplate='%{text:$,.3s}',textposition='outside',cliponaxis=False)
-            fig.update_layout(height=max(260,len(v)*52+70),margin=dict(l=0,r=90,t=8,b=20),
-                              paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(255,249,236,0.64)',showlegend=False,
-                              font_color='#65452d',xaxis=dict(tickformat='~s',tickprefix=''#ddc9ac',showgrid=True,ticks='outside',showticklabels=True,nticks=6,tickfont=dict(size=13,color='#63452f'),title_font=dict(size=14,color='#63452f'),type='linear',rangemode='tozero'))
-            st.plotly_chart(fig,use_container_width=True,theme=None)
-,gridcolor='#ddc9ac',showgrid=True,ticks='outside',showticklabels=True,nticks=6,tickfont=dict(size=13,color='#63452f'),title_font=dict(size=14,color='#63452f'),type='linear',rangemode='tozero'))
+            fig.update_layout(
+                height=max(280,len(v)*54+80),margin=dict(l=4,r=95,t=18,b=40),
+                paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(255,249,236,0.64)',
+                showlegend=False,font=dict(size=13,color='#65452d'),
+                xaxis=dict(type='linear',rangemode='tozero',tickmode='auto',nticks=6,
+                           tickformat='~s',tickprefix='$',showgrid=True,gridcolor='#ddc9ac',
+                           ticks='outside',showticklabels=True,
+                           tickfont=dict(size=13,color='#63452f'),
+                           title_font=dict(size=14,color='#63452f')),
+                yaxis=dict(tickfont=dict(size=13,color='#62432b'),showgrid=False))
             st.plotly_chart(fig,use_container_width=True,theme=None)
     st.markdown('#### 시장 위치 분석')
     both=watched.dropna(subset=['volume_24h_usd','oi_usd']).copy()
