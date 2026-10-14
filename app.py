@@ -1055,27 +1055,24 @@ html.radar-dark [data-testid="stMainBlockContainer"]{background-color:transparen
 </style>"""
 # The supplied photograph is darkened by 75%; warm, illuminated face
 # openings are preserved at the original brightness with a soft glow.
-# Dark mode uses the separately uploaded pumpkin photograph.
-_dark_asset = DATA_DIR / 'assets' / 'pumpkin_dark.webp'
-if _dark_asset.is_file():
-    _dark_image = base64.b64encode(_dark_asset.read_bytes()).decode('ascii')
-    _theme_css += (
-        '<style>'
-        'html.radar-dark body [data-testid="stAppViewContainer"]{'
-        'background-image:url("data:image/webp;base64,'+_dark_image+'")!important;'
-        'background-color:#17121a!important;'
-        'background-position:center top!important;'
-        'background-size:auto min(100vh, 1600px)!important;'
-        'background-repeat:repeat-x!important;'
-        'background-attachment:scroll!important;'
-        'background-blend-mode:normal!important;'
-        '}'
-        'html.radar-dark body [data-testid="stAppViewContainer"] [data-testid="stMain"],'
-        'html.radar-dark body [data-testid="stAppViewContainer"] [data-testid="stMainBlockContainer"]{background:transparent!important;}'
-        'html.radar-dark body [data-testid="stAppViewContainer"] .block-container{'
-        'background:rgba(23,18,26,.92)!important;}'
-        '</style>'
-    )
+# Keep the dark-mode image in an external asset rather than an oversized
+# base64 style tag; use a versioned URL so browser caches cannot retain
+# the previous photo after the repository asset is replaced.
+_dark_photo_url = 'https://raw.githubusercontent.com/krwdigger/perp-farming-radar/main/assets/pumpkin_dark.webp?v=bfa76487'
+_theme_css += f"""<style>
+html.radar-dark body [data-testid="stAppViewContainer"]{{
+ background-image: url("{_dark_photo_url}")!important;
+ background-color:#17121a!important;
+ background-position:center top!important;
+ background-size:auto min(100vh, 1600px)!important;
+ background-repeat:repeat-x!important;
+ background-attachment:scroll!important;
+ background-blend-mode:normal!important;
+}}
+html.radar-dark body [data-testid="stAppViewContainer"] [data-testid="stMain"],
+html.radar-dark body [data-testid="stAppViewContainer"] [data-testid="stMainBlockContainer"]{{background:transparent!important}}
+html.radar-dark body [data-testid="stAppViewContainer"] .block-container{{background:rgba(23,18,26,.92)!important}}
+</style>"""
 st.markdown(_theme_css, unsafe_allow_html=True)
 
 st.components.v1.html("""
