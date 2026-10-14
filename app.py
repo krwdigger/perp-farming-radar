@@ -15,31 +15,6 @@ import streamlit as st
 
 st.set_page_config(page_title='Perp Farming Radar', page_icon='🤔', layout='wide', initial_sidebar_state='collapsed')
 
-# Position the actual clickable control at the viewport edge, not only its outer wrapper.
-st.markdown("""<style>
-html body [data-testid="stSidebarCollapsedControl"] button,
-html body [data-testid="stSidebarCollapsedControl"] [role="button"],
-html body [data-testid="stHeader"] button[aria-label*="sidebar" i],
-html body [data-testid="stHeader"] button[title*="sidebar" i] {
-    position: fixed !important;
-    top: 7px !important;
-    left: 0px !important;
-    right: auto !important;
-    transform: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 26px !important;
-    min-width: 26px !important;
-    height: 32px !important;
-    justify-content: flex-start !important;
-    z-index: 2147483646 !important;
-}
-html body [data-testid="stSidebarCollapsedControl"] button svg {
-    margin: 0 !important;
-    transform: none !important;
-}
-</style>""", unsafe_allow_html=True)
-
 DATA_DIR = Path(__file__).resolve().parent
 SNAPSHOT_FILE = DATA_DIR / 'radar_snapshots.csv'
 WATCHLIST_FILE = DATA_DIR / 'watchlist.csv'
@@ -289,71 +264,10 @@ html,body,[data-testid="stApp"],[class*="css"]{font-family:'DM Sans','Noto Sans 
 [data-testid="stAppViewContainer"]{background:linear-gradient(160deg,#f0f5f7 0%,#f8f7f3 38%,#f5f3ee 100%);color:#505c66}
 [data-testid="stSidebar"]{background:#eff3f3;border-right:1px solid #d8e0e3}
 /* Keep collapsed sidebar opener pinned to the actual left viewport edge. */
-/* Sidebar toggle is rendered within Streamlit's header in recent versions. */
-[data-testid="stSidebarCollapsedControl"],
-[data-testid="stSidebarCollapsedControl"] > div,
-[data-testid="stSidebarNavCollapseButton"]{
-    position:fixed!important;
-    top:8px!important;
-    left:0!important;
-    right:auto!important;
-    transform:none!important;
-    margin:0!important;
-    padding-left:0!important;
-    z-index:100001!important;
-}
-[data-testid="stSidebarCollapsedControl"] button,
-[data-testid="stSidebarNavCollapseButton"] button{
-    margin-left:0!important;
-    padding-left:0!important;
-}
-[data-testid="stHeader"] [data-testid="stSidebarCollapsedControl"]{
-    left:0!important;
-}
-
-
-
-/* Zero the inset of the real collapsed-sidebar toggle AND all inner wrappers. */
-[data-testid="stSidebarCollapsedControl"],
-[data-testid="stSidebarCollapsedControl"] > div,
-[data-testid="stSidebarCollapsedControl"] > div > div,
-[data-testid="stSidebarCollapsedControl"] button,
-[data-testid="stSidebarCollapsedControl"] [data-testid="stBaseButton-headerNoPadding"],
-[data-testid="stSidebarCollapsedControl"] [data-testid="stBaseButton-header"] {
-    margin-left:0!important;
-    margin-right:0!important;
-    padding-left:0!important;
-    padding-right:0!important;
-    left:0!important;
-    transform:none!important;
-}
-[data-testid="stSidebarCollapsedControl"]{
-    position:fixed!important;
-    left:0!important;
-    top:8px!important;
-    width:24px!important;
-    min-width:24px!important;
-    max-width:24px!important;
-    display:flex!important;
-    justify-content:flex-start!important;
-    align-items:center!important;
-    z-index:100001!important;
-}
-[data-testid="stSidebarCollapsedControl"] button{
-    width:24px!important;
-    min-width:24px!important;
-    height:32px!important;
-    display:flex!important;
-    justify-content:flex-start!important;
-    border-radius:0 7px 7px 0!important;
-}
-[data-testid="stSidebarCollapsedControl"] svg{
-    width:17px!important;
-    min-width:17px!important;
-    margin-left:0!important;
-    margin-right:0!important;
-}
-
+/* Collapsed sidebar opener: full-width header and edge-anchored control. */
+[data-testid="stHeader"]{left:0!important;right:0!important;width:100vw!important;max-width:none!important}
+[data-testid="stSidebarCollapsedControl"]{position:fixed!important;top:8px!important;left:0!important;right:auto!important;z-index:99999!important;transform:none!important}
+[data-testid="stSidebarCollapsedControl"] button{padding:0!important;margin:0!important;min-width:30px!important;justify-content:flex-start!important}
 .block-container{max-width:1500px;padding-top:1.8rem;padding-bottom:4rem}
 h1,h2,h3{color:#485760!important;letter-spacing:-.025em;font-weight:700!important}
 h1{font-size:2.35rem!important}
@@ -607,6 +521,16 @@ def exchange_logo_html(name):
     if 'logo_url' in catalog.columns and 'name' in catalog.columns:
         logos={norm(row['name']):row['logo_url'] for _,row in catalog.iterrows() if isinstance(row.get('logo_url'),str) and row['logo_url'].startswith('https://')}
     url=next((logos.get(norm(n)) for n in candidates.get(name,[name]) if logos.get(norm(n))),None)
+    # Verified official web domains are used for favicon lookup when not in the catalog.
+    domains={
+        'Hyperliquid':'hyperliquid.xyz','Lighter':'lighter.xyz',
+        'Variational':'omni.variational.io','Nado':'nado.finance',
+        'StandX':'standx.com','Arcus':'arcus.xyz','QFEX':'qfex.com',
+        'TxFlow':'txflow.com','Pacifica':'pacifica.fi','hello.trade':'hello.trade',
+        'robinhoodchain.lighter':'robinhood.com'
+    }
+    if not url and name in domains:
+        url='https://www.google.com/s2/favicons?domain='+domains[name]+'&sz=64'
     label=html.escape(str(name))
     if url:
         return '<span class="exchange-cell"><img class="exchange-logo" src="'+html.escape(url,quote=True)+'" alt="" loading="lazy" referrerpolicy="no-referrer"><span>'+label+'</span></span>'
