@@ -266,34 +266,32 @@ st.markdown("""<style>
 html,body,[data-testid="stApp"],[class*="css"]{font-family:'DM Sans','Noto Sans KR',sans-serif}
 [data-testid="stAppViewContainer"]{background:linear-gradient(160deg,#f0f5f7 0%,#f8f7f3 38%,#f5f3ee 100%);color:#505c66}
 [data-testid="stSidebar"]{background:#eff3f3;border-right:1px solid #d8e0e3}
-/* Match both old and new Streamlit sidebar controls. */
-[data-testid="collapsedControl"],
+/* Sidebar controls: Streamlit 1.38+ and earlier compatibility. */
 [data-testid="stSidebarCollapsedControl"],
-[data-testid="stSidebarNavCollapseButton"]{
+[data-testid="collapsedControl"],
+[data-testid="stSidebarCollapseButton"],
+[data-testid="stSidebarNavCollapseButton"] {
     position:fixed!important;
-    top:8px!important;
     left:0!important;
+    top:8px!important;
     right:auto!important;
-    margin:0!important;
-    padding:0!important;
     transform:none!important;
-    z-index:2147483000!important;
-    width:30px!important;
-    min-width:30px!important;
-    display:flex!important;
-    justify-content:flex-start!important;
-}
-[data-testid="collapsedControl"] button,
-[data-testid="stSidebarCollapsedControl"] button,
-[data-testid="stSidebarNavCollapseButton"] button{
-    margin:0!important;
     padding:0!important;
-    min-width:26px!important;
-    width:26px!important;
+    margin:0!important;
+    width:32px!important;
+    min-width:32px!important;
+    justify-content:flex-start!important;
+    z-index:2147483000!important;
+}
+[data-testid="stSidebarCollapsedControl"] button,
+[data-testid="collapsedControl"] button,
+[data-testid="stSidebarCollapseButton"] button {
+    padding:0!important;
+    margin:0!important;
+    min-width:28px!important;
     justify-content:flex-start!important;
 }
-[data-testid="collapsedControl"] svg,
-[data-testid="stSidebarCollapsedControl"] svg{margin:0!important;}
+[data-testid="stSidebarHeader"]{padding-left:0!important;}
 .block-container{max-width:1500px;padding-top:1.8rem;padding-bottom:4rem}
 h1,h2,h3{color:#485760!important;letter-spacing:-.025em;font-weight:700!important}
 h1{font-size:2.35rem!important}
