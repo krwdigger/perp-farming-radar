@@ -132,6 +132,26 @@ def lighter_mainnet():
     if volume is None:raise ValueError("No Lighter 24h USD volume")
     return {"volume_24h_usd":volume}
 
+def entropy_hip3():
+    """Official Hyperliquid HIP-3 io namespace; do not aggregate generic HL."""
+    payload=json.dumps({"type":"metaAndAssetCtxs","dex":"io"}).encode("utf-8")
+    req=urllib.request.Request(
+        "https://api.hyperliquid.xyz/info",
+        headers={**HEADERS,"Content-Type":"application/json"},data=payload)
+    with urllib.request.urlopen(req,timeout=22) as res:response=json.load(res)
+    if not isinstance(response,list) or len(response)!=2:raise ValueError("Unexpected io metadata response")
+    metadata,contexts=response
+    markets=metadata.get("universe") if isinstance(metadata,dict) else None
+    if not isinstance(markets,list) or not isinstance(contexts,list) or len(markets)!=len(contexts):
+        raise ValueError("Mismatched io HIP-3 asset contexts")
+    vol=[numeric(row.get("dayNtlVlm")) for row in contexts if isinstance(row,dict)]
+    oi=[(numeric(row.get("markPx")),numeric(row.get("openInterest"))) for row in contexts if isinstance(row,dict)]
+    vol=[v for v in vol if v is not None and v>=0]
+    oi=[price*size for price,size in oi if price is not None and size is not None and price>=0 and size>=0]
+    if not vol and not oi:raise ValueError("No Entropy market data")
+    return dict(volume_24h_usd=sum(vol) if vol else None,
+                oi_usd=sum(oi) if oi else None,markets=len(markets))
+
 def hyperliquid():
     payload=json.dumps({"type":"metaAndAssetCtxs"}).encode()
     req=urllib.request.Request("https://api.hyperliquid.xyz/info",headers={**HEADERS,"Content-Type":"application/json"},data=payload)
@@ -151,6 +171,7 @@ def main():
        ("Pacifica","CCXT public perpetual 24h ticker turnover",pacifica_volume),
        ("Nado","CCXT public perpetual 24h ticker turnover",nado_volume),
        ("Arcus","Official /v1/markets perpetual 24h notional",arcus),
+       ("Entropy","Official Hyperliquid HIP-3 io namespace",entropy_hip3),
        ("Hyperliquid","Official info API",hyperliquid),
        ("Lighter","Lighter mainnet official exchangeStats",lighter_mainnet)]
     rows=[]
