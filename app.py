@@ -1059,16 +1059,20 @@ _dark_pumpkin_asset = DATA_DIR / 'assets' / 'pumpkin_dark.webp'
 if _dark_pumpkin_asset.is_file():
     _dark_pumpkin_b64 = base64.b64encode(_dark_pumpkin_asset.read_bytes()).decode('ascii')
     _theme_css += (
-        '<style>html.radar-dark [data-testid="stAppViewContainer"]{'
-        'background-image:linear-gradient(rgba(19,14,23,.75),rgba(19,14,23,.75)),'
-        'url("data:image/webp;base64,'+_dark_pumpkin_b64+'")!important;'
-        'background-position:center top!important;'
-        'background-size:auto min(100vh, 1600px)!important;'
-        'background-attachment:scroll!important;'
-        'background-repeat:repeat-x!important;'
+        '<style>'
+        'html.radar-dark [data-testid="stAppViewContainer"]{'
+        'background:linear-gradient(rgba(19,14,23,.75),rgba(19,14,23,.75)),'
+        'url("data:image/webp;base64,'+_dark_pumpkin_b64+'") '
+        'center top/auto min(100vh, 1600px) repeat-x scroll #17121a!important;'
         'background-blend-mode:normal!important;'
-        '}</style>'
+        '}'
+        'html.radar-dark [data-testid="stMain"],'
+        'html.radar-dark [data-testid="stMainBlockContainer"]{'
+        'background:transparent!important;'
+        '}'
+        '</style>'
     )
+
 st.markdown(_theme_css, unsafe_allow_html=True)
 
 st.components.v1.html("""
