@@ -868,11 +868,15 @@ def round_exchange_logo(name, url):
     mask=Image.new('L',(size,size),0)
     ImageDraw.Draw(mask).ellipse((3,3,size-4,size-4),fill=255)
     avatar=None
-    if url and url.startswith('https://'):
+    if url and (url.startswith('https://') or url.startswith('data:image/')):
         try:
-            response=requests.get(url,timeout=8,headers=HEADERS)
-            response.raise_for_status()
-            image=Image.open(BytesIO(response.content)).convert('RGBA')
+            if url.startswith('data:image/'):
+                content=base64.b64decode(url.split(',',1)[1])
+            else:
+                response=requests.get(url,timeout=8,headers=HEADERS)
+                response.raise_for_status()
+                content=response.content
+            image=Image.open(BytesIO(content)).convert('RGBA')
             # Cover (rather than contain) the circle so square logos cannot remain as
             # visibly square images surrounded by a decorative ring.
             avatar=ImageOps.fit(image,(size,size),method=Image.Resampling.LANCZOS,
@@ -893,13 +897,58 @@ def round_exchange_logo(name, url):
     avatar.save(output,format='PNG')
     return 'data:image/png;base64,'+base64.b64encode(output.getvalue()).decode('ascii')
 
-# Verified HelloTrade emblem from the project's own @hellotradeapp profile.
-# Unlike Google favicon lookup this is the full 400x400 branded symbol.
-HELLOTRADE_LOGO_URL = 'https://pbs.twimg.com/profile_images/2015857547530403841/yrpPGBWa_400x400.png'
+# HelloTrade mark cross-checked against hello.trade and its verified project profile.
+# Always deliver a data URI to browsers; this avoids broken third-party image links.
+HELLOTRADE_LOGO_URL = 'https://pbs.twimg.com/profile_images/1990455362042933250/zGFe38sh.jpg'
+
+@st.cache_data(ttl=86400,show_spinner=False)
+def hello_trade_logo_embedded():
+    from PIL import Image, ImageDraw
+    # Prefer the actual project-branded bitmap, validated before embedding.
+    try:
+        response=requests.get(HELLOTRADE_LOGO_URL,timeout=3,
+                              headers={'User-Agent':'Mozilla/5.0'})
+        response.raise_for_status()
+        if not 1000 <= len(response.content) <= 3000000:
+            raise ValueError('logo image byte length not plausible')
+        image=Image.open(BytesIO(response.content))
+        image.verify()
+        if image.width<90 or image.height<90:
+            raise ValueError('logo image is too small')
+        return ('data:image/jpeg;base64,'+
+                base64.b64encode(response.content).decode('ascii'))
+    except Exception:
+        # Self-contained vector-traced emergency fallback of the same mark.
+        # Rasterize with Pillow so Streamlit's image sanitizer reliably accepts it.
+        board=Image.new('RGBA',(512,512),(255,91,4,255))
+        pencil=ImageDraw.Draw(board)
+        edges=[
+            ((143,362),(123,354),(127,322),(140,285)),
+            ((140,285),(163,219),(222,144),(259,151)),
+            ((259,151),(280,155),(280,179),(281,186)),
+            ((281,186),(305,147),(338,130),(357,144)),
+            ((357,144),(385,165),(379,213),(348,284)),
+            ((348,284),(323,340),(281,372),(256,351)),
+            ((256,351),(242,339),(242,315),(244,304)),
+            ((244,304),(224,342),(169,373),(143,362))
+        ]
+        outline=[]
+        for p0,p1,p2,p3 in edges:
+            for n in range(48):
+                t=n/48.0
+                x=(1-t)**3*p0[0]+3*(1-t)**2*t*p1[0]+3*(1-t)*t*t*p2[0]+t**3*p3[0]
+                y=(1-t)**3*p0[1]+3*(1-t)**2*t*p1[1]+3*(1-t)*t*t*p2[1]+t**3*p3[1]
+                outline.append((x,y))
+        pencil.polygon(outline,fill=(255,255,255,255))
+        board=board.resize((128,128),Image.Resampling.LANCZOS)
+        output=BytesIO()
+        board.save(output,format='PNG',optimize=True)
+        return ('data:image/png;base64,'+
+                base64.b64encode(output.getvalue()).decode('ascii'))
 
 def exchange_logo_url(name):
     if str(name).strip().lower() in ('hello.trade','hellotrade','hello trade'):
-        return HELLOTRADE_LOGO_URL
+        return hello_trade_logo_embedded()
     # Official-site favicons for projects absent or mismatched in DefiLlama.
     official={'StandX':'standx.com','Entropy':'entropy.io'}
     if name in official:
