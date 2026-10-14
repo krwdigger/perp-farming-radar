@@ -155,6 +155,35 @@ def fetch_pacifica_ccxt():
             'market_data_time':datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}
 
 @st.cache_data(ttl=900,show_spinner=False)
+def fetch_ccxt_perp_volume(venue):
+    """Aggregate only USD quoteVolume tickers for perpetual swap markets."""
+    import ccxt
+    exchange=getattr(ccxt,venue)({'enableRateLimit':True,'timeout':16000})
+    markets=exchange.load_markets()
+    tickers=exchange.fetch_tickers()
+    total=0.0
+    counted=0
+    for symbol,ticker in tickers.items():
+        market=markets.get(symbol)
+        if not isinstance(market,dict) or not market.get('swap') or market.get('active') is False:
+            continue
+        quote=str(market.get('quote') or '').upper()
+        settle=str(market.get('settle') or '').upper()
+        if quote not in ('USD','USDC','USDT') or settle not in ('USD','USDC','USDT'):
+            continue
+        vol=number(ticker.get('quoteVolume'))
+        if vol is None:
+            base=number(ticker.get('baseVolume'))
+            last=number(ticker.get('last'))
+            if base is not None and last is not None:vol=base*last
+        if vol is not None and vol>=0:
+            total+=vol
+            counted+=1
+    if counted==0:raise ValueError('No USD-quoted perpetual tickers with 24h volume')
+    return {'volume_24h_usd':total,'volume_source':venue+' CCXT perpetual 24h quote volume',
+            'market_data_time':datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}
+
+@st.cache_data(ttl=900,show_spinner=False)
 def fetch_nado_ccxt():
     """CCXT official Nado adapter. Only aggregate explicitly reported OI USD fields."""
     import ccxt
@@ -272,6 +301,10 @@ with st.spinner('공개 데이터 수집 중…'):
     except Exception as e: arcus_stats=None;errors.append(f'Arcus markets: {e}')
     try: pacifica_oi=fetch_pacifica_ccxt()
     except Exception as e: pacifica_oi=None;errors.append(f'Pacifica CCXT OI: {e}')
+    try: pacifica_volume=fetch_ccxt_perp_volume('pacifica')
+    except Exception as e: pacifica_volume=None;errors.append(f'Pacifica 24h volume: {e}')
+    try: nado_volume=fetch_ccxt_perp_volume('nado')
+    except Exception as e: nado_volume=None;errors.append(f'Nado 24h volume: {e}')
     try: nado_stats=fetch_nado_ccxt()
     except Exception as e: nado_stats=None;errors.append(f'Nado CCXT: {e}')
     try: pro=fetch_pro_derivatives(pro_key) if pro_key else pd.DataFrame()
@@ -323,6 +356,13 @@ if pacifica_oi:
         for field,value in pacifica_oi.items():
             if field not in df.columns:df[field]=None
             df.loc[pacifica_mask,field]=value
+for venue_name,venue_data in [('Pacifica',pacifica_volume),('Nado',nado_volume)]:
+    if venue_data:
+        venue_mask=df['watch_name'].eq(venue_name)
+        if venue_mask.any():
+            for field,value in venue_data.items():
+                if field not in df.columns:df[field]=None
+                df.loc[venue_mask,field]=value
 if nado_stats:
     nado_mask=df['watch_name'].eq('Nado')
     if nado_mask.any():
