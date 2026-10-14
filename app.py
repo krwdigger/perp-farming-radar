@@ -266,32 +266,46 @@ st.markdown("""<style>
 html,body,[data-testid="stApp"],[class*="css"]{font-family:'DM Sans','Noto Sans KR',sans-serif}
 [data-testid="stAppViewContainer"]{background:linear-gradient(160deg,#f0f5f7 0%,#f8f7f3 38%,#f5f3ee 100%);color:#505c66}
 [data-testid="stSidebar"]{background:#eff3f3;border-right:1px solid #d8e0e3}
-/* Sidebar controls: Streamlit 1.38+ and earlier compatibility. */
-[data-testid="stSidebarCollapsedControl"],
-[data-testid="collapsedControl"],
-[data-testid="stSidebarCollapseButton"],
-[data-testid="stSidebarNavCollapseButton"] {
-    position:fixed!important;
+/* Anchor the native sidebar toggle itself, not only its layout wrapper. */
+header[data-testid="stHeader"] {
     left:0!important;
-    top:8px!important;
-    right:auto!important;
-    transform:none!important;
-    padding:0!important;
+    right:0!important;
+    width:100%!important;
+    max-width:none!important;
     margin:0!important;
-    width:32px!important;
-    min-width:32px!important;
-    justify-content:flex-start!important;
+    padding-left:0!important;
+    transform:none!important;
+}
+[data-testid="stSidebarCollapsedControl"],
+[data-testid="collapsedControl"] {
+    position:fixed!important;
+    top:6px!important;
+    left:0!important;
+    right:auto!important;
+    margin:0!important;
+    padding:0!important;
+    transform:none!important;
     z-index:2147483000!important;
 }
 [data-testid="stSidebarCollapsedControl"] button,
 [data-testid="collapsedControl"] button,
-[data-testid="stSidebarCollapseButton"] button {
-    padding:0!important;
+header[data-testid="stHeader"] button[data-testid="baseButton-headerNoPadding"]:first-child {
+    position:fixed!important;
+    left:0!important;
+    top:6px!important;
     margin:0!important;
-    min-width:28px!important;
-    justify-content:flex-start!important;
+    padding:0!important;
+    transform:none!important;
+    z-index:2147483001!important;
+    width:32px!important;
+    min-width:32px!important;
+    height:32px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
 }
-[data-testid="stSidebarHeader"]{padding-left:0!important;}
+[data-testid="stSidebarCollapseButton"] {margin-left:0!important;}
+[data-testid="stSidebarHeader"] {padding-left:0!important;}
 .block-container{max-width:1500px;padding-top:1.8rem;padding-bottom:4rem}
 h1,h2,h3{color:#485760!important;letter-spacing:-.025em;font-weight:700!important}
 h1{font-size:2.35rem!important}
