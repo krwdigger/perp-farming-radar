@@ -1053,6 +1053,22 @@ html.radar-dark [data-testid="stAppViewContainer"]{
 html.radar-dark [data-testid="stMain"],
 html.radar-dark [data-testid="stMainBlockContainer"]{background-color:transparent!important}
 </style>"""
+# The dark background uses its own photo asset (same 3:4 proportion as
+# pumpkin_original.jpg).  A 75% plum overlay stays over the photo.
+_dark_pumpkin_asset = DATA_DIR / 'assets' / 'pumpkin_dark.webp'
+if _dark_pumpkin_asset.is_file():
+    _dark_pumpkin_b64 = base64.b64encode(_dark_pumpkin_asset.read_bytes()).decode('ascii')
+    _theme_css += (
+        '<style>html.radar-dark [data-testid="stAppViewContainer"]{'
+        'background-image:linear-gradient(rgba(19,14,23,.75),rgba(19,14,23,.75)),'
+        'url("data:image/webp;base64,'+_dark_pumpkin_b64+'")!important;'
+        'background-position:center top!important;'
+        'background-size:auto min(100vh, 1600px)!important;'
+        'background-attachment:scroll!important;'
+        'background-repeat:repeat-x!important;'
+        'background-blend-mode:normal!important;'
+        '}</style>'
+    )
 st.markdown(_theme_css, unsafe_allow_html=True)
 
 st.components.v1.html("""
