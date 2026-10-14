@@ -335,6 +335,23 @@ p,li,[data-testid="stCaptionContainer"]{color:#65737d}
 [data-testid="stSidebar"] h2{font-size:1.08rem!important}
 [data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"]{padding:8px!important}
 
+/* Large cutout cat face immediately to the right of the dashboard title. */
+.radar-banner{
+    display:flex!important;align-items:center!important;justify-content:flex-start!important;
+    gap:22px!important;flex-wrap:nowrap!important;min-height:158px!important;
+    padding:0!important;border:0!important;background:transparent!important;
+}
+.radar-banner h1{flex:0 0 auto!important;white-space:nowrap!important}
+.radar-cat-head{
+    display:block;width:clamp(145px,16vw,195px)!important;height:auto!important;
+    max-height:178px!important;object-fit:contain!important;
+    flex-shrink:0!important;pointer-events:none;
+}
+@media(max-width:650px){
+    .radar-banner{gap:12px!important;min-height:110px!important}
+    .radar-banner h1{font-size:2.45rem!important}
+    .radar-cat-head{width:120px!important;max-height:116px!important}
+}
 /* Harvest palette inspired by the supplied autumn pumpkin photo. */
 :root{--harvest-ink:#493323;--harvest-rust:#ae5727;--harvest-pumpkin:#cb782d;--harvest-straw:#f2dfb5;--harvest-cream:#fff9ee;}
 [data-testid="stAppViewContainer"]{
@@ -391,8 +408,16 @@ if _pumpkin_asset.exists():
         '</style>',unsafe_allow_html=True
     )
 
-st.markdown("""<div class="radar-banner">
-<h1>빈집털이</h1></div>""",unsafe_allow_html=True)
+_cat_asset = DATA_DIR / 'assets' / 'cat_head.b64'
+_cat_head_b64 = _cat_asset.read_text(encoding='utf-8').strip() if _cat_asset.exists() else ''
+_cat_head_html = (
+    f'<img class="radar-cat-head" src="data:image/webp;base64,{_cat_head_b64}" alt="고양이 얼굴">'
+    if _cat_head_b64 else ''
+)
+st.markdown(
+    '<div class="radar-banner"><h1>빈집털이</h1>' + _cat_head_html + '</div>',
+    unsafe_allow_html=True
+)
 
 # Independent left-edge settings control replaces the fragile native sidebar opener.
 with st.popover(' ', help='데이터 연결 및 설정 열기'):
