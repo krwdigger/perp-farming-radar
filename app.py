@@ -379,17 +379,33 @@ with radar_tabs[0]:
         fig.update_xaxes(tickformat='~s',gridcolor='#e1e7e9')
         st.plotly_chart(fig,use_container_width=True)
         st.caption('시장 OI 규모 비교만 나타냅니다. 낮은 OI가 곧 빈집이라는 의미는 아닙니다.')
-    st.markdown('#### 원본 지표')
+    st.markdown('#### 실시간 시장 비교 · Volume / 혼잡 변화')
+    st.caption('막대는 24시간 거래량의 상대 크기입니다. 혼잡도 색상은 7일 활성 거래자 증감률이 있는 경우에만 표시하며, 시장 규모를 혼잡도로 대체하지 않습니다.')
     w1,w2=st.columns([2,1])
-    choice=w1.selectbox('데이터 상태',['모두 보기','시장 데이터','참여자 데이터','미연동'])
-    order=w2.selectbox('정렬',['관심 목록','OI 높은 순','OI 낮은 순','24H 거래량 순'])
-    if choice!='모두 보기':watched=watched[watched['상태']==choice]
-    if order=='OI 높은 순':watched=watched.sort_values('oi_usd',ascending=False,na_position='last')
-    elif order=='OI 낮은 순':watched=watched.sort_values('oi_usd',ascending=True,na_position='last')
-    elif order=='24H 거래량 순':watched=watched.sort_values('volume_24h_usd',ascending=False,na_position='last')
-    viewcols=['watch_name','상태','volume_24h_usd','volume_7d_usd','oi_usd','active_wallets_7d','weekly_points']
-    st.dataframe(readable_metrics(watched[viewcols], rename={'watch_name':'프로젝트','volume_24h_usd':'24H Volume ($)','volume_7d_usd':'7D Volume ($)','oi_usd':'현재 OI ($)','active_wallets_7d':'7D 지갑','weekly_points':'주간 포인트'}),hide_index=True,use_container_width=True,height=445)
-    st.caption('미확보 수치는 0이 아닙니다. 거래량/OI가 있어도 포인트 효율을 계산할 수 있다는 뜻은 아닙니다.')
+    choice=w1.selectbox('시장 데이터 필터',['모두','24H 거래량 있음','OI 있음'])
+    order=w2.selectbox('정렬',['24H 거래량 순','OI 높은 순','관심 목록'])
+    display=watched.copy()
+    if choice=='24H 거래량 있음':display=display[display['volume_24h_usd'].notna()]
+    if choice=='OI 있음':display=display[display['oi_usd'].notna()]
+    if order=='24H 거래량 순':display=display.sort_values('volume_24h_usd',ascending=False,na_position='last')
+    elif order=='OI 높은 순':display=display.sort_values('oi_usd',ascending=False,na_position='last')
+    def crowd_label(change):
+        if pd.isna(change):return '⚪ 판단 불가'
+        if change>=25:return '🔴 유입 급증'
+        if change>=5:return '🟠 유입 증가'
+        if change<=-20:return '🟢 경쟁 완화'
+        if change<=-5:return '🟢 유입 감소'
+        return '🔵 큰 변화 없음'
+    display['혼잡도 변화']=display['wallet_change_pct'].apply(crowd_label)
+    display['24H 거래량 표시']=display['volume_24h_usd'].map(compact_usd)
+    display['현재 OI 표시']=display['oi_usd'].map(compact_usd)
+    display['7D 지갑']=display['active_wallets_7d'].map(integer_fmt)
+    display['지갑 변화']=display['wallet_change_pct'].apply(lambda v:f'{v:+.1f}%' if pd.notna(v) else '—')
+    st.dataframe(display[['watch_name','volume_24h_usd','24H 거래량 표시','현재 OI 표시','7D 지갑','지갑 변화','혼잡도 변화']].rename(
+        columns={'watch_name':'프로젝트','volume_24h_usd':'24H 볼륨 바','24H 거래량 표시':'24H 볼륨','현재 OI 표시':'현재 OI'}),
+        hide_index=True,use_container_width=True,height=450,
+        column_config={'24H 볼륨 바':st.column_config.ProgressColumn('24H 볼륨 바',min_value=0,max_value=max(1,float(display['volume_24h_usd'].max())) if display['volume_24h_usd'].notna().any() else 1,format='$%.0f')})
+    st.caption('🔴 거래자 유입 급증 · 🟠 유입 증가 · 🔵 안정 · 🟢 유입 감소 · ⚪ 미확보. 색상은 활성 지갑 변화에 한정되며 파밍 수익률 추천이 아닙니다.')
     st.markdown('#### 📊 관심 거래소 시장 규모 비교')
     chart_left, chart_right=st.columns(2)
     with chart_left:
