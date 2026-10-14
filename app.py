@@ -1062,7 +1062,7 @@ with radar_tabs[0]:
                                text=html.escape(str(entry['watch_name'])),
                                font=dict(size=14,color='#603e2b',family='Arial'),
                                bgcolor='rgba(255,249,237,0.96)',borderpad=4,
-                               bordercolor='#d7b994',borderwidth=1
+                               bordercolor='#d7b994',borderwidth=1)
         fig.update_layout(
             height=555,margin=dict(t=42,l=112,r=48,b=72),
             paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(255,249,236,0.64)',
