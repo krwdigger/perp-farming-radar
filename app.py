@@ -1009,7 +1009,13 @@ for c in ['point_model','notes','oi_source','volume_source','market_data_time']:
 
 # Recent collector values backfill only missing public market metrics.
 try:
-    archive=pd.read_csv('https://raw.githubusercontent.com/krwdigger/perp-farming-radar/main/data/market_snapshots.csv')
+    # Prefer the bundled collector output. GitHub Raw may lag behind the
+    # deployed revision or be unavailable from Streamlit Cloud.
+    archive_path=DATA_DIR/'data'/'market_snapshots.csv'
+    if archive_path.is_file():
+        archive=pd.read_csv(archive_path)
+    else:
+        archive=pd.read_csv('https://raw.githubusercontent.com/krwdigger/perp-farming-radar/main/data/market_snapshots.csv')
     archive['captured_at_utc']=pd.to_datetime(archive['captured_at_utc'],utc=True,errors='coerce')
     for metric in ['volume_24h_usd','oi_usd']:
         archive[metric]=pd.to_numeric(archive[metric],errors='coerce')
@@ -1023,7 +1029,7 @@ try:
         fill=df['watch_name'].map(look[metric])
         missing=df[metric].isna() & fill.notna()
         df.loc[missing,metric]=fill[missing]
-        df.loc[missing,source]='GitHub public snapshot (48h maximum age)'
+        df.loc[missing,source]='Official collector snapshot (48h maximum age)'
 except Exception as archive_error:
     errors.append('Historical snapshot fallback: '+str(archive_error)[:140])
 df['volume_oi_ratio_24h']=df['volume_24h_usd']/df['oi_usd'].replace(0,float('nan'))
