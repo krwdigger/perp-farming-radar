@@ -1133,110 +1133,64 @@ html.radar-dark .farming-ranking *{color:#dfc2aa!important}
 # Restore the original fixed top-right pumpkin toggle. The theme
 # stylesheet and button script must be emitted together for the DOM class
 # selectors and click handling to work.
-# Streamlit-native, functional theme button. Keep the original pumpkin
-# LIGHT/DARK labels; a click reruns the app and reapplies the theme stylesheet.
-if 'radar_dark_active' not in st.session_state:
-    st.session_state.radar_dark_active = False
+# Fresh native theme control. No injected JavaScript or floating button.
+# One session-state flag drives both its label and the styles.
+if 'theme_is_dark_v2' not in st.session_state:
+    st.session_state['theme_is_dark_v2'] = False
 
-# Handle the click explicitly and rerun before rendering the page theme.
-# This avoids relying on browser-injected scripts or delayed style state.
-_dark_now = bool(st.session_state.radar_dark_active)
-if st.button(
-    '🎃 DARK' if _dark_now else '🎃 LIGHT',
-    key='radar_theme_button',
-    help='다크모드 / 라이트모드 전환',
-):
-    st.session_state.radar_dark_active = not _dark_now
-    st.rerun()
+with st.container(key='theme_dock_v2'):
+    if st.button(
+        '🎃 DARK' if st.session_state['theme_is_dark_v2'] else '🎃 LIGHT',
+        key='theme_action_v2',
+        help='라이트 모드와 다크 모드 전환',
+        use_container_width=False,
+    ):
+        st.session_state['theme_is_dark_v2'] = not st.session_state['theme_is_dark_v2']
+        st.rerun()
 
-_dark_now = bool(st.session_state.radar_dark_active)
+_dark_now = st.session_state['theme_is_dark_v2']
+# Only the original CSS rules are retained; discard the obsolete JS button.
 _theme_css = _theme_widget.split('</style>', 1)[0] + '</style>'
 if _dark_now:
     _theme_css = _theme_css.replace('html.radar-dark', 'html')
-    # Dark rules must also take precedence over the older light-mode
-    # background styles defined earlier in this app.
     _theme_css += """
 <style>
-html [data-testid="stAppViewContainer"],
-html [data-testid="stMain"],
-html [data-testid="stMainBlockContainer"],
-html [data-testid="stApp"] {
- background-color:#130f17!important;
- color:#f3e5d6!important;
-}
-html [data-testid="stAppViewContainer"]{
- background-image:none!important;
-}
-html [data-testid="stAppViewContainer"] .block-container{
- background:#17131c!important;
- backdrop-filter:none!important;
-}
-</style>
-"""
-# HTML styles must be mounted in the main page, not in an isolated iframe.
+html [data-testid="stAppViewContainer"]{background-image:none!important;background-color:#130f17!important}
+html [data-testid="stAppViewContainer"] .block-container{background:#17131c!important;backdrop-filter:none!important}
+</style>"""
 st.markdown(_theme_css, unsafe_allow_html=True)
-# Position the Streamlit widget wrapper, NOT the child label.
-# Right:18px is viewport-right, independent of the dashboard max-width.
+
+# Position the outer container, preventing Streamlit's column layout from
+# shifting the clickable button into the center.
 st.markdown("""
 <style>
-[data-testid="stElementContainer"].st-key-radar_theme_button,
-.st-key-radar_theme_button{
- position:fixed!important;
- top:18px!important;
- right:18px!important;
- left:auto!important;
- width:max-content!important;
- min-width:0!important;
- height:auto!important;
- margin:0!important;
- padding:0!important;
- z-index:2147483646!important;
- transform:none!important;
+.st-key-theme_dock_v2{
+ position:fixed!important;top:18px!important;right:18px!important;
+ left:auto!important;bottom:auto!important;
+ z-index:2147483000!important;width:max-content!important;
+ max-width:calc(100vw - 36px)!important;margin:0!important;
+ padding:0!important;transform:none!important;
+ pointer-events:auto!important;
 }
-.st-key-radar_theme_button [data-testid="stButton"]{
- width:max-content!important;
-}
-.st-key-radar_theme_button button[kind],
-.st-key-radar_theme_button button{
- display:flex!important;
- align-items:center!important;
- justify-content:center!important;
- min-height:40px!important;
- min-width:112px!important;
- padding:8px 16px!important;
- border:1px solid #b9844f!important;
- border-radius:999px!important;
- background:#fff4e2!important;
- color:#583920!important;
- font:700 14px/1.4 'Noto Sans KR',sans-serif!important;
+.st-key-theme_dock_v2 [data-testid="stButton"]{width:max-content!important;pointer-events:auto!important}
+.st-key-theme_dock_v2 button{
+ min-width:112px!important;min-height:40px!important;
+ padding:8px 16px!important;border-radius:999px!important;
+ border:1px solid #b9844f!important;background:#fff4e2!important;
+ color:#583920!important;font:700 14px/1.4 'Noto Sans KR',sans-serif!important;
  box-shadow:0 3px 15px rgba(36,19,7,.2)!important;
- opacity:1!important;
- cursor:pointer!important;
+ cursor:pointer!important;pointer-events:auto!important;
 }
-.st-key-radar_theme_button button *,
-.st-key-radar_theme_button button p{
- color:inherit!important;
- font-weight:700!important;
-}
-.st-key-radar_theme_button button:hover{
- background:#ffebca!important;border-color:#bd783a!important;
-}
-html:has(.st-key-radar_theme_button) .st-key-radar_theme_button:has(button[aria-label=""]) {}
-""" + ("""
-html .st-key-radar_theme_button button{
- background:#372536!important;
- border-color:#ac6d42!important;
- color:#fff0df!important;
-}
-html .st-key-radar_theme_button button:hover{background:#4c3445!important}
-""" if _dark_now else "") + """
-@media(max-width:650px){
- .st-key-radar_theme_button{
-  top:10px!important;right:12px!important;
- }
-}
+.st-key-theme_dock_v2 button p{color:inherit!important;font-weight:700!important}
+.st-key-theme_dock_v2 button:hover{background:#ffebca!important}
+@media(max-width:650px){.st-key-theme_dock_v2{top:10px!important;right:12px!important}}
 </style>
-""",unsafe_allow_html=True)
+""" + ("""
+<style>
+.st-key-theme_dock_v2 button{background:#372536!important;border-color:#ac6d42!important;color:#fff0df!important}
+.st-key-theme_dock_v2 button:hover{background:#4c3445!important}
+</style>
+""" if _dark_now else ""),unsafe_allow_html=True)
 
 # Independent left-edge settings control replaces the fragile native sidebar opener.
 with st.popover(' ', help='데이터 연결 및 설정 열기'):
