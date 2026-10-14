@@ -708,6 +708,22 @@ html,body,[data-testid="stApp"],[data-testid="stApp"] *,
 [data-testid="stExpander"] summary [data-testid="stExpanderToggleIcon"]{
  flex:0 0 24px!important;min-width:24px!important;width:24px!important;
  display:inline-flex!important;align-items:center!important;justify-content:center!important}
+
+/* Replace the faulty arrow_right ligature with a real CSS disclosure triangle. */
+[data-testid="stExpander"] summary [data-testid="stExpanderToggleIcon"],
+[data-testid="stExpander"] summary [data-testid="stIconMaterial"],
+[data-testid="stExpander"] summary span[class*="material"]{
+ display:none!important;visibility:hidden!important;width:0!important;
+ min-width:0!important;height:0!important;overflow:hidden!important;
+}
+[data-testid="stExpander"] summary{position:relative!important;padding-left:43px!important}
+[data-testid="stExpander"] summary::before{
+ content:"▸"!important;position:absolute!important;display:block!important;
+ top:50%!important;left:17px!important;transform:translateY(-50%)!important;
+ color:#90603b!important;font:700 16px/1 Arial,sans-serif!important;
+ width:14px!important;height:16px!important;line-height:16px!important;
+}
+[data-testid="stExpander"] details[open] summary::before{content:"▾"!important}
 </style>""",unsafe_allow_html=True)
 # Keep the exact uploaded 1200×1600 JPEG in the repository (no lossy re-encoding).
 # Scale to the viewport height rather than covering its width, which greatly
