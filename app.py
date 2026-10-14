@@ -2033,7 +2033,7 @@ with radar_tabs[0]:
                     x=item['nx'],y=item['ny'],
                     sizex=diameter/930,sizey=diameter/395,
                     xanchor='center',yanchor='middle',sizing='contain',
-                    layer='below'
+                    layer='above'
                 ))
             except Exception:
                 fig.add_scatter(
