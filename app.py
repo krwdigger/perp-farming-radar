@@ -1026,7 +1026,7 @@ if 'theme_is_dark_v2' not in st.session_state:
 _theme_left, _theme_right = st.columns([10, 1], gap='small')
 with _theme_right:
     if st.button(
-        '🎃 DARK' if st.session_state['theme_is_dark_v2'] else '🎃 LIGHT',
+        'DARK' if st.session_state['theme_is_dark_v2'] else 'LIGHT',
         key='theme_action_v3',
         use_container_width=True,
     ):
@@ -1223,12 +1223,19 @@ st.markdown("""
 .st-key-theme_action_v3 button p {
  color:inherit!important;font-weight:700!important;white-space:nowrap!important;
 }
+.st-key-theme_action_v3 button::before{
+ content:"";display:inline-block;width:19px;height:19px;flex:0 0 19px;
+ margin-right:5px;background:center/contain no-repeat url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cpath%20d%3D%22M30%2010Q32%203%2038%204L37%209Q34%207%2033%2012C49%205%2059%2018%2059%2033C59%2050%2048%2060%2032%2060S5%2050%205%2033C5%2018%2015%205%2030%2010Z%22%20fill%3D%22%23da7c30%22%20stroke%3D%22%23a75023%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M22%2014Q13%2031%2022%2053M42%2014Q51%2031%2042%2053%22%20fill%3D%22none%22%20stroke%3D%22%23b65c24%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M30%2011L31%203L37%203L34%2012%22%20fill%3D%22%23557b32%22%2F%3E%3Cg%20fill%3D%22%234a2b1d%22%3E%3Cpath%20d%3D%22M20%2025L29%2034H16Z%22%2F%3E%3Cpath%20d%3D%22M44%2025L48%2034H35Z%22%2F%3E%3Cpath%20d%3D%22M29%2034L35%2034L32%2039Z%22%2F%3E%3Cpath%20d%3D%22M17%2043Q32%2056%2048%2043L45%2050L39%2048L34%2053L28%2049L22%2051Z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+}
 .st-key-theme_action_v3 button:hover{background:#ffebca!important}
 </style>
 """ + ("""
 <style>
 .st-key-theme_action_v3 button {
  background:#372536!important;border-color:#ac6d42!important;color:#fff0df!important;
+}
+.st-key-theme_action_v3 button::before{
+ background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3Cfilter%20id%3D%22g%22%20x%3D%22-100%25%22%20y%3D%22-100%25%22%20width%3D%22300%25%22%20height%3D%22300%25%22%3E%3CfeGaussianBlur%20stdDeviation%3D%222%22%20result%3D%22b%22%2F%3E%3CfeMerge%3E%3CfeMergeNode%20in%3D%22b%22%2F%3E%3CfeMergeNode%20in%3D%22SourceGraphic%22%2F%3E%3C%2FfeMerge%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Cpath%20d%3D%22M30%2010Q32%203%2038%204L37%209Q34%207%2033%2012C49%205%2059%2018%2059%2033C59%2050%2048%2060%2032%2060S5%2050%205%2033C5%2018%2015%205%2030%2010Z%22%20fill%3D%22%23da7c30%22%20stroke%3D%22%23a75023%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M22%2014Q13%2031%2022%2053M42%2014Q51%2031%2042%2053%22%20fill%3D%22none%22%20stroke%3D%22%23b65c24%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M30%2011L31%203L37%203L34%2012%22%20fill%3D%22%23557b32%22%2F%3E%3Cg%20fill%3D%22%23ffe391%22%20filter%3D%22url(%23g)%22%3E%3Cpath%20d%3D%22M20%2025L29%2034H16Z%22%2F%3E%3Cpath%20d%3D%22M44%2025L48%2034H35Z%22%2F%3E%3Cpath%20d%3D%22M29%2034L35%2034L32%2039Z%22%2F%3E%3Cpath%20d%3D%22M17%2043Q32%2056%2048%2043L45%2050L39%2048L34%2053L28%2049L22%2051Z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E")!important;
 }
 .st-key-theme_action_v3 button:hover{background:#4c3445!important}
 </style>
