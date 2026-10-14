@@ -53,6 +53,20 @@ def arcus():
         if size is not None and price is not None:notionals.append(size*price)
     return dict(markets=len(perps),oi_usd=sum(notionals) if notionals else None)
 
+def pacifica_oi():
+    import ccxt
+    exchange=ccxt.pacifica({"enableRateLimit":True,"timeout":16000})
+    records=exchange.fetch_open_interests()
+    if isinstance(records,dict):records=list(records.values())
+    if not isinstance(records,list):raise ValueError("OI response not a list")
+    values=[]
+    for record in records:
+        if not isinstance(record,dict):continue
+        val=numeric(record.get("openInterestValue"))
+        if val is not None and val>=0:values.append(val)
+    if not values:raise ValueError("No USD-denominated open interest values")
+    return {"oi_usd":sum(values),"markets":len(values)}
+
 def hyperliquid():
     payload=json.dumps({"type":"metaAndAssetCtxs"}).encode()
     req=urllib.request.Request("https://api.hyperliquid.xyz/info",headers={**HEADERS,"Content-Type":"application/json"},data=payload)
@@ -67,6 +81,7 @@ def main():
        ("Variational","Official Omni API",variational),
        ("StandX","Official public overview",standx),
        ("Pacifica","Official public market info (market count only)",pacifica),
+       ("Pacifica OI","CCXT unified fetchOpenInterests",pacifica_oi),
        ("Arcus","Public REST market list (market count only)",arcus),
        ("Hyperliquid","Official info API",hyperliquid)]
     rows=[]
