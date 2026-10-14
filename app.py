@@ -1479,7 +1479,7 @@ def harvest_linear_bar(fig, values, height=360, money=True):
         yaxis=dict(tickfont=dict(family='Noto Sans KR, DM Sans, sans-serif',size=15,color='#62432c'),showgrid=False,automargin=True,title=None))
     return fig
 
-radar_tabs=st.tabs(['🧸 관심 거래소','🐿️ 경쟁 비교','🦊 전체 스캐너','🍁 데이터 출처'])
+radar_tabs=st.tabs(['🎃 관심 거래소','🐱 경쟁 비교','🌰 전체 스캐너','🍁 데이터 출처'])
 @st.cache_data(ttl=300,show_spinner=False)
 def load_public_market_history():
     url='https://raw.githubusercontent.com/krwdigger/perp-farming-radar/main/data/market_snapshots.csv'
