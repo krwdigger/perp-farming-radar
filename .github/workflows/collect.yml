@@ -3,6 +3,12 @@ on:
   schedule:
     - cron: '17 */4 * * *'
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'collect_metrics.py'
+      - 'app.py'
+      - '.github/workflows/collect.yml'
 permissions:
   contents: write
 concurrency:
