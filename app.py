@@ -1098,6 +1098,48 @@ html div[data-testid="stAlert"] :is(p,span,div,svg){
 </style>
 """
 st.markdown(_theme_css, unsafe_allow_html=True)
+def radar_dataframe(frame, **kwargs):
+    """Keep native editable-free Streamlit grids in LIGHT; use the reference
+    rankings-table colors for DARK, including cells rendered by canvas."""
+    if not _dark_now:
+        return st.dataframe(frame, **kwargs)
+    if not isinstance(frame, pd.DataFrame):
+        frame = pd.DataFrame(frame)
+    headers = ''.join(
+        '<th style="position:sticky;top:0;background:#3c2a32;color:#f3dfbf;'
+        'border:1px solid #684e38;padding:9px 12px;text-align:left;'
+        'white-space:nowrap;z-index:1">' + html.escape(str(column)) + '</th>'
+        for column in frame.columns
+    )
+    rows=[]
+    for values in frame.itertuples(index=False,name=None):
+        cells=[]
+        for value in values:
+            if pd.isna(value):
+                label='—'
+            else:
+                label=str(value)
+            safe=html.escape(label)
+            if label.startswith(('https://','http://')):
+                safe='<a href="'+html.escape(label,quote=True)+'" target="_blank" rel="noopener noreferrer" style="color:#edac71;text-decoration:underline">'+safe+'</a>'
+            cells.append(
+                '<td style="background:#241d28;color:#f0dfce;'
+                'border:1px solid #514038;padding:9px 12px;'
+                'white-space:nowrap;max-width:390px;overflow:hidden;text-overflow:ellipsis"'
+                ' title="'+html.escape(label,quote=True)+'">'+safe+'</td>'
+            )
+        rows.append('<tr>'+''.join(cells)+'</tr>')
+    height=kwargs.get('height',None)
+    maxheight='max-height:'+str(int(height))+'px;' if isinstance(height,(int,float)) else ''
+    st.markdown(
+        '<div style="width:100%;overflow:auto;'+maxheight
+        +'border:1px solid #594535;border-radius:10px;background:#241d28">'
+        '<table style="width:100%;border-collapse:collapse;font-size:13px">'
+        '<thead><tr>'+headers+'</tr></thead><tbody>'
+        +''.join(rows)+'</tbody></table></div>',
+        unsafe_allow_html=True
+    )
+
 # Override chart colors at the Plotly figure layer rather than SVG CSS.
 def readable_plotly(fig):
     bg = '#241d28' if _dark_now else '#fff8ed'
@@ -1807,7 +1849,7 @@ with radar_tabs[0]:
         if not funding_by_name:
             st.info('투자 자료 파일을 불러오지 못했습니다.')
         else:
-            st.dataframe(
+            radar_dataframe(
                 funding[['project','display_amount','investors','round','scope','note','source_url']]
                 .rename(columns={'project':'거래소','display_amount':'공개 투자금','investors':'투자사',
                                  'round':'라운드','scope':'투자 대상','note':'검증 메모','source_url':'출처'}),
@@ -2027,7 +2069,7 @@ with radar_tabs[0]:
                 unsafe_allow_html=True
             )
         else:
-            st.dataframe(coverage_view,hide_index=True,use_container_width=True)
+            radar_dataframe(coverage_view,hide_index=True,use_container_width=True)
     st.download_button('시장 데이터 CSV',watched.to_csv(index=False).encode('utf-8-sig'),'perp_market_radar.csv','text/csv')
 
 with radar_tabs[1]:
@@ -2072,7 +2114,7 @@ with radar_tabs[2]:
     for col in sc:
         if col not in v:v[col]=None
     st.caption(f'검색 결과 {len(v):,}개 · 목록 등록일은 실제 서비스 출시일과 다를 수 있음')
-    st.dataframe(readable_metrics(v[sc], rename={'name':'거래소','chains':'체인','listed_date':'목록 등록일','volume_24h_usd':'24H Volume','volume_7d_usd':'7D Volume','oi_usd':'OI','active_wallets_7d':'7D 지갑','weekly_points':'주간 포인트'}),hide_index=True,use_container_width=True,height=570)
+    radar_dataframe(readable_metrics(v[sc], rename={'name':'거래소','chains':'체인','listed_date':'목록 등록일','volume_24h_usd':'24H Volume','volume_7d_usd':'7D Volume','oi_usd':'OI','active_wallets_7d':'7D 지갑','weekly_points':'주간 포인트'}),hide_index=True,use_container_width=True,height=570)
     st.download_button('스캐너 CSV 내보내기',v[sc].to_csv(index=False).encode('utf-8-sig'),'perp_scanner.csv','text/csv')
 with radar_tabs[3]:
     if errors:
@@ -2094,7 +2136,7 @@ with radar_tabs[3]:
       {'프로젝트':'Pacifica','시장 데이터':'공식 무료 시장목록 조회','미확보 데이터':'집계 거래량·OI·활성 지갑·포인트','원인 구분':'무료 공개 API 있음 · 지표별 검증/집계 필요','Dune':'거래가 오프체인이면 실제 거래지갑 집계 한계','자료':'https://pacifica.gitbook.io/docs/api-documentation/api/rest-api/markets/get-market-info'},
       {'프로젝트':'hello.trade','시장 데이터':'공식 소스 미확인','미확보 데이터':'전체','원인 구분':'자료 유료/비공개 여부도 미확인','Dune':'프로젝트/컨트랙트 식별 필요','자료':'https://dune.com/'}
     ]
-    st.dataframe(pd.DataFrame(investigation),hide_index=True,use_container_width=True,height=435,
+    radar_dataframe(pd.DataFrame(investigation),hide_index=True,use_container_width=True,height=435,
                  column_config={'자료':st.column_config.LinkColumn('검증 참고 링크')})
     st.download_button('미연동 조사표 CSV',pd.DataFrame(investigation).to_csv(index=False).encode('utf-8-sig'),'integration_audit.csv','text/csv')
     st.markdown('### 신규 공개 API 확인')
@@ -2104,7 +2146,7 @@ with radar_tabs[3]:
       {'거래소':'Arcus','상태':'시장/OI 조회 성공' if arcus_stats is not None else '연결 실패/응답 변경',
        '확인된 시장 수':arcus_stats.get('markets') if arcus_stats else None,'의미':'PERPETUAL 한쪽 OI×가격만 집계. 거래량·포인트 아님'}
     ]
-    st.dataframe(pd.DataFrame(checks),hide_index=True,use_container_width=True)
+    radar_dataframe(pd.DataFrame(checks),hide_index=True,use_container_width=True)
     st.info('정확한 빈집 순위는 활성 거래자와 포인트 배분 데이터가 충분히 확보될 때만 제공할 수 있습니다. Dune 무료 API도 쿼리 실행 한도·체인 지원 여부를 확인해야 합니다.')
 
     status_rows=[
@@ -2117,7 +2159,7 @@ with radar_tabs[3]:
       {'소스':'Hyperliquid 공식 API','항목':'24H Volume / OI','상태':'연결 성공' if hl else '미사용/실패','캐시':'2분'},
       {'소스':'DefiLlama Pro','항목':'7D Volume','상태':'연결 성공' if not pro.empty else '유료 키 필요' if not pro_key else '실패','캐시':'15분'},
       {'소스':'참여자/포인트','항목':'7D 지갑 / 포인트','상태':'사용자 CSV' if uploaded else '미연동','캐시':'수동'}]
-    st.dataframe(pd.DataFrame(status_rows),hide_index=True,use_container_width=True)
+    radar_dataframe(pd.DataFrame(status_rows),hide_index=True,use_container_width=True)
     st.caption('조회 성공은 전체 시장의 데이터가 제공되었다는 보장이 아닙니다. 개별 거래소와 체인 식별을 먼저 확인해야 합니다.')
 # Points efficiency simulator intentionally removed from public tabs.
 # Actual point pool, eligibility and competition inputs are not yet verified.
