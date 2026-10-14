@@ -1084,6 +1084,33 @@ html [data-testid="stAlert"]{background-color:#302632!important;border-color:#79
 html [data-testid="stAlert"] p{color:#f0dcc6!important}
 html [data-testid="stCaptionContainer"] p{color:#cbb29e!important}
 html [data-testid="stDataFrame"] canvas{filter:none!important}
+/* Preserve dark surfaces on hover, focus and expanded states.
+   In particular, Streamlit's expander summary has a light hover default. */
+html [data-testid="stExpander"] summary,
+html [data-testid="stExpander"] summary:hover,
+html [data-testid="stExpander"] summary:focus,
+html [data-testid="stExpander"] summary:focus-visible,
+html [data-testid="stExpander"] details[open] summary,
+html [data-testid="stExpander"] details[open] summary:hover,
+html [data-testid="stExpander"] summary[aria-expanded="true"]{
+ background:#3c2a32!important;background-color:#3c2a32!important;
+ color:#f3dfbf!important;border-color:#684e38!important;
+}
+html [data-testid="stExpander"] summary :is(p,span,svg),
+html [data-testid="stExpander"] summary:hover :is(p,span,svg){
+ color:#f3dfbf!important;fill:currentColor;
+}
+html [data-baseweb="select"] > div:hover,
+html [data-baseweb="select"] > div:focus-within,
+html [data-baseweb="input"] > div:hover,
+html [data-baseweb="input"] > div:focus-within{
+ background-color:#30252c!important;color:#f5e7d5!important;
+ border-color:#aa7750!important;
+}
+html [role="option"]:hover,html [role="option"]:focus,
+html [role="option"][aria-selected="true"]{
+ background:#493342!important;color:#f4e4d2!important;
+}
 /* Override the old light alert CSS, including its inner panels. */
 html div[data-testid="stAlert"],
 html div[data-testid="stAlert"] > div,
