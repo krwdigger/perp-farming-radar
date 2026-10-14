@@ -207,7 +207,7 @@ c3.metric('OI 자료 확보',f"{df['oi_usd'].notna().sum():,}개")
 c4.metric('주간 포인트 자료 확보',f"{df['weekly_points'].notna().sum():,}개")
 
 st.subheader('⭐ 관심 프로젝트 (11개)')
-watch_view=df[df['is_watchlist']].copy()
+watch_view=df[df['is_watchlist'].fillna(False).astype(bool)].copy()
 watch_view['data_status']=watch_view.apply(lambda x: '활성 지갑 있음' if pd.notna(x['active_wallets_7d']) else ('거래/OI 일부 확보' if pd.notna(x['volume_7d_usd']) or pd.notna(x['oi_usd']) else '연동 필요'),axis=1)
 watch_view=watch_view.merge(watch[['name','tracking_note']],left_on='watch_name',right_on='name',how='left',suffixes=('','_watch'))
 st.dataframe(watch_view[['watch_name','data_status','active_wallets_7d','volume_7d_usd','oi_usd','weekly_points','tracking_note']].rename(columns={'watch_name':'관심 프로젝트','data_status':'데이터 상태','active_wallets_7d':'7d 활성 지갑','volume_7d_usd':'7d 거래량 $','oi_usd':'OI $','weekly_points':'주간 포인트','tracking_note':'추적 참고'}),hide_index=True,use_container_width=True)
