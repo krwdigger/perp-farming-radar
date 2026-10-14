@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import io
+import html
 import os
 import re
 from datetime import datetime, timezone
@@ -577,16 +578,47 @@ with radar_tabs[0]:
     rank=rank.sort_values(col,ascending=ascending,na_position='last')
     rank=rank.reset_index(drop=True)
     rank.insert(0,'#',range(1,len(rank)+1))
-    rank['거래소']=rank['watch_name']
-    rank['24H Volume']=rank['volume_24h_usd'].map(compact_usd)
-    rank['Open Interest']=rank['oi_usd'].map(compact_usd)
-    rank['Vol / OI']=rank['volume_oi_ratio'].map(lambda x:f'{x:.2f}×' if pd.notna(x) else '—')
-    rank['OI 7D']=rank['oi_weekly_change_pct'].map(lambda x:f'{x:+.1f}%' if pd.notna(x) else '—')
-    rank['7D Traders']=rank['active_wallets_7d'].map(integer_fmt)
-    st.dataframe(rank[['#','거래소','24H Volume','Open Interest','Vol / OI','OI 7D','7D Traders']].rename(columns={'거래소':'Exchange'}),
-                 hide_index=True,use_container_width=True,height=min(570,max(190,40*(len(rank)+1))),
-                 column_config={'#':st.column_config.NumberColumn('#',width='small'),
-                                'Exchange':st.column_config.TextColumn('Exchange',width='medium')})
+    max_volume=max(1.0,float(rank['volume_24h_usd'].max())) if rank['volume_24h_usd'].notna().any() else 1.0
+    def table_cell(value):
+        return html.escape(str(value))
+    def volume_bar(value):
+        if pd.isna(value):return '<span class="radar-missing">—</span>'
+        percentage=max(0.0,min(100.0,float(value)/max_volume*100))
+        return ('<div class="radar-volume-cell"><div class="radar-bar-track">'
+                '<div class="radar-bar-fill" style="width:'+f'{percentage:.2f}'+'%"></div>'
+                '</div><span>'+table_cell(compact_usd(value))+'</span></div>')
+    body=[]
+    for _,entry in rank.iterrows():
+        oi=compact_usd(entry['oi_usd'])
+        ratio=f"{entry['volume_oi_ratio']:.2f}×" if pd.notna(entry['volume_oi_ratio']) else '—'
+        oi_delta=f"{entry['oi_weekly_change_pct']:+.1f}%" if pd.notna(entry['oi_weekly_change_pct']) else '—'
+        traders=integer_fmt(entry['active_wallets_7d'])
+        body.append('<tr><td class="rank-no">'+table_cell(int(entry['#']))+'</td>'
+                    '<td class="rank-name">'+table_cell(entry['watch_name'])+'</td>'
+                    '<td>'+volume_bar(entry['volume_24h_usd'])+'</td>'
+                    '<td>'+table_cell(oi)+'</td>'
+                    '<td>'+table_cell(ratio)+'</td>'
+                    '<td>'+table_cell(oi_delta)+'</td>'
+                    '<td>'+table_cell(traders)+'</td></tr>')
+    st.markdown("""<style>
+    .radar-table-wrap{width:100%;overflow-x:auto;border:1px solid #d8e2e6;border-radius:14px;background:#fffefa}
+    .radar-rank-table{width:100%;border-collapse:collapse;min-width:860px;font-size:15px;color:#405768}
+    .radar-rank-table thead th{background:#edf3f6;color:#6d8190;text-align:left;
+        font-size:13px;font-weight:700;padding:16px 14px;white-space:nowrap}
+    .radar-rank-table tbody td{border-top:1px solid #e6ecee;padding:18px 14px;
+        font-variant-numeric:tabular-nums;white-space:nowrap}
+    .radar-rank-table tbody tr:hover{background:#f1f7fa}
+    .radar-rank-table .rank-no{width:50px;color:#8799a4;font-weight:650}
+    .radar-rank-table .rank-name{font-weight:730;color:#36586c;min-width:155px}
+    .radar-rank-table th:nth-child(3),.radar-rank-table td:nth-child(3){min-width:230px;width:30%}
+    .radar-volume-cell{display:flex;gap:12px;align-items:center;justify-content:space-between}
+    .radar-bar-track{min-width:105px;flex:1;height:11px;background:#e3edf2;border-radius:8px;overflow:hidden}
+    .radar-bar-fill{height:100%;background:#76a9c1;border-radius:8px}
+    .radar-volume-cell span{min-width:74px;text-align:right;font-weight:700}
+    .radar-missing{color:#a5afb6}
+    </style>""",unsafe_allow_html=True)
+    table_header='<div class="radar-table-wrap"><table class="radar-rank-table"><thead><tr><th>#</th><th>Exchange</th><th>24H Volume</th><th>Open Interest</th><th>Vol / OI</th><th>OI 7D</th><th>7D Traders</th></tr></thead><tbody>'
+    st.markdown(table_header+''.join(body)+'</tbody></table></div>',unsafe_allow_html=True)
     st.caption('Vol/OI는 거래 회전율에 가까운 시장 활동 지표입니다. 파밍 수익률이나 활성 지갑 수의 대체치는 아닙니다. OI 7D는 일주일 전 기록이 있는 경우에만 표시합니다.')
     chart_a,chart_b=st.columns(2)
     with chart_a:
