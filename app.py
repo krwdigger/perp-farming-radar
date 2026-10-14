@@ -1133,64 +1133,62 @@ html.radar-dark .farming-ranking *{color:#dfc2aa!important}
 # Restore the original fixed top-right pumpkin toggle. The theme
 # stylesheet and button script must be emitted together for the DOM class
 # selectors and click handling to work.
-# Fresh native theme control. No injected JavaScript or floating button.
-# One session-state flag drives both its label and the styles.
+# Theme selector stays in Streamlit's normal document flow so the native
+# button receives pointer events. Fixed positioning of the wrapper previously
+# displayed a button but made it unclickable in the deployed page.
 if 'theme_is_dark_v2' not in st.session_state:
     st.session_state['theme_is_dark_v2'] = False
 
-with st.container(key='theme_dock_v2'):
+_theme_left, _theme_right = st.columns([10, 1], gap='small')
+with _theme_right:
     if st.button(
         '🎃 DARK' if st.session_state['theme_is_dark_v2'] else '🎃 LIGHT',
-        key='theme_action_v2',
+        key='theme_action_v3',
         help='라이트 모드와 다크 모드 전환',
-        use_container_width=False,
+        use_container_width=True,
     ):
         st.session_state['theme_is_dark_v2'] = not st.session_state['theme_is_dark_v2']
         st.rerun()
 
 _dark_now = st.session_state['theme_is_dark_v2']
-# Only the original CSS rules are retained; discard the obsolete JS button.
 _theme_css = _theme_widget.split('</style>', 1)[0] + '</style>'
 if _dark_now:
     _theme_css = _theme_css.replace('html.radar-dark', 'html')
     _theme_css += """
 <style>
-html [data-testid="stAppViewContainer"]{background-image:none!important;background-color:#130f17!important}
-html [data-testid="stAppViewContainer"] .block-container{background:#17131c!important;backdrop-filter:none!important}
+html [data-testid="stAppViewContainer"]{
+ background-image:none!important;background-color:#130f17!important;
+}
+html [data-testid="stAppViewContainer"] .block-container{
+ background:#17131c!important;backdrop-filter:none!important;
+}
 </style>"""
 st.markdown(_theme_css, unsafe_allow_html=True)
 
-# Position the outer container, preventing Streamlit's column layout from
-# shifting the clickable button into the center.
 st.markdown("""
 <style>
-.st-key-theme_dock_v2{
- position:fixed!important;top:18px!important;right:18px!important;
- left:auto!important;bottom:auto!important;
- z-index:2147483000!important;width:max-content!important;
- max-width:calc(100vw - 36px)!important;margin:0!important;
- padding:0!important;transform:none!important;
- pointer-events:auto!important;
-}
-.st-key-theme_dock_v2 [data-testid="stButton"]{width:max-content!important;pointer-events:auto!important}
-.st-key-theme_dock_v2 button{
- min-width:112px!important;min-height:40px!important;
- padding:8px 16px!important;border-radius:999px!important;
+/* Native theme button in normal layout; no fixed/z-index overlay. */
+.st-key-theme_action_v3 button {
+ min-width:110px!important;min-height:40px!important;
+ border-radius:999px!important;padding:8px 12px!important;
  border:1px solid #b9844f!important;background:#fff4e2!important;
  color:#583920!important;font:700 14px/1.4 'Noto Sans KR',sans-serif!important;
  box-shadow:0 3px 15px rgba(36,19,7,.2)!important;
- cursor:pointer!important;pointer-events:auto!important;
+ cursor:pointer!important;opacity:1!important;
 }
-.st-key-theme_dock_v2 button p{color:inherit!important;font-weight:700!important}
-.st-key-theme_dock_v2 button:hover{background:#ffebca!important}
-@media(max-width:650px){.st-key-theme_dock_v2{top:10px!important;right:12px!important}}
+.st-key-theme_action_v3 button p {
+ color:inherit!important;font-weight:700!important;white-space:nowrap!important;
+}
+.st-key-theme_action_v3 button:hover{background:#ffebca!important}
 </style>
 """ + ("""
 <style>
-.st-key-theme_dock_v2 button{background:#372536!important;border-color:#ac6d42!important;color:#fff0df!important}
-.st-key-theme_dock_v2 button:hover{background:#4c3445!important}
+.st-key-theme_action_v3 button {
+ background:#372536!important;border-color:#ac6d42!important;color:#fff0df!important;
+}
+.st-key-theme_action_v3 button:hover{background:#4c3445!important}
 </style>
-""" if _dark_now else ""),unsafe_allow_html=True)
+""" if _dark_now else ""), unsafe_allow_html=True)
 
 # Independent left-edge settings control replaces the fragile native sidebar opener.
 with st.popover(' ', help='데이터 연결 및 설정 열기'):
