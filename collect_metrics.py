@@ -119,6 +119,22 @@ def nado_oi():
     if not values:raise ValueError("No explicit USD open interest notional in Nado records")
     return {"oi_usd":sum(values),"markets":len(values)}
 
+def lighter_robinhood():
+    """Separate Robinhood Chain deployment (not ordinary Lighter mainnet)."""
+    data=get("https://api.rh.lighter.xyz/api/v1/exchangeStats")
+    if not isinstance(data,dict):raise ValueError("RH Lighter exchangeStats response invalid")
+    payload=data.get("data",data)
+    if not isinstance(payload,dict):raise ValueError("RH Lighter payload invalid")
+    volume=numeric(payload.get("daily_usd_volume"))
+    if volume is None:
+        entries=payload.get("order_book_stats")
+        if isinstance(entries,list):
+            vals=[numeric(item.get("daily_quote_token_volume")) for item in entries if isinstance(item,dict)]
+            vals=[v for v in vals if v is not None and v>=0]
+            if vals:volume=sum(vals)
+    if volume is None or volume<0:raise ValueError("No explicit RH Lighter USD 24h volume")
+    return dict(volume_24h_usd=volume)
+
 def lighter_mainnet():
     d=get("https://mainnet.zklighter.elliot.ai/api/v1/exchangeStats")
     if not isinstance(d,dict) or d.get("code")!=200:
@@ -173,6 +189,7 @@ def main():
        ("Arcus","Official /v1/markets perpetual 24h notional",arcus),
        ("Entropy","Official Hyperliquid HIP-3 io namespace",entropy_hip3),
        ("Hyperliquid","Official info API",hyperliquid),
+       ("robinhoodchain.lighter","Robinhood Chain-only exchangeStats",lighter_robinhood),
        ("Lighter","Lighter mainnet official exchangeStats",lighter_mainnet)]
     rows=[]
     for venue,source,fn in probes:
