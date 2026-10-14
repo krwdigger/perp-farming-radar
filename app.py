@@ -20,6 +20,49 @@ import streamlit as st
 
 st.set_page_config(page_title='빈집털이', page_icon='🤔', layout='wide', initial_sidebar_state='collapsed')
 
+# Apply immediate visual feedback to the existing native theme button before
+# Streamlit finishes its full rerender. The server remains authoritative for
+# Plotly/dataframe colors after the rerender.
+st.html("""
+<style>
+html.radar-theme-preview-dark [data-testid="stAppViewContainer"]{
+ background:#130f17!important;background-image:none!important;
+}
+html.radar-theme-preview-dark [data-testid="stAppViewContainer"] .block-container{
+ background:#17121a!important;backdrop-filter:none!important;
+}
+html.radar-theme-preview-dark [data-testid="stApp"]{
+ background:#17121a!important;color:#f0dfce!important;
+}
+html.radar-theme-preview-light [data-testid="stAppViewContainer"]{
+ background:#f8efdf!important;
+}
+html.radar-theme-preview-light [data-testid="stAppViewContainer"] .block-container{
+ background:#fff8ea!important;
+}
+</style>
+<script>
+(() => {
+ const key='radar.instant.theme';
+ function findButton(target) {
+   const button=target?.closest?.('.st-key-theme_action_v3 button');
+   return button || null;
+ }
+ if (!window.__radarThemePreviewHandler) {
+   window.__radarThemePreviewHandler=(event)=>{
+     if(!findButton(event.target))return;
+     const dark=!(document.documentElement.classList.contains('radar-theme-preview-dark') ||
+       localStorage.getItem(key)==='dark');
+     document.documentElement.classList.toggle('radar-theme-preview-dark',dark);
+     document.documentElement.classList.toggle('radar-theme-preview-light',!dark);
+     try{localStorage.setItem(key,dark?'dark':'light')}catch(_){}
+   };
+   document.addEventListener('pointerdown',window.__radarThemePreviewHandler,true);
+ }
+})();
+</script>
+""", unsafe_allow_javascript=True)
+
 # Set the page background before expensive charts and API-backed widgets render.
 # Full component styling remains in the existing dark-mode stylesheet below.
 if st.session_state.get('theme_is_dark_v2', False):
