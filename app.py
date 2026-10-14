@@ -1053,46 +1053,16 @@ html.radar-dark [data-testid="stAppViewContainer"]{
 html.radar-dark [data-testid="stMain"],
 html.radar-dark [data-testid="stMainBlockContainer"]{background-color:transparent!important}
 </style>"""
-# Prepare the supplied Halloween photo only once. Keep exactly the
-# light-mode image sizing (auto min(100vh, 1600px), centered and repeat-x).
-# Apply a 75% dark-plum overlay to the photograph; only the warm, bright
-# jack-o-lantern cutouts are selectively restored with a soft warm glow.
-@st.cache_data(show_spinner=False)
-def _lit_dark_pumpkin_photo(photo_bytes):
-    import numpy as np
-    from PIL import ImageFilter
-
-    with Image.open(BytesIO(photo_bytes)) as photo:
-        original = np.asarray(photo.convert('RGB'), dtype=np.float32)
-    red, green, blue = original[:,:,0], original[:,:,1], original[:,:,2]
-    # Bright golden, internally illuminated faces; exclude ordinary orange
-    # pumpkin skin and neutral-toned hay using saturation/hue thresholds.
-    # Restrict glow to near-white/yellow emissive cutouts, not orange skins.
-    flame = (
-        np.clip((red - 220.0) / 30.0, 0, 1) *
-        np.clip((green - 165.0) / 65.0, 0, 1) *
-        np.clip((green - blue - 35.0) / 60.0, 0, 1) *
-        np.clip((100.0 - (red-green)) / 35.0, 0, 1)
-    )
-    glow_source = Image.fromarray(np.uint8(flame * 255), 'L')
-    halo = np.asarray(glow_source.filter(ImageFilter.GaussianBlur(12)), dtype=np.float32) / 255.0
-    # 75% opaque plum overlay on non-emissive areas.
-    plum = np.array([19.0,14.0,23.0], dtype=np.float32)
-    dark = original * .25 + plum * .75
-    light_weight = np.clip(flame * 1.0 + halo * .17, 0, 1)[:,:,None]
-    lit = dark * (1.0-light_weight) + original * light_weight
-    result = Image.fromarray(np.uint8(np.clip(lit,0,255)), 'RGB')
-    output = BytesIO()
-    result.save(output,format='WEBP',quality=85,method=5)
-    return base64.b64encode(output.getvalue()).decode('ascii')
-
+# Dark-mode background: use the uploaded photo directly. Keep the same
+# background sizing/positioning as LIGHT, with exactly one 75% overlay.
 _dark_pumpkin_asset = DATA_DIR / 'assets' / 'pumpkin_dark.webp'
 if _dark_pumpkin_asset.is_file():
-    _dark_pumpkin_b64 = _lit_dark_pumpkin_photo(_dark_pumpkin_asset.read_bytes())
+    _dark_pumpkin_b64 = base64.b64encode(_dark_pumpkin_asset.read_bytes()).decode('ascii')
     _theme_css += (
         '<style>'
-        'html.radar-dark [data-testid="stAppViewContainer"]{'
-        'background-image:url("data:image/webp;base64,'+_dark_pumpkin_b64+'")!important;'
+        'html.radar-dark body [data-testid="stAppViewContainer"]{'
+        'background-image:linear-gradient(rgba(19,14,23,.75),rgba(19,14,23,.75)),'
+        'url("data:image/webp;base64,'+_dark_pumpkin_b64+'")!important;'
         'background-color:#17121a!important;'
         'background-position:center top!important;'
         'background-size:auto min(100vh, 1600px)!important;'
@@ -1100,34 +1070,15 @@ if _dark_pumpkin_asset.is_file():
         'background-attachment:scroll!important;'
         'background-blend-mode:normal!important;'
         '}'
-        'html.radar-dark [data-testid="stMain"],'
-        'html.radar-dark [data-testid="stMainBlockContainer"]{'
+        'html.radar-dark body [data-testid="stAppViewContainer"] [data-testid="stMain"],'
+        'html.radar-dark body [data-testid="stAppViewContainer"] [data-testid="stMainBlockContainer"]{'
         'background:transparent!important;'
+        '}'
+        'html.radar-dark body [data-testid="stAppViewContainer"] .block-container{'
+        'background:rgba(23,18,26,.88)!important;'
         '}'
         '</style>'
     )
-
-# Final dark-background layer: the image is already composited with a
-# 75% plum overlay and retained warm jack-o-lantern illumination.
-# Keep background selectors separate from all card/chart/table styles.
-_theme_css += """<style>
-html.radar-dark body [data-testid="stAppViewContainer"]{
- background-color:#17121a!important;
- background-position:center top!important;
- background-size:auto min(100vh, 1600px)!important;
- background-repeat:repeat-x!important;
- background-attachment:scroll!important;
- background-blend-mode:normal!important;
-}
-html.radar-dark body [data-testid="stAppViewContainer"] [data-testid="stMain"],
-html.radar-dark body [data-testid="stAppViewContainer"] [data-testid="stMainBlockContainer"]{
- background-color:transparent!important;
- background-image:none!important;
-}
-html.radar-dark body [data-testid="stAppViewContainer"] .block-container{
- background:rgba(23,18,26,.88)!important;
-}
-</style>"""
 st.markdown(_theme_css, unsafe_allow_html=True)
 
 st.components.v1.html("""
