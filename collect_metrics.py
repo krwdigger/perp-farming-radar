@@ -70,6 +70,38 @@ def pacifica_oi():
     if not values:raise ValueError("No USD-denominated open interest values")
     return {"oi_usd":sum(values),"markets":len(values)}
 
+def ccxt_perp_volume(venue):
+    import ccxt
+    exchange=getattr(ccxt,venue)({"enableRateLimit":True,"timeout":16000})
+    markets=exchange.load_markets()
+    tickers=exchange.fetch_tickers()
+    volume=0.0
+    count=0
+    for symbol,ticker in tickers.items():
+        market=markets.get(symbol)
+        if not isinstance(market,dict) or not market.get("swap") or market.get("active") is False:
+            continue
+        if str(market.get("quote") or "").upper() not in ("USD","USDC","USDT"):
+            continue
+        if str(market.get("settle") or "").upper() not in ("USD","USDC","USDT"):
+            continue
+        q=numeric(ticker.get("quoteVolume"))
+        if q is None:
+            base=numeric(ticker.get("baseVolume"))
+            price=numeric(ticker.get("last"))
+            if base is not None and price is not None:q=base*price
+        if q is not None and q>=0:
+            volume+=q
+            count+=1
+    if not count:raise ValueError("No USD perpetual markets with public 24h turnover")
+    return {"volume_24h_usd":volume,"markets":count}
+
+def pacifica_volume():
+    return ccxt_perp_volume("pacifica")
+
+def nado_volume():
+    return ccxt_perp_volume("nado")
+
 def nado_oi():
     import ccxt
     exchange=ccxt.nado({"enableRateLimit":True,"timeout":16000})
@@ -103,6 +135,8 @@ def main():
        ("Pacifica","Official public market info (market count only)",pacifica),
        ("Pacifica","CCXT unified fetchOpenInterests",pacifica_oi),
        ("Nado","CCXT unified fetchOpenInterests",nado_oi),
+       ("Pacifica","CCXT public perpetual 24h ticker turnover",pacifica_volume),
+       ("Nado","CCXT public perpetual 24h ticker turnover",nado_volume),
        ("Arcus","Official /v1/markets perpetual 24h notional",arcus),
        ("Hyperliquid","Official info API",hyperliquid)]
     rows=[]
