@@ -335,6 +335,7 @@ for c in ['point_model','notes','oi_source','volume_source','market_data_time']:
     if c not in df:df[c]=None
 
 df['is_watchlist']=df['is_watchlist'].fillna(False).astype(bool)
+df['volume_per_active_wallet_7d_usd']=df['volume_7d_usd']/df['active_wallets_7d'].replace(0,float('nan'))
 df['wallet_change_pct']=(df['active_wallets_7d']/df['active_wallets_prev_7d']-1)*100
 df.loc[df['active_wallets_prev_7d']<=0,'wallet_change_pct']=float('nan')
 df['volume_change_pct']=(df['volume_7d_usd']/df['volume_prev_7d_usd']-1)*100
@@ -428,7 +429,7 @@ with radar_tabs[0]:
       '7D 지갑 변화 ↓':('wallet_change_pct',True)}[order]
     display=display.sort_values(sort_column,ascending=ascending,na_position='last').reset_index(drop=True)
     def crowd_label(change):
-        if pd.isna(change):return '⚪ 관측 대기'
+        if pd.isna(change):return ''
         if change>=25:return '🔴 유입 급증'
         if change>=5:return '🟠 유입 증가'
         if change<=-20:return '🟢 유입 크게 감소'
@@ -439,8 +440,9 @@ with radar_tabs[0]:
     display['Volume']=display['volume_24h_usd'].map(compact_usd)
     display['OI']=display['oi_usd'].map(compact_usd)
     display['활성 지갑']=display['active_wallets_7d'].map(integer_fmt)
+    display['지갑당 7D Volume']=display['volume_per_active_wallet_7d_usd'].map(compact_usd)
     display['7D 변화']=display['wallet_change_pct'].apply(lambda x:f'{x:+.1f}%' if pd.notna(x) else '—')
-    st.dataframe(display[['순위','watch_name','volume_24h_usd','Volume','OI','활성 지갑','7D 변화','혼잡 변화']].rename(
+    st.dataframe(display[['순위','watch_name','volume_24h_usd','Volume','OI','활성 지갑','지갑당 7D Volume','7D 변화','혼잡 변화']].rename(
         columns={'watch_name':'프로젝트','volume_24h_usd':'거래량 바 (24H)'}),
         hide_index=True,use_container_width=True,height=min(570,max(245,42*(len(display)+1)+10)),
         column_config={
