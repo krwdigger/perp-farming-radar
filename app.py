@@ -1084,6 +1084,29 @@ html [data-testid="stAlert"]{background-color:#302632!important;border-color:#79
 html [data-testid="stAlert"] p{color:#f0dcc6!important}
 html [data-testid="stCaptionContainer"] p{color:#cbb29e!important}
 html [data-testid="stDataFrame"] canvas{filter:none!important}
+/* Data connection popover: override inherited light-theme brown typography. */
+html [data-baseweb="popover"]:has([data-testid="stFileUploader"]),
+html [data-testid="stPopoverContent"]:has([data-testid="stFileUploader"]),
+html [role="dialog"]:has([data-testid="stFileUploader"]){
+ background:#241d28!important;color:#f0dfce!important;
+}
+html [data-baseweb="popover"]:has([data-testid="stFileUploader"]) :is(h1,h2,h3,h4,p,span,label,small),
+html [data-testid="stPopoverContent"]:has([data-testid="stFileUploader"]) :is(h1,h2,h3,h4,p,span,label,small),
+html [role="dialog"]:has([data-testid="stFileUploader"]) :is(h1,h2,h3,h4,p,span,label,small){
+ color:#f0dfce!important;
+}
+html [data-baseweb="popover"]:has([data-testid="stFileUploader"]) :is([data-testid="stCaptionContainer"],[data-testid="stWidgetLabel"]) *,
+html [data-testid="stPopoverContent"]:has([data-testid="stFileUploader"]) :is([data-testid="stCaptionContainer"],[data-testid="stWidgetLabel"]) *{
+ color:#d8baa3!important;
+}
+html [data-testid="stFileUploader"] section,
+html [data-testid="stFileUploaderDropzone"]{
+ background:#30252c!important;border-color:#78563f!important;
+}
+html [data-baseweb="popover"]:has([data-testid="stFileUploader"]) button:disabled,
+html [data-testid="stPopoverContent"]:has([data-testid="stFileUploader"]) button:disabled{
+ background:#302834!important;color:#bba89a!important;border-color:#615044!important;opacity:1!important;
+}
 /* Preserve dark surfaces on hover, focus and expanded states.
    In particular, Streamlit's expander summary has a light hover default. */
 html [data-testid="stExpander"] summary,
