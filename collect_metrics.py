@@ -46,7 +46,12 @@ def arcus():
     d=get("https://api.arcus.xyz/v1/markets")
     markets=d if isinstance(d,list) else d.get("markets") if isinstance(d,dict) else None
     if not isinstance(markets,list):raise ValueError("Unexpected market-list schema")
-    return dict(markets=len(markets))
+    perps=[m for m in markets if isinstance(m,dict) and m.get("type")=="PERPETUAL"]
+    notionals=[]
+    for m in perps:
+        size=numeric(m.get("openInterest"));price=numeric(m.get("markPrice"))
+        if size is not None and price is not None:notionals.append(size*price)
+    return dict(markets=len(perps),oi_usd=sum(notionals) if notionals else None)
 
 def hyperliquid():
     payload=json.dumps({"type":"metaAndAssetCtxs"}).encode()
