@@ -349,29 +349,29 @@ with radar_tabs[0]:
     st.subheader('관심 프로젝트 · Watchlist')
     watched=df[df['is_watchlist'].fillna(False).astype(bool)].copy()
     watched['상태']=watched.apply(lambda r:'참여자 데이터' if pd.notna(r['active_wallets_7d']) else ('시장 데이터' if pd.notna(r['oi_usd']) or pd.notna(r['volume_24h_usd']) or pd.notna(r['volume_7d_usd']) else '미연동'),axis=1)
-    # Decision-first summary: never infer point efficiency from Volume/OI alone.
-    full=(watched['active_wallets_7d'].notna() & watched['weekly_points'].notna())
-    market=(watched[['oi_usd','volume_24h_usd','volume_7d_usd']].notna().any(axis=1))
+    # Primary goal: weekly trader crowding. Points are optional.
+    wallet_available=watched['active_wallets_7d'].notna()
+    oi_available=watched['oi_usd'].notna()
     d1,d2,d3=st.columns(3)
-    d1.metric('경쟁률 분석 가능',f'{int(full.sum())} / {len(watched)}')
-    d2.metric('시장 데이터 관측',f'{int(market.sum())} / {len(watched)}')
-    d3.metric('추가 연동 필요',f'{int((~full).sum())}')
-    if not full.any():
-        st.warning('이번 주 확정 빈집 후보: **없음 (판정 불가)** · 참여자 수와 실제 주간 포인트 배분량을 동시에 확보한 거래소가 없습니다. 아래 시장 규모는 경쟁률 순위가 아닙니다.')
-    st.markdown('#### 이번 주 어디를 먼저 살펴볼까?')
-    st.caption('아래 순서는 파밍 추천이나 수익률 순위가 아닌, **데이터 확보 우선순위**입니다.')
-    ready_rows=[]
+    d1.metric('7일 활성 거래 지갑 확보',f'{int(wallet_available.sum())}/{len(watched)}')
+    d2.metric('현재 OI 확보',f'{int(oi_available.sum())}/{len(watched)}')
+    d3.metric('활성 지갑 미확보',f'{int((~wallet_available).sum())}/{len(watched)}')
+    st.info('**목표: 이번 주 어느 거래소에 사람이 몰리는가.** 활성 지갑 수와 7일 증감률을 우선하고, OI 규모와 7일 증감률은 보조 경쟁 지표로 사용합니다. 포인트 데이터는 필수 조건이 아닙니다.')
+    st.markdown('#### 관심 거래소 · 참여자 관측 가능 여부')
+    crowd_rows=[]
     for _,r in watched.iterrows():
-        metrics=int(pd.notna(r['volume_24h_usd']))+int(pd.notna(r['volume_7d_usd']))+int(pd.notna(r['oi_usd']))
-        ready_rows.append({
-            '프로젝트':r['watch_name'],
-            '현재 할 수 있는 일':'파밍 경쟁 분석' if pd.notna(r['active_wallets_7d']) and pd.notna(r['weekly_points']) else ('시장 활동 관찰' if metrics else '공식 데이터 연결 확인'),
-            '데이터 상황':('참여자·포인트 있음' if pd.notna(r['active_wallets_7d']) and pd.notna(r['weekly_points']) else f'시장 지표 {metrics}/3 확보'),
-            '핵심 미확보':'없음' if pd.notna(r['active_wallets_7d']) and pd.notna(r['weekly_points']) else ('활성 거래 지갑 + 주간 포인트' if metrics else '거래량/OI + 활성 거래 지갑 + 주간 포인트'),
-            '시장 데이터 점수':metrics
+        wallet_ok=pd.notna(r['active_wallets_7d'])
+        oi_ok=pd.notna(r['oi_usd'])
+        crowd_rows.append({
+          '거래소':r['watch_name'],
+          '7D 거래 지갑':integer_fmt(r['active_wallets_7d']),
+          '지갑 증감률':(f"{r['wallet_change_pct']:+.1f}%" if pd.notna(r['wallet_change_pct']) else '—'),
+          '현재 OI':compact_usd(r['oi_usd']),
+          '데이터 판단':'거래자 관측 가능' if wallet_ok else ('OI 추이 관찰 가능' if oi_ok else '미확보'),
+          '부족한 정보':('7일 이전 거래 지갑 수' if wallet_ok and pd.isna(r['wallet_change_pct']) else '—' if wallet_ok else '7일 활성 거래 지갑 / 주간 변화')
         })
-    queue=pd.DataFrame(ready_rows).sort_values(['시장 데이터 점수','프로젝트'],ascending=[False,True])
-    st.dataframe(queue.drop(columns=['시장 데이터 점수']),hide_index=True,use_container_width=True,height=425)
+    st.dataframe(pd.DataFrame(crowd_rows),hide_index=True,use_container_width=True,height=422)
+    st.caption('지갑 데이터가 없으면 OI로 사람이 얼마나 몰렸다고 단정하지 않습니다. 포인트 비공개 여부는 이 표의 관측 가능 조건에 포함되지 않습니다.')
     st.markdown('#### 시장 활동 · 스케일 비교')
     vplot=watched.dropna(subset=['oi_usd']).sort_values('oi_usd',ascending=False)
     if not vplot.empty:
@@ -562,4 +562,4 @@ with radar_tabs[4]:
         c3.metric('활동 점유율',f'{mine/whole*100:.4f}%')
     else:st.warning('전체 활동량과 포인트 풀을 확인하세요.')
 st.divider()
-st.caption('v0.9 Scheduled History Cloud Dancer · Read-only research dashboard · 에어드랍 수익 보장 없음 · 주문/지갑 서명 기능 없음')
+st.caption('v1.0 Weekly Crowd Radar Cloud Dancer · Read-only research dashboard · 에어드랍 수익 보장 없음 · 주문/지갑 서명 기능 없음')
