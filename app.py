@@ -1077,7 +1077,7 @@ if _dark_pumpkin_file.is_file():
         'html.radar-dark [data-testid="stAppViewContainer"] .block-container{background:rgba(23,18,26,.92)!important;}'
         '</style>'
     )
-st.markdown(_theme_css, unsafe_allow_html=True)
+st.html(_theme_css)
 
 st.components.v1.html("""
 <script>
