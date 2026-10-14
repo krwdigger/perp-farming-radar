@@ -1028,7 +1028,6 @@ with _theme_right:
     if st.button(
         '🎃 DARK' if st.session_state['theme_is_dark_v2'] else '🎃 LIGHT',
         key='theme_action_v3',
-        help='라이트 모드와 다크 모드 전환',
         use_container_width=True,
     ):
         st.session_state['theme_is_dark_v2'] = not st.session_state['theme_is_dark_v2']
