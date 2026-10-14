@@ -856,20 +856,31 @@ if _paw_base64:
 
 _cat_asset = DATA_DIR / 'assets' / 'cat_head.b64'
 _cat_head_b64 = _cat_asset.read_text(encoding='utf-8').strip() if _cat_asset.exists() else ''
-_cat_head_html = (
-    f'<img class="radar-cat-head" src="data:image/webp;base64,{_cat_head_b64}" alt="고양이 얼굴">'
-    if _cat_head_b64 else ''
-)
-st.markdown(
-    '<div class="radar-banner"><h1>빈집털이</h1>' + _cat_head_html + '</div>',
-    unsafe_allow_html=True
-)
-
-
 _dark_cat_asset=DATA_DIR/'assets'/'dark_cat_head.b64'
 _dark_cat_b64=_dark_cat_asset.read_text(encoding='utf-8').strip() if _dark_cat_asset.exists() else ''
+# Render both images; CSS swaps visibility on the root dark-mode class.
+# Unlike updating img.src from JavaScript, this is resilient to Streamlit
+# re-rendering the banner and to cached image node replacements.
+_cat_head_html = (
+    f'<img class="radar-cat-head radar-cat-light" src="data:image/webp;base64,{_cat_head_b64}" alt="고양이 얼굴">'
+    if _cat_head_b64 else ''
+)
+if _dark_cat_b64:
+    _cat_head_html += (
+        f'<img class="radar-cat-head radar-cat-dark" src="data:image/webp;base64,{_dark_cat_b64}" alt="잭오랜턴 고양이">'
+    )
+st.markdown(
+    '<div class="radar-banner"><h1>빈집털이</h1><span class="radar-cat-stack">'
+    + _cat_head_html + '</span></div>',
+    unsafe_allow_html=True
+)
 _theme_widget=r"""
 <style id="radar-theme-css">
+.radar-cat-stack{display:inline-grid;grid-template-areas:"cat";align-items:center;justify-items:center;flex-shrink:0}
+.radar-cat-stack .radar-cat-head{grid-area:cat}
+.radar-cat-stack .radar-cat-dark{display:none!important}
+html.radar-dark .radar-cat-stack .radar-cat-light{display:none!important}
+html.radar-dark .radar-cat-stack .radar-cat-dark{display:block!important}
 #radar-dark-toggle{position:fixed!important;top:18px!important;right:max(24px,calc((100vw - 1450px)/2 + 30px))!important;z-index:2147483645!important;cursor:pointer!important;border:1px solid #b9844f!important;border-radius:999px!important;padding:9px 16px!important;font:700 14px/1.4 'Noto Sans KR',sans-serif!important;background:#fff4e2!important;color:#583920!important;box-shadow:0 3px 15px rgba(36,19,7,.2)!important;}
 html.radar-dark body,html.radar-dark [data-testid="stApp"]{background:#120f14!important;color:#f1e3d5!important}
 html.radar-dark [data-testid="stAppViewContainer"]{background-color:#17121a!important;background-blend-mode:multiply,multiply!important}
@@ -911,8 +922,7 @@ html.radar-dark [data-testid="stAlert"]{background:#34252b!important;border-colo
     document.documentElement.classList.toggle('radar-dark',isDark);
     button.textContent=isDark?'☀️ 라이트모드':'🌙 다크모드';
     button.setAttribute('aria-pressed',String(isDark));
-    const cat=document.querySelector('.radar-cat-head');
-    if(cat) cat.src=isDark && {{HAS_DARK_CAT}} ? darkCat : lightCat;
+    // Banner images switch through CSS bound to html.radar-dark.
   }
   button.onclick=()=>{
     const next=!document.documentElement.classList.contains('radar-dark');
@@ -922,17 +932,7 @@ html.radar-dark [data-testid="stAlert"]{background:#34252b!important;border-colo
   let saved='light';
   try{saved=localStorage.getItem(key)||'light'}catch(_e){}
   apply(saved==='dark');
-  if(!window.__radarThemeObserver){
-    const observer=new MutationObserver(()=>{
-      const cat=document.querySelector('.radar-cat-head');
-      if(cat){
-        const desired=document.documentElement.classList.contains('radar-dark') && {{HAS_DARK_CAT}} ? darkCat : lightCat;
-        if(cat.src!==desired)cat.src=desired;
-      }
-    });
-    observer.observe(document.body,{childList:true,subtree:true});
-    window.__radarThemeObserver=observer;
-  }
+
 })();
 </script>
 """
