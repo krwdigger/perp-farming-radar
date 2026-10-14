@@ -12,7 +12,7 @@ import plotly.express as px
 import requests
 import streamlit as st
 
-st.set_page_config(page_title='Perp Farming Radar', page_icon='📡', layout='wide')
+st.set_page_config(page_title='Perp Farming Radar', page_icon='📡', layout='wide', initial_sidebar_state='collapsed')
 DATA_DIR = Path(__file__).resolve().parent
 SNAPSHOT_FILE = DATA_DIR / 'radar_snapshots.csv'
 WATCHLIST_FILE = DATA_DIR / 'watchlist.csv'
@@ -282,6 +282,10 @@ p,li,[data-testid="stCaptionContainer"]{color:#65737d}
 .radar-chip{display:none}
 .radar-hint{padding:14px 18px;background:#ecf3f7;border-left:3px solid #a5bfd0;border-radius:9px;color:#607685;font-size:13px}
 .radar-hint b{color:#566b79}
+[data-testid="stSidebar"]{min-width:230px!important;max-width:230px!important;width:230px!important}
+[data-testid="stSidebar"] [data-testid="stVerticalBlock"]{gap:.35rem}
+[data-testid="stSidebar"] h2{font-size:1.08rem!important}
+[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"]{padding:8px!important}
 </style>""",unsafe_allow_html=True)
 st.markdown("""<div class="radar-banner">
 <h1 style="margin:8px 0 2px">Perp Farming Radar</h1>
@@ -296,10 +300,7 @@ with st.sidebar:
     st.download_button('CSV 템플릿 다운로드', (DATA_DIR/'manual_metrics.csv').read_bytes(), 'manual_metrics.csv', mime='text/csv')
     if st.button('API 캐시 새로고침'):
         fetch_catalog.clear();fetch_oi.clear();fetch_hyperliquid.clear();fetch_standx.clear();fetch_variational.clear();fetch_pacifica_markets.clear();fetch_arcus_markets.clear();fetch_nado_ccxt.clear();fetch_pacifica_ccxt.clear();fetch_pro_derivatives.clear();st.rerun()
-    st.divider()
-    st.caption('관심 프로젝트 11개는 기본 등록됩니다. 이름 중복은 거래소별 실제 엔드포인트 확인 전까지 자동 통합하지 않습니다.')
-    st.caption('활성 사용자 수는 현재 범용 무료 API에서 자동으로 가져오지 못합니다. 확인 가능한 프로젝트별 데이터를 CSV로 연결해야 합니다.')
-    st.caption('v0.4: StandX·Variational 공식 공개 시장 API 연동. 24h 거래량 및 현재 OI이며 7일 지표나 포인트 경쟁률은 아닙니다.')
+
 
 errors=[]
 with st.spinner('공개 데이터 수집 중…'):
