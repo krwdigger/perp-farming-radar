@@ -371,6 +371,26 @@ p,li,[data-testid="stCaptionContainer"]{color:#695545!important}
 [data-testid="stMetricLabel"],[data-testid="stMetricValue"]{color:#63442d!important}
 [data-testid="stPopover"] button{color:#704826!important}
 </style>""",unsafe_allow_html=True)
+# The supplied pumpkin photograph is stored as a small WebP data file in the repo.
+# Inline it so the background loads on Streamlit Cloud without another image host.
+_pumpkin_asset=DATA_DIR / 'assets' / 'pumpkin_background.b64'
+if _pumpkin_asset.exists():
+    _pumpkin_b64=_pumpkin_asset.read_text(encoding='utf-8').strip()
+    st.markdown(
+        '<style>'
+        '[data-testid="stAppViewContainer"]{'
+        'background-image:linear-gradient(rgba(69,40,19,.24),rgba(74,44,24,.28)),'
+        'url("data:image/webp;base64,'+_pumpkin_b64+'")!important;'
+        'background-position:center center!important;'
+        'background-size:cover!important;'
+        'background-attachment:fixed!important;'
+        'background-repeat:no-repeat!important;}'
+        '[data-testid="stAppViewContainer"] .block-container{'
+        'background:rgba(255,248,234,.89)!important;'
+        'backdrop-filter:blur(3px)!important;}'
+        '</style>',unsafe_allow_html=True
+    )
+
 st.markdown("""<div class="radar-banner">
 <h1>빈집털이</h1></div>""",unsafe_allow_html=True)
 
