@@ -93,6 +93,21 @@ def fetch_standx():
             'oi_source': 'StandX official public market overview (current OI notional)',
             'market_data_time': datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}
 
+@st.cache_data(ttl=300, show_spinner=False)
+def fetch_variational():
+    """Official Variational Omni public platform stats (USDC denominated)."""
+    data = api_get('https://omni-client-api.prod.ap-northeast-1.variational.io/metadata/stats')
+    if not isinstance(data, dict):
+        raise ValueError('Variational market statistics response is not an object')
+    volume = number(data.get('total_volume_24h'))
+    oi = number(data.get('open_interest'))
+    if volume is None and oi is None:
+        raise ValueError('Variational statistics contain no supported market figures')
+    return {'volume_24h_usd': volume, 'oi_usd': oi,
+            'volume_source': 'Variational Omni official public API (24h USDC volume)',
+            'oi_source': 'Variational Omni official public API (current USDC OI)',
+            'market_data_time': datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}
+
 @st.cache_data(ttl=900, show_spinner=False)
 def fetch_pro_derivatives(key):
     payload=api_get('https://pro-api.llama.fi/' + key.strip() + '/api/overview/derivatives',
@@ -134,11 +149,11 @@ with st.sidebar:
     uploaded=st.file_uploader('프로젝트별 포인트·참여자 CSV', type='csv')
     st.download_button('CSV 템플릿 다운로드', (DATA_DIR/'manual_metrics.csv').read_bytes(), 'manual_metrics.csv', mime='text/csv')
     if st.button('API 캐시 새로고침'):
-        fetch_catalog.clear();fetch_oi.clear();fetch_hyperliquid.clear();fetch_pro_derivatives.clear();st.rerun()
+        fetch_catalog.clear();fetch_oi.clear();fetch_hyperliquid.clear();fetch_standx.clear();fetch_variational.clear();fetch_pro_derivatives.clear();st.rerun()
     st.divider()
     st.caption('관심 프로젝트 11개는 기본 등록됩니다. 이름 중복은 거래소별 실제 엔드포인트 확인 전까지 자동 통합하지 않습니다.')
     st.caption('활성 사용자 수는 현재 범용 무료 API에서 자동으로 가져오지 못합니다. 확인 가능한 프로젝트별 데이터를 CSV로 연결해야 합니다.')
-    st.caption('v0.3: StandX 공식 공개 시장 API 연결. 24h 거래량과 OI만 제공하며 7일 지표는 제공하지 않습니다.')
+    st.caption('v0.4: StandX·Variational 공식 공개 시장 API 연동. 24h 거래량 및 현재 OI이며 7일 지표나 포인트 경쟁률은 아닙니다.')
 
 errors=[]
 with st.spinner('공개 데이터 수집 중…'):
@@ -150,6 +165,8 @@ with st.spinner('공개 데이터 수집 중…'):
     except Exception as e: hl=None;errors.append(f'Hyperliquid: {e}')
     try: sx=fetch_standx()
     except Exception as e: sx=None;errors.append(f'StandX: {e}')
+    try: va=fetch_variational()
+    except Exception as e: va=None;errors.append(f'Variational: {e}')
     try: pro=fetch_pro_derivatives(pro_key) if pro_key else pd.DataFrame()
     except Exception as e: pro=pd.DataFrame();errors.append(f'DefiLlama Pro: {e}')
 
@@ -180,6 +197,13 @@ if sx:
         for field, value in sx.items():
             if field not in df.columns: df[field] = None
             df.loc[standx_mask, field] = value
+# Scope Variational market stats to the explicitly identified Variational watchlist row.
+if va:
+    va_mask = df['watch_name'].eq('Variational')
+    if va_mask.any():
+        for field, value in va.items():
+            if field not in df.columns: df[field] = None
+            df.loc[va_mask, field] = value
 if hl:
     hk=norm(hl['name'])
     mask=df['_id']==hk
@@ -240,6 +264,7 @@ st.subheader('📡 데이터 연결 현황')
 status_rows = [
     {'소스':'DefiLlama 프로토콜 목록','제공 항목':'거래소 목록 · TVL(해당 시)','상태':'연결 성공' if not catalog.empty else '조회 실패','갱신 방식':'15분 캐시'},
     {'소스':'DefiLlama OI 개요','제공 항목':'거래소별 OI','상태':'연결 성공' if not oi.empty else '조회 실패/결과 없음','갱신 방식':'15분 캐시'},
+    {'소스':'Variational Omni 공식 공개 시장 API','제공 항목':'Variational 24h Volume · 현재 OI','상태':'연결 성공' if va else '조회 실패','갱신 방식':'5분 캐시'},
     {'소스':'StandX 공식 공개 시장 API','제공 항목':'StandX 24h Volume · 현재 OI','상태':'연결 성공' if sx else '조회 실패','갱신 방식':'5분 캐시'},
     {'소스':'Hyperliquid 공식 API','제공 항목':'Hyperliquid 현물 아닌 무기한 선물 시장의 24h Volume 및 OI','상태':'연결 성공' if hl else ('비활성화' if not use_hl else '조회 실패'),'갱신 방식':'2분 캐시'},
     {'소스':'DefiLlama Pro derivatives','제공 항목':'거래소별 24h/7d Volume','상태':'연결 성공' if not pro.empty else ('API 키 필요' if not pro_key else '조회 실패/결과 없음'),'갱신 방식':'15분 캐시'},
