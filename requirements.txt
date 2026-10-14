@@ -2,3 +2,4 @@ streamlit>=1.38
 pandas>=2.1
 requests>=2.31
 plotly>=5.20
+ccxt>=4.4,<5
