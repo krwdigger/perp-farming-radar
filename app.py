@@ -507,6 +507,26 @@ div[data-testid="stAlert"] svg,[data-testid="stAlert"] [data-testid="stIconMater
 [data-testid="stDataFrame"]{background:#fff9ef!important;color:#573b28!important}
 [data-testid="stApp"] [data-testid="stPlotlyChart"]{
  background:rgba(255,248,236,.55)!important}
+
+/* Flat tabs: no bright hover blocks or animated underline. */
+[data-testid="stTabs"] [data-baseweb="tab-list"]{gap:18px!important;border-bottom:1px solid #dcc19d!important}
+[data-testid="stTabs"] [data-baseweb="tab"],
+[data-testid="stTabs"] [role="tab"]{
+ border-radius:0!important;background:transparent!important;box-shadow:none!important;
+ transition:none!important;animation:none!important;transform:none!important;
+ padding:11px 5px!important;color:#68442e!important;white-space:nowrap!important
+}
+[data-testid="stTabs"] [role="tab"]:hover,
+[data-testid="stTabs"] [role="tab"]:focus-visible{
+ background:transparent!important;box-shadow:none!important;color:#ad622e!important
+}
+[data-testid="stTabs"] [role="tab"][aria-selected="true"]{
+ background:transparent!important;border-bottom:2px solid #b96e36!important;color:#9d552c!important
+}
+[data-testid="stTabs"] [data-baseweb="tab-highlight"],
+[data-testid="stTabs"] [data-baseweb="tab-border"]{
+ transition:none!important;animation:none!important
+}
 </style>""",unsafe_allow_html=True)
 # Keep the exact uploaded 1200×1600 JPEG in the repository (no lossy re-encoding).
 # Scale to the viewport height rather than covering its width, which greatly
@@ -778,11 +798,11 @@ def harvest_linear_bar(fig, values, height=360, money=True):
     maximum=max(valid) if valid else 1.0
     rough=max(maximum/5.0,1.0)
     decade=10**math.floor(math.log10(rough))
-    increment=next((k*decade for k in (1,2,2.5,5,10) if k*decade>=rough),10*decade)
-    axis_end=max(6*increment,math.ceil(maximum/increment+1)*increment)
+    increment=next((k*decade for k in (10,5,2.5,2,1) if k*decade<=rough),decade)
+    axis_end=max(5*increment,math.ceil(maximum/increment+0.35)*increment)
     tick_values=[i*increment for i in range(int(axis_end/increment)+1)]
     fig.update_layout(
-        height=height,margin=dict(l=6,r=88,t=15,b=46),
+        height=height,margin=dict(l=178,r=105,t=18,b=62),
         showlegend=False,font=dict(size=14,color='#61432d'),
         paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(255,248,233,.28)',
         xaxis=dict(type='linear',range=[0,axis_end],tickmode='array',
@@ -790,7 +810,7 @@ def harvest_linear_bar(fig, values, height=360, money=True):
                    ticks='outside',tickcolor='#a07750',showticklabels=True,
                    showgrid=True,gridcolor='#e2cda9',zeroline=False,
                    tickfont=dict(size=13,color='#62432c'),title_font=dict(size=14,color='#62432c')),
-        yaxis=dict(tickfont=dict(size=13,color='#62432c'),showgrid=False))
+        yaxis=dict(tickfont=dict(size=13,color='#62432c'),showgrid=False,automargin=True,title=None))
     return fig
 
 radar_tabs=st.tabs(['🧸 관심 거래소','🐿️ 경쟁 비교','🦊 전체 스캐너','🍁 데이터 출처'])
