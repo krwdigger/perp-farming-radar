@@ -263,17 +263,28 @@ html,body,[data-testid="stApp"],[class*="css"]{font-family:'DM Sans','Noto Sans 
 [data-testid="stAppViewContainer"]{background:linear-gradient(160deg,#f0f5f7 0%,#f8f7f3 38%,#f5f3ee 100%);color:#505c66}
 [data-testid="stSidebar"]{background:#eff3f3;border-right:1px solid #d8e0e3}
 /* Keep collapsed sidebar opener pinned to the actual left viewport edge. */
-[data-testid="stSidebarCollapsedControl"]{
+/* Sidebar toggle is rendered within Streamlit's header in recent versions. */
+[data-testid="stSidebarCollapsedControl"],
+[data-testid="stSidebarCollapsedControl"] > div,
+[data-testid="stSidebarNavCollapseButton"]{
     position:fixed!important;
-    top:12px!important;
-    left:6px!important;
+    top:8px!important;
+    left:0!important;
     right:auto!important;
+    transform:none!important;
     margin:0!important;
-    z-index:100000!important;
+    padding-left:0!important;
+    z-index:100001!important;
 }
-[data-testid="stSidebarCollapsedControl"] button{
-    margin:0!important;
+[data-testid="stSidebarCollapsedControl"] button,
+[data-testid="stSidebarNavCollapseButton"] button{
+    margin-left:0!important;
+    padding-left:0!important;
 }
+[data-testid="stHeader"] [data-testid="stSidebarCollapsedControl"]{
+    left:0!important;
+}
+
 
 .block-container{max-width:1500px;padding-top:1.8rem;padding-bottom:4rem}
 h1,h2,h3{color:#485760!important;letter-spacing:-.025em;font-weight:700!important}
