@@ -388,23 +388,25 @@ p,li,[data-testid="stCaptionContainer"]{color:#695545!important}
 [data-testid="stMetricLabel"],[data-testid="stMetricValue"]{color:#63442d!important}
 [data-testid="stPopover"] button{color:#704826!important}
 </style>""",unsafe_allow_html=True)
-# The supplied pumpkin photograph is stored as a small WebP data file in the repo.
-# Inline it so the background loads on Streamlit Cloud without another image host.
-_pumpkin_asset=DATA_DIR / 'assets' / 'pumpkin_background.b64'
+# Keep the exact uploaded 1200×1600 JPEG in the repository (no lossy re-encoding).
+# Scale to the viewport height rather than covering its width, which greatly
+# enlarged the vertical photo on wide screens.
+_pumpkin_asset = DATA_DIR / 'assets' / 'pumpkin_original.jpg'
 if _pumpkin_asset.exists():
-    _pumpkin_b64=_pumpkin_asset.read_text(encoding='utf-8').strip()
+    _pumpkin_b64 = base64.b64encode(_pumpkin_asset.read_bytes()).decode('ascii')
     st.markdown(
         '<style>'
         '[data-testid="stAppViewContainer"]{'
-        'background-image:linear-gradient(rgba(69,40,19,.24),rgba(74,44,24,.28)),'
-        'url("data:image/webp;base64,'+_pumpkin_b64+'")!important;'
-        'background-position:center center!important;'
-        'background-size:cover!important;'
+        'background-color:#c49d6d!important;'
+        'background-image:linear-gradient(rgba(69,40,19,.20),rgba(74,44,24,.23)),'
+        'url("data:image/jpeg;base64,'+_pumpkin_b64+'")!important;'
+        'background-position:center top!important;'
+        'background-size:auto min(100vh, 1600px)!important;'
         'background-attachment:fixed!important;'
-        'background-repeat:no-repeat!important;}'
+        'background-repeat:repeat-x!important;}'
         '[data-testid="stAppViewContainer"] .block-container{'
-        'background:rgba(255,248,234,.89)!important;'
-        'backdrop-filter:blur(3px)!important;}'
+        'background:rgba(255,248,234,.88)!important;'
+        'backdrop-filter:blur(2px)!important;}'
         '</style>',unsafe_allow_html=True
     )
 
