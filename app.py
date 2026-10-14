@@ -273,15 +273,17 @@ p,li,[data-testid="stCaptionContainer"]{color:#65737d}
 .stTabs [data-baseweb="tab"]{color:#65737d;border-radius:10px}
 .stTabs [aria-selected="true"]{color:#557f97!important}
 [data-testid="stSidebar"] label,[data-testid="stSidebar"] p{color:#647580}
-.radar-banner{background:linear-gradient(115deg,#edf5f9,#f7f7f3 67%,#eaf0f2);padding:28px 32px;border:1px solid #d9e3e7;border-radius:18px;margin-bottom:22px}
+.block-container{padding-top:1.25rem!important;padding-bottom:2rem!important}
+[data-testid="stHeader"]{height:2.25rem;background:transparent}
+.radar-banner{background:linear-gradient(115deg,#edf5f9,#f7f7f3 67%,#eaf0f2);padding:10px 18px;border:1px solid #d9e3e7;border-radius:12px;margin-bottom:8px}
 .radar-overline{font-weight:700;letter-spacing:.17em;color:#7594a6;font-size:11px}
-.radar-banner h1{color:#586771!important;font-size:2.4rem!important;font-weight:700!important}
-.radar-description{font-size:14px;color:#7b8992;margin-top:11px}
-.radar-chip{display:inline-block;background:#e5eff5;color:#7194a8;padding:6px 12px;border-radius:30px;margin-top:15px;font-size:11px;font-weight:700}
+.radar-banner h1{color:#586771!important;font-size:1.42rem!important;font-weight:700!important;line-height:1.15!important}
+.radar-description{font-size:12px;color:#7b8992;margin-top:3px}
+.radar-chip{display:none}
 .radar-hint{padding:14px 18px;background:#ecf3f7;border-left:3px solid #a5bfd0;border-radius:9px;color:#607685;font-size:13px}
 .radar-hint b{color:#566b79}
 </style>""",unsafe_allow_html=True)
-st.markdown("""<div class="radar-banner"><div class="radar-overline">PERP DEX INTELLIGENCE / WEEKLY RESEARCH</div>
+st.markdown("""<div class="radar-banner">
 <h1 style="margin:8px 0 2px">Perp Farming Radar</h1>
 <div class="radar-description">참여자 밀집도와 포인트 파밍 효율을 추적하는 리서치 대시보드</div>
 <div class="radar-chip">● LIVE MARKET DATA · CLOUD DANCER EDITION</div></div>""",unsafe_allow_html=True)
