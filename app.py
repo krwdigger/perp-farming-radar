@@ -1105,6 +1105,14 @@ if _dark_pumpkin_asset.is_file():
         '</style>'
     )
 
+# The image already has its 75%-opacity overlay baked in. Prevent the
+# main content wrapper from imposing another nearly opaque dark layer
+# (which previously left only ~5% of the pumpkin photograph visible).
+_theme_css += """<style>
+html.radar-dark [data-testid="stApp"] [data-testid="stAppViewContainer"] .block-container{
+ background:rgba(29,22,33,.30)!important;
+}
+</style>"""
 st.markdown(_theme_css, unsafe_allow_html=True)
 
 st.components.v1.html("""
