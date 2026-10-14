@@ -808,6 +808,19 @@ if _pumpkin_asset.exists():
         '</style>',unsafe_allow_html=True
     )
 
+# Embedded photo-derived cursor: original transparent paw, scaled to browser-friendly dimensions.
+_cursor_file = DATA_DIR / 'assets' / 'cat_paw_cursor.b64'
+if _cursor_file.is_file():
+    _paw_base64 = _cursor_file.read_text(encoding='utf-8').strip()
+    st.markdown(
+        '<style>'
+        'html,body,[data-testid="stApp"],[data-testid="stApp"] *{'
+        'cursor:url("data:image/png;base64,' + _paw_base64 + '") 5 14,auto!important;}'
+        'input[type="text"],input[type="password"],input[type="number"],textarea,'
+        '[contenteditable="true"]{cursor:text!important;}'
+        '</style>',unsafe_allow_html=True
+    )
+
 _cat_asset = DATA_DIR / 'assets' / 'cat_head.b64'
 _cat_head_b64 = _cat_asset.read_text(encoding='utf-8').strip() if _cat_asset.exists() else ''
 _cat_head_html = (
