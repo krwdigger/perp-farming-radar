@@ -142,6 +142,24 @@ def main():
     rows=[]
     for venue,source,fn in probes:
         row=pull(venue,source,fn);row["captured_at_utc"]=now;rows.append(row)
+    # Merge same-venue probes so a volume-only result never overwrites OI.
+    merged={}
+    for row in rows:
+        venue=row["venue"]
+        if venue not in merged:
+            merged[venue]=row.copy()
+            continue
+        prior=merged[venue]
+        for field in ("volume_24h_usd","oi_usd","markets"):
+            if row.get(field) is not None:
+                prior[field]=row[field]
+        if row["status"]=="ok":
+            prior["status"]="ok"
+            prior["error"]=""
+        elif prior["status"]!="ok":
+            prior["error"]=(str(prior.get("error") or "")+"; "+str(row.get("error") or ""))[:180]
+        prior["source"]=(str(prior["source"])+" + "+str(row["source"]))[:160]
+    rows=list(merged.values())
     OUT.parent.mkdir(parents=True,exist_ok=True)
     exists=OUT.exists()
     with OUT.open("a",newline="",encoding="utf-8") as f:
