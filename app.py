@@ -335,6 +335,42 @@ with radar_tabs[0]:
     st.subheader('관심 프로젝트 · Watchlist')
     watched=df[df['is_watchlist'].fillna(False).astype(bool)].copy()
     watched['상태']=watched.apply(lambda r:'참여자 데이터' if pd.notna(r['active_wallets_7d']) else ('시장 데이터' if pd.notna(r['oi_usd']) or pd.notna(r['volume_24h_usd']) or pd.notna(r['volume_7d_usd']) else '미연동'),axis=1)
+    # Decision-first summary: never infer point efficiency from Volume/OI alone.
+    full=(watched['active_wallets_7d'].notna() & watched['weekly_points'].notna())
+    market=(watched[['oi_usd','volume_24h_usd','volume_7d_usd']].notna().any(axis=1))
+    d1,d2,d3=st.columns(3)
+    d1.metric('경쟁률 분석 가능',f'{int(full.sum())} / {len(watched)}')
+    d2.metric('시장 데이터 관측',f'{int(market.sum())} / {len(watched)}')
+    d3.metric('추가 연동 필요',f'{int((~full).sum())}')
+    if not full.any():
+        st.warning('이번 주 확정 빈집 후보: **없음 (판정 불가)** · 참여자 수와 실제 주간 포인트 배분량을 동시에 확보한 거래소가 없습니다. 아래 시장 규모는 경쟁률 순위가 아닙니다.')
+    st.markdown('#### 이번 주 어디를 먼저 살펴볼까?')
+    st.caption('아래 순서는 파밍 추천이나 수익률 순위가 아닌, **데이터 확보 우선순위**입니다.')
+    ready_rows=[]
+    for _,r in watched.iterrows():
+        metrics=int(pd.notna(r['volume_24h_usd']))+int(pd.notna(r['volume_7d_usd']))+int(pd.notna(r['oi_usd']))
+        ready_rows.append({
+            '프로젝트':r['watch_name'],
+            '현재 할 수 있는 일':'파밍 경쟁 분석' if pd.notna(r['active_wallets_7d']) and pd.notna(r['weekly_points']) else ('시장 활동 관찰' if metrics else '공식 데이터 연결 확인'),
+            '데이터 상황':('참여자·포인트 있음' if pd.notna(r['active_wallets_7d']) and pd.notna(r['weekly_points']) else f'시장 지표 {metrics}/3 확보'),
+            '핵심 미확보':'없음' if pd.notna(r['active_wallets_7d']) and pd.notna(r['weekly_points']) else ('활성 거래 지갑 + 주간 포인트' if metrics else '거래량/OI + 활성 거래 지갑 + 주간 포인트'),
+            '시장 데이터 점수':metrics
+        })
+    queue=pd.DataFrame(ready_rows).sort_values(['시장 데이터 점수','프로젝트'],ascending=[False,True])
+    st.dataframe(queue.drop(columns=['시장 데이터 점수']),hide_index=True,use_container_width=True,height=425)
+    st.markdown('#### 시장 활동 · 스케일 비교')
+    vplot=watched.dropna(subset=['oi_usd']).sort_values('oi_usd',ascending=False)
+    if not vplot.empty:
+        fig=px.bar(vplot,x='oi_usd',y='watch_name',orientation='h',text='oi_usd',
+                   color_discrete_sequence=['#94b9ca'],labels={'oi_usd':'현재 OI (USD)','watch_name':''})
+        fig.update_traces(texttemplate='%{text:$,.3s}',textposition='outside',cliponaxis=False)
+        fig.update_layout(height=max(230,80+len(vplot)*52),margin=dict(l=0,r=95,t=10,b=25),
+                          paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',font_color='#627581',
+                          yaxis={'categoryorder':'total ascending'})
+        fig.update_xaxes(tickformat='~s',gridcolor='#e1e7e9')
+        st.plotly_chart(fig,use_container_width=True)
+        st.caption('시장 OI 규모 비교만 나타냅니다. 낮은 OI가 곧 빈집이라는 의미는 아닙니다.')
+    st.markdown('#### 원본 지표')
     w1,w2=st.columns([2,1])
     choice=w1.selectbox('데이터 상태',['모두 보기','시장 데이터','참여자 데이터','미연동'])
     order=w2.selectbox('정렬',['관심 목록','OI 높은 순','OI 낮은 순','24H 거래량 순'])
