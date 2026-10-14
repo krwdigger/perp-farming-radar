@@ -526,7 +526,7 @@ def exchange_logo_html(name):
         'Hyperliquid':'hyperliquid.xyz','Lighter':'lighter.xyz',
         'Variational':'omni.variational.io','Nado':'nado.finance',
         'StandX':'standx.com','Arcus':'arcus.xyz','QFEX':'qfex.com',
-        'TxFlow':'txflow.com','Pacifica':'pacifica.fi','hello.trade':'hello.trade',
+        'TxFlow':'txflow.com','Pacifica':'pacifica.fi','hello.trade':'hello.trade','N1':'n1.xyz',
         'robinhoodchain.lighter':'robinhood.com'
     }
     if not url and name in domains:
