@@ -1107,12 +1107,25 @@ if _dark_pumpkin_asset.is_file():
         '</style>'
     )
 
-# The image already has its 75%-opacity overlay baked in. Prevent the
-# main content wrapper from imposing another nearly opaque dark layer
-# (which previously left only ~5% of the pumpkin photograph visible).
+# Final dark-background layer: the image is already composited with a
+# 75% plum overlay and retained warm jack-o-lantern illumination.
+# Keep background selectors separate from all card/chart/table styles.
 _theme_css += """<style>
-html.radar-dark [data-testid="stApp"] [data-testid="stAppViewContainer"] .block-container{
- background:rgba(23,18,26,.92)!important;
+html.radar-dark body [data-testid="stAppViewContainer"]{
+ background-color:#17121a!important;
+ background-position:center top!important;
+ background-size:auto min(100vh, 1600px)!important;
+ background-repeat:repeat-x!important;
+ background-attachment:scroll!important;
+ background-blend-mode:normal!important;
+}
+html.radar-dark body [data-testid="stAppViewContainer"] [data-testid="stMain"],
+html.radar-dark body [data-testid="stAppViewContainer"] [data-testid="stMainBlockContainer"]{
+ background-color:transparent!important;
+ background-image:none!important;
+}
+html.radar-dark body [data-testid="stAppViewContainer"] .block-container{
+ background:rgba(23,18,26,.88)!important;
 }
 </style>"""
 st.markdown(_theme_css, unsafe_allow_html=True)
