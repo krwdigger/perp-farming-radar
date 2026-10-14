@@ -109,6 +109,23 @@ def fetch_variational():
             'market_data_time': datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}
 
 @st.cache_data(ttl=900, show_spinner=False)
+def fetch_pacifica_markets():
+    """Public metadata only. Never convert market listing into volume or active users."""
+    data=api_get('https://api.pacifica.fi/api/v1/info')
+    if not isinstance(data,dict) or data.get('success') is not True or not isinstance(data.get('data'),list):
+        raise ValueError('Pacifica public market metadata response changed')
+    return len(data['data'])
+
+@st.cache_data(ttl=900, show_spinner=False)
+def fetch_arcus_markets():
+    """Public market discovery only; schema checked conservatively."""
+    data=api_get('https://api.arcus.xyz/v1/markets')
+    rows=data if isinstance(data,list) else data.get('markets') if isinstance(data,dict) else None
+    if not isinstance(rows,list):
+        raise ValueError('Arcus API market-list schema unverified')
+    return len(rows)
+
+@st.cache_data(ttl=900, show_spinner=False)
 def fetch_pro_derivatives(key):
     payload=api_get('https://pro-api.llama.fi/' + key.strip() + '/api/overview/derivatives',
                     params={'excludeTotalDataChart':'true','excludeTotalDataChartBreakdown':'true'})
@@ -178,7 +195,7 @@ with st.sidebar:
     uploaded=st.file_uploader('프로젝트별 포인트·참여자 CSV', type='csv')
     st.download_button('CSV 템플릿 다운로드', (DATA_DIR/'manual_metrics.csv').read_bytes(), 'manual_metrics.csv', mime='text/csv')
     if st.button('API 캐시 새로고침'):
-        fetch_catalog.clear();fetch_oi.clear();fetch_hyperliquid.clear();fetch_standx.clear();fetch_variational.clear();fetch_pro_derivatives.clear();st.rerun()
+        fetch_catalog.clear();fetch_oi.clear();fetch_hyperliquid.clear();fetch_standx.clear();fetch_variational.clear();fetch_pacifica_markets.clear();fetch_arcus_markets.clear();fetch_pro_derivatives.clear();st.rerun()
     st.divider()
     st.caption('관심 프로젝트 11개는 기본 등록됩니다. 이름 중복은 거래소별 실제 엔드포인트 확인 전까지 자동 통합하지 않습니다.')
     st.caption('활성 사용자 수는 현재 범용 무료 API에서 자동으로 가져오지 못합니다. 확인 가능한 프로젝트별 데이터를 CSV로 연결해야 합니다.')
@@ -196,6 +213,10 @@ with st.spinner('공개 데이터 수집 중…'):
     except Exception as e: sx=None;errors.append(f'StandX: {e}')
     try: va=fetch_variational()
     except Exception as e: va=None;errors.append(f'Variational: {e}')
+    try: pacifica_markets=fetch_pacifica_markets()
+    except Exception as e: pacifica_markets=None;errors.append(f'Pacifica markets: {e}')
+    try: arcus_markets=fetch_arcus_markets()
+    except Exception as e: arcus_markets=None;errors.append(f'Arcus markets: {e}')
     try: pro=fetch_pro_derivatives(pro_key) if pro_key else pd.DataFrame()
     except Exception as e: pro=pd.DataFrame();errors.append(f'DefiLlama Pro: {e}')
 
@@ -391,6 +412,34 @@ with radar_tabs[2]:
     st.download_button('스캐너 CSV 내보내기',v[sc].to_csv(index=False).encode('utf-8-sig'),'perp_scanner.csv','text/csv')
 with radar_tabs[3]:
     st.subheader('데이터 연결 현황')
+    st.markdown('### 관심 프로젝트 11개 · 미연동 사유')
+    st.caption('공개 문서 검토 기준 · 프로젝트 전체 사용자 수/포인트 정보는 API 접근 가능성과 별개입니다. Dune에서 확인 가능한 것은 인덱싱된 체인·컨트랙트 이벤트로 한정됩니다.')
+    investigation=[
+      {'프로젝트':'Variational','시장 데이터':'공식 API 일부 연결','미확보 데이터':'7일 활성 거래자·실제 포인트','원인 구분':'API 세부 지표 미확보 / 포인트 산식 별도 검증','Dune':'입출금/컨트랙트 활동은 후보 · 실제 체결은 별도 검증','자료':'https://omni.variational.io/'},
+      {'프로젝트':'Nado','시장 데이터':'SDK/인덱서 조사 단계','미확보 데이터':'거래량·OI·활성 지갑·포인트','원인 구분':'무료 불가 확정 아님 · 어댑터 미작성','Dune':'인덱서/컨트랙트 이벤트 식별 필요','자료':'https://docs.nado.xyz/'},
+      {'프로젝트':'StandX','시장 데이터':'공식 API 일부 연결','미확보 데이터':'7일 활성 거래자·실제 포인트','원인 구분':'API에 파밍 전체 활동 데이터 없음/미확인','Dune':'거래 엔진과 온체인 자금 이동 분리 필요','자료':'https://docs.standx.com/'},
+      {'프로젝트':'N1','시장 데이터':'거래소 식별 미확정','미확보 데이터':'전체','원인 구분':'프로젝트·체인 식별 먼저 필요','Dune':'정확한 컨트랙트/체인 필요','자료':'https://dune.com/'},
+      {'프로젝트':'Arcus','시장 데이터':'공식 공개 시장목록 조사','미확보 데이터':'거래량·OI·활성 지갑·포인트','원인 구분':'REST 일부 공개 · 집계 어댑터 미작성','Dune':'Robinhood Chain 컨트랙트 이벤트 확인 필요','자료':'https://api.arcus.xyz/v1/markets'},
+      {'프로젝트':'Entropy','시장 데이터':'공식 소스 미확인','미확보 데이터':'전체','원인 구분':'자료 유료/비공개 여부도 미확인','Dune':'프로젝트/컨트랙트 식별 필요','자료':'https://dune.com/'},
+      {'프로젝트':'QFEX','시장 데이터':'공개 market CLI 확인','미확보 데이터':'거래소 통합 거래량·OI·지갑·포인트','원인 구분':'무료 시장 명령 제공 · 직접 집계 구현 필요','Dune':'거래 엔진 거래 내역이 온체인인지 확인 필요','자료':'https://github.com/QFEX-org/cli'},
+      {'프로젝트':'TxFlow','시장 데이터':'컨트랙트 매핑 대기','미확보 데이터':'전체','원인 구분':'이벤트/체인/주소 검증 필요','Dune':'트레이드 이벤트 있으면 SQL 집계 가능','자료':'https://dune.com/'},
+      {'프로젝트':'robinhoodchain.lighter','시장 데이터':'전용 API 별도 조사','미확보 데이터':'거래량·OI·지갑·포인트','원인 구분':'일반 Lighter와 별도 시장 · 어댑터 미작성','Dune':'체인 입출금만으로 롤업 체결 복원 불가','자료':'https://docs.robinhood.com/chain/'},
+      {'프로젝트':'Pacifica','시장 데이터':'공식 무료 시장목록 조회','미확보 데이터':'집계 거래량·OI·활성 지갑·포인트','원인 구분':'무료 공개 API 있음 · 지표별 검증/집계 필요','Dune':'거래가 오프체인이면 실제 거래지갑 집계 한계','자료':'https://pacifica.gitbook.io/docs/api-documentation/api/rest-api/markets/get-market-info'},
+      {'프로젝트':'hello.trade','시장 데이터':'공식 소스 미확인','미확보 데이터':'전체','원인 구분':'자료 유료/비공개 여부도 미확인','Dune':'프로젝트/컨트랙트 식별 필요','자료':'https://dune.com/'}
+    ]
+    st.dataframe(pd.DataFrame(investigation),hide_index=True,use_container_width=True,height=435,
+                 column_config={'자료':st.column_config.LinkColumn('검증 참고 링크')})
+    st.download_button('미연동 조사표 CSV',pd.DataFrame(investigation).to_csv(index=False).encode('utf-8-sig'),'integration_audit.csv','text/csv')
+    st.markdown('### 신규 공개 API 확인')
+    checks=[
+      {'거래소':'Pacifica','상태':'시장 목록 조회 성공' if pacifica_markets is not None else '연결 실패/응답 변경',
+       '확인된 시장 수':pacifica_markets,'의미':'상장된 마켓 개수만 의미. 거래량·OI·지갑 수 아님'},
+      {'거래소':'Arcus','상태':'시장 목록 조회 성공' if arcus_markets is not None else '연결 실패/응답 변경',
+       '확인된 시장 수':arcus_markets,'의미':'공개 마켓 목록 확인. 거래량·포인트 지표 아님'}
+    ]
+    st.dataframe(pd.DataFrame(checks),hide_index=True,use_container_width=True)
+    st.info('정확한 빈집 순위는 활성 거래자와 포인트 배분 데이터가 충분히 확보될 때만 제공할 수 있습니다. Dune 무료 API도 쿼리 실행 한도·체인 지원 여부를 확인해야 합니다.')
+
     status_rows=[
       {'소스':'DefiLlama 프로토콜 목록','항목':'Perp DEX 목록','상태':'연결 성공' if not catalog.empty else '실패','캐시':'15분'},
       {'소스':'DefiLlama OI 개요','항목':'OI','상태':'연결 성공' if not oi.empty else '실패','캐시':'15분'},
@@ -422,4 +471,4 @@ with radar_tabs[4]:
         c3.metric('활동 점유율',f'{mine/whole*100:.4f}%')
     else:st.warning('전체 활동량과 포인트 풀을 확인하세요.')
 st.divider()
-st.caption('v0.7 Cloud Dancer · Read-only research dashboard · 에어드랍 수익 보장 없음 · 주문/지갑 서명 기능 없음')
+st.caption('v0.8 Data Audit Cloud Dancer · Read-only research dashboard · 에어드랍 수익 보장 없음 · 주문/지갑 서명 기능 없음')
