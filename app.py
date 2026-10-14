@@ -283,17 +283,27 @@ html,body,[data-testid="stApp"],[class*="css"]{font-family:'DM Sans','Noto Sans 
 }
 [data-testid="stPopover"] > button,
 [data-testid="stPopover"] > div > button {
+    width:32px!important;
+    min-width:32px!important;
+    height:34px!important;
     min-height:34px!important;
-    padding:5px 11px!important;
+    padding:0!important;
     margin:0!important;
-    border-radius:0 9px 9px 0!important;
-    border:1px solid #b8cbd6!important;
-    border-left:0!important;
-    background:#ffffff!important;
-    color:#304e61!important;
-    font-size:13px!important;
-    font-weight:700!important;
-    box-shadow:0 2px 8px rgba(46,73,91,.12)!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    color:#5e7180!important;
+    font-size:24px!important;
+    font-weight:400!important;
+    box-shadow:none!important;
+}
+[data-testid="stPopover"] > button:hover,
+[data-testid="stPopover"] > div > button:hover {
+    background:#edf3f6!important;
+    color:#344f61!important;
 }
 .block-container{max-width:1500px;padding-top:1.8rem;padding-bottom:4rem}
 h1,h2,h3{color:#485760!important;letter-spacing:-.025em;font-weight:700!important}
@@ -327,7 +337,7 @@ st.markdown("""<div class="radar-banner">
 <div class="radar-chip">● LIVE MARKET DATA · CLOUD DANCER EDITION</div></div>""",unsafe_allow_html=True)
 
 # Independent left-edge settings control replaces the fragile native sidebar opener.
-with st.popover('☰ 설정', help='데이터 연결 및 설정 열기'):
+with st.popover('»', help='데이터 연결 및 설정 열기'):
     st.header('데이터 연결')
     pro_key=st.text_input('DefiLlama Pro API key (선택)', type='password', help='유료 derivatives 거래량 API용. 키는 저장하지 않습니다.')
     use_hl=st.checkbox('Hyperliquid 시장 데이터 불러오기', value=True)
