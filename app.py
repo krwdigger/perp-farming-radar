@@ -1067,17 +1067,19 @@ def _lit_dark_pumpkin_photo(photo_bytes):
     red, green, blue = original[:,:,0], original[:,:,1], original[:,:,2]
     # Bright golden, internally illuminated faces; exclude ordinary orange
     # pumpkin skin and neutral-toned hay using saturation/hue thresholds.
-    warm = np.clip((green - 110.0) / 80.0, 0, 1)
-    yellow = np.clip((green - blue - 45.0) / 65.0, 0, 1)
-    bright = np.clip((red - 185.0) / 55.0, 0, 1)
-    balanced = np.clip((145.0 - (red - green)) / 50.0, 0, 1)
-    flame = warm * yellow * bright * balanced
+    # Restrict glow to near-white/yellow emissive cutouts, not orange skins.
+    flame = (
+        np.clip((red - 220.0) / 30.0, 0, 1) *
+        np.clip((green - 165.0) / 65.0, 0, 1) *
+        np.clip((green - blue - 35.0) / 60.0, 0, 1) *
+        np.clip((100.0 - (red-green)) / 35.0, 0, 1)
+    )
     glow_source = Image.fromarray(np.uint8(flame * 255), 'L')
     halo = np.asarray(glow_source.filter(ImageFilter.GaussianBlur(12)), dtype=np.float32) / 255.0
     # 75% opaque plum overlay on non-emissive areas.
     plum = np.array([19.0,14.0,23.0], dtype=np.float32)
     dark = original * .25 + plum * .75
-    light_weight = np.clip(flame * .90 + halo * .24, 0, 1)[:,:,None]
+    light_weight = np.clip(flame * 1.0 + halo * .17, 0, 1)[:,:,None]
     lit = dark * (1.0-light_weight) + original * light_weight
     result = Image.fromarray(np.uint8(np.clip(lit,0,255)), 'RGB')
     output = BytesIO()
@@ -1110,7 +1112,7 @@ if _dark_pumpkin_asset.is_file():
 # (which previously left only ~5% of the pumpkin photograph visible).
 _theme_css += """<style>
 html.radar-dark [data-testid="stApp"] [data-testid="stAppViewContainer"] .block-container{
- background:rgba(29,22,33,.30)!important;
+ background:rgba(23,18,26,.92)!important;
 }
 </style>"""
 st.markdown(_theme_css, unsafe_allow_html=True)
