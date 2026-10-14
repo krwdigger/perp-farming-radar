@@ -1060,7 +1060,8 @@ if _dark_asset.is_file():
     _theme_css += (
         '<style>'
         'html.radar-dark body [data-testid="stAppViewContainer"]{'
-        'background-image:url("data:image/webp;base64,'+_dark_image+'")!important;'
+        'background-image:linear-gradient(rgba(19,14,23,.75),rgba(19,14,23,.75)),'
+        'url("data:image/webp;base64,'+_dark_image+'")!important;'
         'background-color:#17121a!important;'
         'background-position:center top!important;'
         'background-size:auto min(100vh, 1600px)!important;'
