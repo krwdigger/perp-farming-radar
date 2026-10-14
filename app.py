@@ -513,6 +513,10 @@ def latest_oi_weekly_change(data,venue):
     return (now['oi_usd']/previous.iloc[-1]['oi_usd']-1)*100
 
 def exchange_logo_url(name):
+    # Official-site favicons for projects absent or mismatched in DefiLlama.
+    official={'StandX':'standx.com','Entropy':'entropy.io','hello.trade':'hello.trade'}
+    if name in official:
+        return 'https://www.google.com/s2/favicons?domain='+official[name]+'&sz=128'
     candidates = {
         'Lighter': ['lighter'], 'Hyperliquid': ['hyperliquid'],
         'StandX': ['standx', 'standx perps'], 'Nado': ['nado'],
@@ -552,7 +556,7 @@ def exchange_logo_html(name):
     logos={}
     if 'logo_url' in catalog.columns and 'name' in catalog.columns:
         logos={norm(row['name']):row['logo_url'] for _,row in catalog.iterrows() if isinstance(row.get('logo_url'),str) and row['logo_url'].startswith('https://')}
-    url=next((logos.get(norm(n)) for n in candidates.get(name,[name]) if logos.get(norm(n))),None)
+    url=exchange_logo_url(name)
     # Verified official web domains are used for favicon lookup when not in the catalog.
     domains={
         'Hyperliquid':'hyperliquid.xyz','Lighter':'lighter.xyz',
