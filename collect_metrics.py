@@ -119,6 +119,19 @@ def nado_oi():
     if not values:raise ValueError("No explicit USD open interest notional in Nado records")
     return {"oi_usd":sum(values),"markets":len(values)}
 
+def lighter_mainnet():
+    d=get("https://mainnet.zklighter.elliot.ai/api/v1/exchangeStats")
+    if not isinstance(d,dict) or d.get("code")!=200:
+        raise ValueError("Lighter exchangeStats returned invalid schema")
+    volume=numeric(d.get("daily_usd_volume"))
+    if volume is None:
+        stats=d.get("order_book_stats") or []
+        parts=[numeric(x.get("daily_quote_token_volume")) for x in stats if isinstance(x,dict)]
+        parts=[v for v in parts if v is not None and v>=0]
+        volume=sum(parts) if parts else None
+    if volume is None:raise ValueError("No Lighter 24h USD volume")
+    return {"volume_24h_usd":volume}
+
 def hyperliquid():
     payload=json.dumps({"type":"metaAndAssetCtxs"}).encode()
     req=urllib.request.Request("https://api.hyperliquid.xyz/info",headers={**HEADERS,"Content-Type":"application/json"},data=payload)
@@ -138,7 +151,8 @@ def main():
        ("Pacifica","CCXT public perpetual 24h ticker turnover",pacifica_volume),
        ("Nado","CCXT public perpetual 24h ticker turnover",nado_volume),
        ("Arcus","Official /v1/markets perpetual 24h notional",arcus),
-       ("Hyperliquid","Official info API",hyperliquid)]
+       ("Hyperliquid","Official info API",hyperliquid),
+       ("Lighter","Lighter mainnet official exchangeStats",lighter_mainnet)]
     rows=[]
     for venue,source,fn in probes:
         row=pull(venue,source,fn);row["captured_at_utc"]=now;rows.append(row)
