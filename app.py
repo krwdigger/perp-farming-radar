@@ -14,6 +14,32 @@ import requests
 import streamlit as st
 
 st.set_page_config(page_title='Perp Farming Radar', page_icon='🤔', layout='wide', initial_sidebar_state='collapsed')
+
+# Position the actual clickable control at the viewport edge, not only its outer wrapper.
+st.markdown("""<style>
+html body [data-testid="stSidebarCollapsedControl"] button,
+html body [data-testid="stSidebarCollapsedControl"] [role="button"],
+html body [data-testid="stHeader"] button[aria-label*="sidebar" i],
+html body [data-testid="stHeader"] button[title*="sidebar" i] {
+    position: fixed !important;
+    top: 7px !important;
+    left: 0px !important;
+    right: auto !important;
+    transform: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 26px !important;
+    min-width: 26px !important;
+    height: 32px !important;
+    justify-content: flex-start !important;
+    z-index: 2147483646 !important;
+}
+html body [data-testid="stSidebarCollapsedControl"] button svg {
+    margin: 0 !important;
+    transform: none !important;
+}
+</style>""", unsafe_allow_html=True)
+
 DATA_DIR = Path(__file__).resolve().parent
 SNAPSHOT_FILE = DATA_DIR / 'radar_snapshots.csv'
 WATCHLIST_FILE = DATA_DIR / 'watchlist.csv'
