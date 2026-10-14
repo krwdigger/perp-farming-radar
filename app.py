@@ -16,7 +16,7 @@ st.set_page_config(page_title='Perp Farming Radar', page_icon='📡', layout='wi
 DATA_DIR = Path(__file__).resolve().parent
 SNAPSHOT_FILE = DATA_DIR / 'radar_snapshots.csv'
 WATCHLIST_FILE = DATA_DIR / 'watchlist.csv'
-HEADERS = {'User-Agent': 'PerpFarmingRadar-MVP/0.2'}
+HEADERS = {'User-Agent': 'PerpFarmingRadar-MVP/0.3'}
 FETCHED_AT = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
 
 def norm(name):
@@ -78,6 +78,22 @@ def fetch_hyperliquid():
             'volume_source':'Hyperliquid API, 24h market context', 'oi_source':'Hyperliquid API, current estimate'}
 
 @st.cache_data(ttl=900, show_spinner=False)
+def fetch_standx():
+    """Official StandX public market overview: 24h quote volume and current OI."""
+    data = api_get('https://perps.standx.com/api/query_market_overview')
+    if not isinstance(data, dict) or not isinstance(data.get('summary'), dict):
+        raise ValueError('StandX API response shape changed')
+    summary = data['summary']
+    volume = number(summary.get('volume_quote_24h'))
+    oi = number(summary.get('open_interest_notional'))
+    if volume is None and oi is None:
+        raise ValueError('StandX summary contains no supported market figures')
+    return {'volume_24h_usd': volume, 'oi_usd': oi,
+            'volume_source': 'StandX official public market overview (24h USD quote volume)',
+            'oi_source': 'StandX official public market overview (current OI notional)',
+            'market_data_time': datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}
+
+@st.cache_data(ttl=900, show_spinner=False)
 def fetch_pro_derivatives(key):
     payload=api_get('https://pro-api.llama.fi/' + key.strip() + '/api/overview/derivatives',
                     params={'excludeTotalDataChart':'true','excludeTotalDataChartBreakdown':'true'})
@@ -93,7 +109,7 @@ def merge_exact(left, right, suffix):
     right=right.copy();right['_id']=right['name'].map(norm)
     right=right.drop(columns=['name']).drop_duplicates('_id')
     combined=left.merge(right,on='_id',how='left',suffixes=('',suffix))
-    for field in ['oi_usd','volume_24h_usd','volume_7d_usd','volume_prev_7d_usd','oi_source','volume_source']:
+    for field in ['oi_usd','volume_24h_usd','volume_7d_usd','volume_prev_7d_usd','oi_source','volume_source','market_data_time']:
         other=f'{field}{suffix}'
         if other in combined:
             if field in combined: combined[field]=combined[other].combine_first(combined[field])
@@ -122,6 +138,7 @@ with st.sidebar:
     st.divider()
     st.caption('관심 프로젝트 11개는 기본 등록됩니다. 이름 중복은 거래소별 실제 엔드포인트 확인 전까지 자동 통합하지 않습니다.')
     st.caption('활성 사용자 수는 현재 범용 무료 API에서 자동으로 가져오지 못합니다. 확인 가능한 프로젝트별 데이터를 CSV로 연결해야 합니다.')
+    st.caption('v0.3: StandX 공식 공개 시장 API 연결. 24h 거래량과 OI만 제공하며 7일 지표는 제공하지 않습니다.')
 
 errors=[]
 with st.spinner('공개 데이터 수집 중…'):
@@ -131,6 +148,8 @@ with st.spinner('공개 데이터 수집 중…'):
     except Exception as e: oi=pd.DataFrame();errors.append(f'OI: {e}')
     try: hl=fetch_hyperliquid() if use_hl else None
     except Exception as e: hl=None;errors.append(f'Hyperliquid: {e}')
+    try: sx=fetch_standx()
+    except Exception as e: sx=None;errors.append(f'StandX: {e}')
     try: pro=fetch_pro_derivatives(pro_key) if pro_key else pd.DataFrame()
     except Exception as e: pro=pd.DataFrame();errors.append(f'DefiLlama Pro: {e}')
 
@@ -153,6 +172,14 @@ df['is_watchlist']=df['watch_name'].notna().fillna(False).astype(bool)
 
 df=merge_exact(df,oi,'_oi')
 df=merge_exact(df,pro,'_pro')
+# StandX market figures are only applied to the explicitly labelled StandX watchlist row.
+# Do not merge ambiguously named venues or infer points data from the market API.
+if sx:
+    standx_mask = df['watch_name'].eq('StandX')
+    if standx_mask.any():
+        for field, value in sx.items():
+            if field not in df.columns: df[field] = None
+            df.loc[standx_mask, field] = value
 if hl:
     hk=norm(hl['name'])
     mask=df['_id']==hk
@@ -184,7 +211,7 @@ numeric_fields=['volume_24h_usd','volume_7d_usd','volume_prev_7d_usd','oi_usd','
 for c in numeric_fields:
     if c not in df:df[c]=float('nan')
     df[c]=pd.to_numeric(df[c],errors='coerce')
-for c in ['point_model','notes','oi_source','volume_source']:
+for c in ['point_model','notes','oi_source','volume_source','market_data_time']:
     if c not in df:df[c]=None
 
 df['is_watchlist']=df['is_watchlist'].fillna(False).astype(bool)
@@ -213,6 +240,7 @@ st.subheader('📡 데이터 연결 현황')
 status_rows = [
     {'소스':'DefiLlama 프로토콜 목록','제공 항목':'거래소 목록 · TVL(해당 시)','상태':'연결 성공' if not catalog.empty else '조회 실패','갱신 방식':'15분 캐시'},
     {'소스':'DefiLlama OI 개요','제공 항목':'거래소별 OI','상태':'연결 성공' if not oi.empty else '조회 실패/결과 없음','갱신 방식':'15분 캐시'},
+    {'소스':'StandX 공식 공개 시장 API','제공 항목':'StandX 24h Volume · 현재 OI','상태':'연결 성공' if sx else '조회 실패','갱신 방식':'5분 캐시'},
     {'소스':'Hyperliquid 공식 API','제공 항목':'Hyperliquid 현물 아닌 무기한 선물 시장의 24h Volume 및 OI','상태':'연결 성공' if hl else ('비활성화' if not use_hl else '조회 실패'),'갱신 방식':'2분 캐시'},
     {'소스':'DefiLlama Pro derivatives','제공 항목':'거래소별 24h/7d Volume','상태':'연결 성공' if not pro.empty else ('API 키 필요' if not pro_key else '조회 실패/결과 없음'),'갱신 방식':'15분 캐시'},
     {'소스':'참여자 · 포인트 데이터','제공 항목':'7d 활성 지갑 · 포인트 풀 · 지갑별 거래량','상태':'CSV 입력 가능' if uploaded else '공식 소스 미연동','갱신 방식':'사용자 입력'},
@@ -223,16 +251,16 @@ with st.expander('수집 소스와 상태 확인', expanded=False):
 
 st.subheader('⭐ 관심 프로젝트 (11개)')
 watch_view=df[df['is_watchlist'].fillna(False).astype(bool)].copy()
-watch_view['data_status']=watch_view.apply(lambda x: '활성 지갑 있음' if pd.notna(x['active_wallets_7d']) else ('거래/OI 일부 확보' if pd.notna(x['volume_7d_usd']) or pd.notna(x['oi_usd']) else '연동 필요'),axis=1)
+watch_view['data_status']=watch_view.apply(lambda x: '활성 지갑 있음' if pd.notna(x['active_wallets_7d']) else ('거래/OI 일부 확보' if pd.notna(x['volume_24h_usd']) or pd.notna(x['volume_7d_usd']) or pd.notna(x['oi_usd']) else '연동 필요'),axis=1)
 watch_view=watch_view.merge(watch[['name','tracking_note']],left_on='watch_name',right_on='name',how='left',suffixes=('','_watch'))
 st.dataframe(watch_view[['watch_name','data_status','active_wallets_7d','volume_7d_usd','oi_usd','weekly_points','tracking_note']].rename(columns={'watch_name':'관심 프로젝트','data_status':'데이터 상태','active_wallets_7d':'7d 활성 지갑','volume_7d_usd':'7d 거래량 $','oi_usd':'OI $','weekly_points':'주간 포인트','tracking_note':'추적 참고'}),hide_index=True,use_container_width=True)
-st.caption('프로젝트 11개 등록 완료 ≠ 실시간 데이터 연동 완료. N/A는 0이 아닙니다. OI 매칭도 거래소 식별 검증이 필요합니다.')
+st.caption('프로젝트 11개 등록 완료 ≠ 실시간 데이터 연동 완료. N/A는 0이 아닙니다. 24h Volume과 7d Volume은 별도 지표입니다. OI 매칭도 거래소 식별 검증이 필요합니다.')
 with st.expander('⭐ 관심 프로젝트 데이터 확보 현황 자세히'):
-    detail_cols=['watch_name','volume_24h_usd','volume_7d_usd','oi_usd','oi_source','volume_source','active_wallets_7d','weekly_points']
+    detail_cols=['watch_name','volume_24h_usd','volume_7d_usd','oi_usd','oi_source','volume_source','market_data_time','active_wallets_7d','weekly_points']
     detail=watch_view[detail_cols].copy()
-    for k in ['oi_source','volume_source']:
+    for k in ['oi_source','volume_source','market_data_time']:
         detail[k]=detail[k].fillna('확인 필요')
-    st.dataframe(detail.rename(columns={'watch_name':'프로젝트','volume_24h_usd':'24h 거래량 $','volume_7d_usd':'7d 거래량 $','oi_usd':'OI $','oi_source':'OI 출처','volume_source':'거래량 출처','active_wallets_7d':'7d 활성 지갑','weekly_points':'주간 포인트'}),hide_index=True,use_container_width=True)
+    st.dataframe(detail.rename(columns={'watch_name':'프로젝트','volume_24h_usd':'24h 거래량 $','volume_7d_usd':'7d 거래량 $','oi_usd':'OI $','oi_source':'OI 출처','volume_source':'거래량 출처','market_data_time':'시장 데이터 조회시각','active_wallets_7d':'7d 활성 지갑','weekly_points':'주간 포인트'}),hide_index=True,use_container_width=True)
     st.download_button('관심 프로젝트 연동 현황 CSV',detail.to_csv(index=False).encode('utf-8-sig'),'watchlist_data_status.csv','text/csv')
 st.subheader('🔎 전체 거래소 스캐너')
 f1,f2,f3=st.columns([2,1,1]); query=f1.text_input('이름 검색',placeholder='Hyperliquid, Lighter…')
