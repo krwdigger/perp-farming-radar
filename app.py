@@ -679,6 +679,35 @@ html,body,[data-testid="stApp"],[data-testid="stApp"] *,
  padding:12px 18px!important;overflow-wrap:anywhere!important
 }
 [data-testid="stExpander"] summary:hover{background:#f4e3c8!important}
+
+/* Reliable bar-chart layout with a dedicated non-overlapping venue column. */
+.venue-rank-chart{background:rgba(255,249,237,.72);border-radius:12px;padding:16px 15px;overflow:hidden}
+.venue-rank-row{display:grid;grid-template-columns:152px minmax(0,1fr);gap:12px;align-items:center;min-height:47px}
+.venue-rank-name{display:flex;justify-content:flex-end;align-items:center;min-width:0;white-space:nowrap}
+.venue-rank-name .exchange-cell{font-size:15px!important;font-weight:700!important;gap:8px}
+.venue-rank-name .exchange-logo,.venue-rank-name .exchange-monogram{width:29px;height:29px;min-width:29px}
+.venue-rank-measure{display:flex;position:relative;align-items:center;height:33px;min-width:0;
+ background:repeating-linear-gradient(to right,transparent 0,transparent calc(25% - 1px),#ddc4a2 calc(25% - 1px),#ddc4a2 25%)}
+.venue-bar{height:30px;min-width:2px;border-radius:1px}
+.venue-rank-value{font-size:13px!important;color:#6d4b33!important;white-space:nowrap;margin-left:5px}
+.venue-rank-foot{display:grid;grid-template-columns:152px minmax(0,1fr);gap:12px;margin-top:7px}
+.venue-rank-ticks{display:flex;justify-content:space-between;gap:0;color:#6e503a;font-size:12px!important}
+.venue-rank-ticks span{white-space:nowrap}
+.venue-rank-axis{text-align:center;margin-top:4px;color:#6e503a;font-size:13px!important}
+@media(max-width:740px){.venue-rank-row,.venue-rank-foot{grid-template-columns:125px minmax(0,1fr);gap:7px}
+.venue-rank-chart{padding:11px 8px}.venue-rank-name .exchange-cell{font-size:13px!important}}
+/* Material icon ligatures must not inherit the global Noto font. */
+[data-testid="stExpander"] summary [data-testid="stIconMaterial"],
+[data-testid="stExpander"] summary span[class*="material"],
+[data-testid="stExpander"] summary [data-testid="stExpanderToggleIcon"] span{
+ font-family:'Material Symbols Rounded','Material Symbols Outlined','Material Icons'!important;
+ font-size:22px!important;font-weight:normal!important;letter-spacing:normal!important;
+ line-height:1!important;white-space:nowrap!important;display:inline-flex!important;
+ font-feature-settings:'liga' 1!important;
+}
+[data-testid="stExpander"] summary [data-testid="stExpanderToggleIcon"]{
+ flex:0 0 24px!important;min-width:24px!important;width:24px!important;
+ display:inline-flex!important;align-items:center!important;justify-content:center!important}
 </style>""",unsafe_allow_html=True)
 # Keep the exact uploaded 1200×1600 JPEG in the repository (no lossy re-encoding).
 # Scale to the viewport height rather than covering its width, which greatly
@@ -1321,49 +1350,39 @@ with radar_tabs[0]:
                 column_config={'출처':st.column_config.LinkColumn('근거 링크')}
             )
     def ranking_with_logos(frame, field, accent, axis_title):
-        # Use categorical text positions, hiding only Plotly's default labels.
-        # Logos and names live in the left margin, aligned to each bar's y value.
-        v=frame.dropna(subset=[field]).sort_values(field).copy()
+        # Native CSS grid: venue and bar are separate columns, never overlays.
+        import math
+        v=frame.dropna(subset=[field]).sort_values(field,ascending=False)
         if v.empty:
             st.info('해당 시장 데이터가 확보되면 차트가 표시됩니다.')
             return
-        import math
-        names=v['watch_name'].astype(str).tolist()
-        values=v[field].tolist()
-        positions=list(range(len(v)))
-        fig=go.Figure(go.Bar(
-            x=values,y=positions,orientation='h',
-            marker=dict(color=accent,line=dict(width=0)),
-            width=0.66,text=[compact_usd(n) for n in values],
-            textposition='outside',cliponaxis=False,
-            customdata=names,
-            hovertemplate='<b>%{customdata}</b><br>'+axis_title+': %{text}<extra></extra>'
-        ))
-        harvest_linear_bar(fig,values,height=max(310,len(v)*59+95))
-        fig.update_layout(margin=dict(l=220,r=95,t=20,b=64),
-                          font=dict(family='Noto Sans KR, DM Sans, sans-serif',
-                                    size=15,color='#62432c'),
-                          yaxis=dict(type='linear',range=[-0.6,len(v)-0.4],
-                                     showticklabels=False,showgrid=False,
-                                     zeroline=False,title=None,fixedrange=True))
-        # Align both glyphs to the actual numeric bar center. The overlay
-        # is outside the plotting rectangle and never alters bar placement.
-        for y,name in enumerate(names):
-            fig.add_annotation(x=-0.075,y=y,xref='paper',yref='y',
-                               text='<b>'+html.escape(name)+'</b>',
-                               showarrow=False,xanchor='right',yanchor='middle',
-                               font=dict(family='Noto Sans KR, DM Sans, sans-serif',
-                                         size=15,color='#624128'),align='right')
-            try:
-                logo=round_exchange_logo(name,exchange_logo_url(name))
-                fig.add_layout_image(dict(source=logo,xref='paper',yref='y',
-                                          x=-0.51,y=y,sizex=0.10,sizey=0.54,
-                                          xanchor='left',yanchor='middle',
-                                          sizing='contain',layer='above'))
-            except Exception:
-                pass
-        st.plotly_chart(fig,use_container_width=True,theme=None,
-                        config={'displayModeBar':False,'scrollZoom':False})
+        maximum=max(float(v[field].max()),1.0)
+        magnitude=10**math.floor(math.log10(maximum/4))
+        step=next((i*magnitude for i in (1,2,2.5,5,10) if i*magnitude>=maximum/4),10*magnitude)
+        end=math.ceil(maximum/step)*step
+        rows=[]
+        for _,entry in v.iterrows():
+            value=float(entry[field])
+            name=str(entry['watch_name'])
+            percentage=max(0,min(100,100*value/end))
+            bar=('<span class="venue-bar" style="width:'+f'{percentage:.2f}'
+                 +'%;background:'+accent+'"></span>')
+            rows.append('<div class="venue-rank-row">'
+                        '<div class="venue-rank-name">'+exchange_logo_html(name)+'</div>'
+                        '<div class="venue-rank-measure">'+bar
+                        +'<span class="venue-rank-value">'+html.escape(compact_usd(value))+'</span>'
+                        '</div></div>')
+        def tick(v):
+            if v>=1e9:return '$'+f'{v/1e9:g}'+'B'
+            if v>=1e6:return '$'+f'{v/1e6:g}'+'M'
+            if v>=1e3:return '$'+f'{v/1e3:g}'+'K'
+            return '$'+f'{v:,.0f}'
+        ticks=''.join('<span>'+html.escape(tick(k*step))+'</span>'
+                      for k in range(int(end/step)+1))
+        st.markdown('<div class="venue-rank-chart">'+''.join(rows)
+                    +'<div class="venue-rank-foot"><span></span><div class="venue-rank-ticks">'
+                    +ticks+'</div></div><div class="venue-rank-axis">'
+                    +html.escape(axis_title)+' (USD)</div></div>',unsafe_allow_html=True)
 
     chart_a,chart_b=st.columns(2)
     with chart_a:
