@@ -334,6 +334,42 @@ p,li,[data-testid="stCaptionContainer"]{color:#65737d}
 [data-testid="stSidebar"] [data-testid="stVerticalBlock"]{gap:.35rem}
 [data-testid="stSidebar"] h2{font-size:1.08rem!important}
 [data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"]{padding:8px!important}
+
+/* Harvest palette inspired by the supplied autumn pumpkin photo. */
+:root{--harvest-ink:#493323;--harvest-rust:#ae5727;--harvest-pumpkin:#cb782d;--harvest-straw:#f2dfb5;--harvest-cream:#fff9ee;}
+[data-testid="stAppViewContainer"]{
+  background:linear-gradient(90deg,rgba(255,250,239,.93),rgba(252,244,225,.88))!important;
+  color:var(--harvest-ink)!important;
+}
+[data-testid="stAppViewContainer"] .block-container{
+  background:rgba(255,249,238,.89)!important;
+  border:1px solid rgba(144,101,62,.16)!important;
+  border-radius:19px!important;
+  box-shadow:0 10px 34px rgba(78,46,17,.08)!important;
+  padding:28px 33px 48px!important;
+}
+h1,h2,h3,.radar-banner h1{color:#57361f!important}
+.radar-banner h1{font-size:3.15rem!important;font-weight:850!important}
+p,li,[data-testid="stCaptionContainer"]{color:#695545!important}
+[data-testid="stSidebar"]{background:#f9eed7!important;border-right:1px solid #dbbf95!important}
+[data-testid="stTabs"] [role="tablist"]{border-color:#e1caa9!important}
+[data-testid="stTabs"] button{color:#765637!important}
+[data-testid="stTabs"] button[aria-selected="true"]{color:#ae5727!important;border-bottom-color:#bd692e!important}
+.radar-table-wrap,.benchmark-wrap{background:rgba(255,253,247,.96)!important;border:1px solid #e0cba8!important}
+.radar-rank-table{color:#503927!important}
+.radar-rank-table thead th{background:#edddbf!important;color:#634a30!important}
+.radar-rank-table tbody td{border-top:1px solid #ecdec8!important;color:#503927!important}
+.radar-rank-table tbody tr:hover{background:#fff0d7!important}
+.radar-rank-table .rank-name{color:#5b3920!important}
+.radar-bar-track{background:#eddbc0!important}
+.radar-bar-fill{background:linear-gradient(90deg,#a84e27,#d78930)!important}
+.radar-volume-cell span{color:#6b3c24!important}
+[data-testid="stDataFrame"],[data-testid="stMetric"],[data-testid="stExpander"]{
+  border-color:#e2cfaf!important;
+}
+[data-testid="stMetric"]{background:#fff6e5e8!important}
+[data-testid="stMetricLabel"],[data-testid="stMetricValue"]{color:#63442d!important}
+[data-testid="stPopover"] button{color:#704826!important}
 </style>""",unsafe_allow_html=True)
 st.markdown("""<div class="radar-banner">
 <h1>빈집털이</h1></div>""",unsafe_allow_html=True)
