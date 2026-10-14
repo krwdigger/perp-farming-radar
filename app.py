@@ -587,6 +587,9 @@ with radar_tabs[0]:
     watched=watched.drop_duplicates(subset=['watch_name'],keep='first').copy()
     watched=watched[watched['watch_name'].notna() & watched['watch_name'].astype(str).str.strip().ne('')].copy()
     benchmarks=comparison.copy()
+    # Both tables share the same volume scale, including reference markets.
+    combined_volumes=pd.concat([watched['volume_24h_usd'],benchmarks['volume_24h_usd']]).dropna()
+    shared_volume_max=max(1.0,float(combined_volumes.max())) if not combined_volumes.empty else 1.0
     try:
         history=load_public_market_history()
         watched['oi_weekly_change_pct']=watched['watch_name'].map(lambda n:latest_oi_weekly_change(history,n))
@@ -599,7 +602,7 @@ with radar_tabs[0]:
     # Two compact reference rows, deliberately not part of the farming rankings.
     if not benchmarks.empty:
         st.caption('시장 규모 비교군 · Hyperliquid / Lighter')
-        benchmark_scale=max(1.0,float(benchmarks['volume_24h_usd'].max())) if benchmarks['volume_24h_usd'].notna().any() else 1.0
+        benchmark_scale=shared_volume_max
         benchmark_rows=[]
         for _,b in benchmarks.iterrows():
             v=b['volume_24h_usd'];oi=b['oi_usd']
@@ -623,7 +626,7 @@ with radar_tabs[0]:
     rank=rank.sort_values(col,ascending=ascending,na_position='last')
     rank=rank.reset_index(drop=True)
     rank.insert(0,'#',range(1,len(rank)+1))
-    max_volume=max(1.0,float(rank['volume_24h_usd'].max())) if rank['volume_24h_usd'].notna().any() else 1.0
+    max_volume=shared_volume_max
     def table_cell(value):
         return html.escape(str(value))
     def volume_bar(value):
