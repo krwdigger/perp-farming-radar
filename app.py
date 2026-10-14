@@ -99,6 +99,42 @@ def fetch_hyperliquid():
     return {'name':'Hyperliquid','volume_24h_usd':volume,'oi_usd':oi, 'markets':pairs,
             'volume_source':'Hyperliquid API, 24h market context', 'oi_source':'Hyperliquid API, current estimate'}
 
+@st.cache_data(ttl=300, show_spinner=False)
+def fetch_entropy_hip3():
+    """Entropy's isolated Hyperliquid HIP-3 'io' dex, not global Hyperliquid."""
+    response=requests.post(
+        'https://api.hyperliquid.xyz/info',
+        json={'type':'metaAndAssetCtxs','dex':'io'},
+        headers=HEADERS,timeout=15)
+    response.raise_for_status()
+    data=response.json()
+    if not isinstance(data,list) or len(data)!=2:
+        raise ValueError('Unexpected HIP-3 market metadata format')
+    metadata,contexts=data
+    markets=metadata.get('universe') if isinstance(metadata,dict) else None
+    if not isinstance(markets,list) or not isinstance(contexts,list) or len(markets)!=len(contexts):
+        raise ValueError('HIP-3 market list and asset contexts disagree')
+    volume=[]
+    open_interest=[]
+    for item,market in zip(contexts,markets):
+        if not isinstance(item,dict) or not isinstance(market,dict):
+            continue
+        daily=number(item.get('dayNtlVlm'))
+        price=number(item.get('markPx'))
+        size=number(item.get('openInterest'))
+        if daily is not None and daily>=0:volume.append(daily)
+        if price is not None and size is not None and price>=0 and size>=0:
+            open_interest.append(price*size)
+    if not volume and not open_interest:
+        raise ValueError('No usable Entropy HIP-3 volume or OI')
+    return {
+        'volume_24h_usd':sum(volume) if volume else None,
+        'oi_usd':sum(open_interest) if open_interest else None,
+        'volume_source':'Hyperliquid public HIP-3 io dex metaAndAssetCtxs, dayNtlVlm USD',
+        'oi_source':'Hyperliquid public HIP-3 io dex, OI contracts × markPx USD',
+        'market_data_time':datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
+    }
+
 @st.cache_data(ttl=900, show_spinner=False)
 def fetch_standx():
     """Official StandX public market overview: 24h quote volume and current OI."""
@@ -821,6 +857,8 @@ with st.spinner('공개 데이터 수집 중…'):
     except Exception as e: nado_volume=None;errors.append(f'Nado 24h volume: {e}')
     try: nado_stats=fetch_nado_ccxt()
     except Exception as e: nado_stats=None;errors.append(f'Nado CCXT: {e}')
+    try: entropy_stats=fetch_entropy_hip3()
+    except Exception as e: entropy_stats=None;errors.append(f'Entropy HIP-3: {e}')
     try: pro=fetch_pro_derivatives(pro_key) if pro_key else pd.DataFrame()
     except Exception as e: pro=pd.DataFrame();errors.append(f'DefiLlama Pro: {e}')
 
@@ -843,6 +881,14 @@ df['is_watchlist']=df['watch_name'].notna().fillna(False).astype(bool)
 
 df=merge_exact(df,oi,'_oi')
 df=merge_exact(df,pro,'_pro')
+# Entropy io is a distinct HIP-3 venue. Never merge Hyperliquid's default market.
+if entropy_stats:
+    entropy_mask=df['watch_name'].eq('Entropy')
+    if entropy_mask.any():
+        for field,value in entropy_stats.items():
+            if value is not None:
+                if field not in df.columns:df[field]=None
+                df.loc[entropy_mask,field]=value
 # StandX market figures are only applied to the explicitly labelled StandX watchlist row.
 # Do not merge ambiguously named venues or infer points data from the market API.
 if sx:
