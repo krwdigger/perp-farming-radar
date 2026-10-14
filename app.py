@@ -1164,15 +1164,23 @@ st.markdown(_theme_css, unsafe_allow_html=True)
 # shifting the clickable button into the center.
 st.markdown("""
 <style>
+/* The app's header and decoration layers must not cover the theme control. */
+[data-testid="stHeader"]{pointer-events:none!important}
+[data-testid="stHeader"] button,[data-testid="stToolbar"],[data-testid="stDecoration"] button{
+ pointer-events:auto!important;
+}
+[data-testid="stAppViewContainer"],[data-testid="stMain"],
+[data-testid="stMainBlockContainer"]{overflow:visible!important}
 .st-key-theme_dock_v2{
  position:fixed!important;top:18px!important;right:18px!important;
  left:auto!important;bottom:auto!important;
- z-index:2147483000!important;width:max-content!important;
+ z-index:2147483647!important;width:max-content!important;
  max-width:calc(100vw - 36px)!important;margin:0!important;
  padding:0!important;transform:none!important;
  pointer-events:auto!important;
 }
-.st-key-theme_dock_v2 [data-testid="stButton"]{width:max-content!important;pointer-events:auto!important}
+.st-key-theme_dock_v2, .st-key-theme_dock_v2 *{pointer-events:auto!important}
+.st-key-theme_dock_v2 [data-testid="stButton"]{position:relative!important;z-index:2147483647!important;width:max-content!important;pointer-events:auto!important}
 .st-key-theme_dock_v2 button{
  min-width:112px!important;min-height:40px!important;
  padding:8px 16px!important;border-radius:999px!important;
