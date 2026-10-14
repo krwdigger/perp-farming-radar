@@ -1178,35 +1178,58 @@ with radar_tabs[0]:
                   '</tr></thead><tbody>')
     st.markdown(table_header+''.join(body)+'</tbody></table></div>',unsafe_allow_html=True)
     st.caption('추정 혼잡도: 값이 확보된 관심 거래소 간 24H Volume 순위 60% + 현재 OI 순위 40%. 호박이 많을수록 상대적으로 덜 붐비는 시장입니다. 실제 트레이더 수·파밍 수익률을 뜻하지 않으며, 데이터 부족 시 평가하지 않습니다.')
+    def ranking_with_logos(frame, field, accent, axis_title):
+        # Use categorical text positions, hiding only Plotly's default labels.
+        # Logos and names live in the left margin, aligned to each bar's y value.
+        v=frame.dropna(subset=[field]).sort_values(field).copy()
+        if v.empty:
+            st.info('해당 시장 데이터가 확보되면 차트가 표시됩니다.')
+            return
+        import math
+        names=v['watch_name'].astype(str).tolist()
+        values=v[field].tolist()
+        positions=list(range(len(v)))
+        fig=go.Figure(go.Bar(
+            x=values,y=positions,orientation='h',
+            marker=dict(color=accent,line=dict(width=0)),
+            width=0.66,text=[compact_usd(n) for n in values],
+            textposition='outside',cliponaxis=False,
+            customdata=names,
+            hovertemplate='<b>%{customdata}</b><br>'+axis_title+': %{text}<extra></extra>'
+        ))
+        harvest_linear_bar(fig,values,height=max(310,len(v)*59+95))
+        fig.update_layout(margin=dict(l=205,r=95,t=20,b=64),
+                          font=dict(family='Noto Sans KR, DM Sans, sans-serif',
+                                    size=15,color='#62432c'),
+                          yaxis=dict(type='linear',range=[-0.6,len(v)-0.4],
+                                     showticklabels=False,showgrid=False,
+                                     zeroline=False,title=None,fixedrange=True))
+        # Align both glyphs to the actual numeric bar center. The overlay
+        # is outside the plotting rectangle and never alters bar placement.
+        for y,name in enumerate(names):
+            fig.add_annotation(x=-0.17,y=y,xref='paper',yref='y',
+                               text='<b>'+html.escape(name)+'</b>',
+                               showarrow=False,xanchor='left',yanchor='middle',
+                               font=dict(family='Noto Sans KR, DM Sans, sans-serif',
+                                         size=15,color='#624128'),align='left')
+            try:
+                logo=round_exchange_logo(name,exchange_logo_url(name))
+                fig.add_layout_image(dict(source=logo,xref='paper',yref='y',
+                                          x=-0.235,y=y,sizex=0.055,sizey=0.53,
+                                          xanchor='left',yanchor='middle',
+                                          sizing='contain',layer='above'))
+            except Exception:
+                pass
+        st.plotly_chart(fig,use_container_width=True,theme=None,
+                        config={'displayModeBar':False,'scrollZoom':False})
+
     chart_a,chart_b=st.columns(2)
     with chart_a:
         st.markdown('#### 24H Volume Rankings')
-        v=watched.dropna(subset=['volume_24h_usd']).sort_values('volume_24h_usd')
-        if v.empty:
-            st.info('거래량 데이터가 확보되면 차트가 표시됩니다.')
-        else:
-            fig=px.bar(v,x='volume_24h_usd',y='watch_name',orientation='h',
-                       color_discrete_sequence=['#b36732'],
-                       labels={'volume_24h_usd':'24H Volume (USD)','watch_name':''})
-            fig.update_traces(text=v['volume_24h_usd'].map(compact_usd).tolist(),
-                              texttemplate='%{text}',textposition='outside',cliponaxis=False,
-                              marker_line_width=0)
-            harvest_linear_bar(fig,v['volume_24h_usd'],height=max(310,len(v)*56+100))
-            st.plotly_chart(fig,use_container_width=True,theme=None)
+        ranking_with_logos(watched,'volume_24h_usd','#b36732','24H Volume')
     with chart_b:
         st.markdown('#### Open Interest Rankings')
-        v=watched.dropna(subset=['oi_usd']).sort_values('oi_usd')
-        if v.empty:
-            st.info('OI 데이터가 확보되면 차트가 표시됩니다.')
-        else:
-            fig=px.bar(v,x='oi_usd',y='watch_name',orientation='h',
-                       color_discrete_sequence=['#d2944c'],
-                       labels={'oi_usd':'Open Interest (USD)','watch_name':''})
-            fig.update_traces(text=v['oi_usd'].map(compact_usd).tolist(),
-                              texttemplate='%{text}',textposition='outside',cliponaxis=False,
-                              marker_line_width=0)
-            harvest_linear_bar(fig,v['oi_usd'],height=max(310,len(v)*56+100))
-            st.plotly_chart(fig,use_container_width=True,theme=None)
+        ranking_with_logos(watched,'oi_usd','#d2944c','Open Interest')
     st.markdown('#### 시장 위치 분석')
     both=watched.dropna(subset=['volume_24h_usd','oi_usd']).copy()
     both=both[(both['volume_24h_usd']>0)&(both['oi_usd']>0)]
