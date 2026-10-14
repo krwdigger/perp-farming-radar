@@ -540,32 +540,36 @@ def latest_oi_weekly_change(data,venue):
 
 @st.cache_data(ttl=3600,show_spinner=False)
 def round_exchange_logo(name, url):
-    """Generate an actual circular RGBA image for Plotly from an exchange logo."""
-    from PIL import Image, ImageDraw
-    canvas=Image.new('RGBA',(160,160),(0,0,0,0))
-    inset=4
-    mask=Image.new('L',(152,152),0)
-    ImageDraw.Draw(mask).ellipse((0,0,151,151),fill=255)
+    """Produce a true circular PNG: the image corners are transparent, not merely outlined."""
+    from PIL import Image, ImageDraw, ImageOps
+    size=192
+    # Supersampling makes the actual clipping edge smooth at small chart sizes.
+    mask=Image.new('L',(size,size),0)
+    ImageDraw.Draw(mask).ellipse((3,3,size-4,size-4),fill=255)
     avatar=None
     if url and url.startswith('https://'):
         try:
-            response=requests.get(url,timeout=7,headers=HEADERS)
+            response=requests.get(url,timeout=8,headers=HEADERS)
             response.raise_for_status()
             image=Image.open(BytesIO(response.content)).convert('RGBA')
-            image.thumbnail((126,126),Image.Resampling.LANCZOS)
-            avatar=Image.new('RGBA',(152,152),(250,252,253,255))
-            avatar.alpha_composite(image,((152-image.width)//2,(152-image.height)//2))
+            # Cover (rather than contain) the circle so square logos cannot remain as
+            # visibly square images surrounded by a decorative ring.
+            avatar=ImageOps.fit(image,(size,size),method=Image.Resampling.LANCZOS,
+                                centering=(0.5,0.5))
+            # Preserve transparent source artwork while giving it a circular backing.
+            backing=Image.new('RGBA',(size,size),(248,251,253,255))
+            backing.alpha_composite(avatar)
+            avatar=backing
         except Exception:
             avatar=None
     if avatar is None:
-        avatar=Image.new('RGBA',(152,152),(226,238,244,255))
-        draw=ImageDraw.Draw(avatar)
-        initial=str(name)[0:1].upper()
-        draw.text((76,76),initial,fill=(45,83,103,255),anchor='mm')
-    canvas.paste(avatar,(inset,inset),mask)
-    ImageDraw.Draw(canvas).ellipse((inset,inset,155,155),outline=(109,147,166,255),width=3)
+        avatar=Image.new('RGBA',(size,size),(227,239,246,255))
+        drawer=ImageDraw.Draw(avatar)
+        drawer.text((size//2,size//2),str(name)[:1].upper(),
+                    fill=(44,79,100,255),anchor='mm',stroke_width=0)
+    avatar.putalpha(mask)
     output=BytesIO()
-    canvas.save(output,format='PNG')
+    avatar.save(output,format='PNG')
     return 'data:image/png;base64,'+base64.b64encode(output.getvalue()).decode('ascii')
 
 def exchange_logo_url(name):
@@ -786,7 +790,7 @@ with radar_tabs[0]:
             fig.add_layout_image(dict(
                 source=round_exchange_logo(str(entry['watch_name']),exchange_logo_url(entry['watch_name'])),
                 xref='x domain',yref='y domain',x=xpos,y=ypos,
-                sizex=diameter/1100,sizey=diameter/440,
+                sizex=diameter/900,sizey=diameter/430,
                 xanchor='center',yanchor='middle',sizing='contain',layer='above'))
             fig.add_annotation(x=xpos,y=min(0.985,ypos+diameter/760+0.018),
                                xref='x domain',yref='y domain',showarrow=False,
