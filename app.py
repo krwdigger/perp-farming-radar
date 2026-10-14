@@ -281,34 +281,14 @@ html,body,[data-testid="stApp"],[class*="css"]{font-family:'DM Sans','Noto Sans 
     margin:0!important;
     padding:0!important;
 }
-[data-testid="stPopover"] > button,
-[data-testid="stPopover"] > div > button {
-    width:32px!important;
-    min-width:32px!important;
-    height:34px!important;
-    min-height:34px!important;
-    padding:0!important;
-    margin:0!important;
-    display:flex!important;
-    align-items:center!important;
-    justify-content:center!important;
-    border:0!important;
-    border-radius:0!important;
-    background:transparent!important;
-    color:#5e7180!important;
-    font-size:24px!important;
-    font-weight:400!important;
-    box-shadow:none!important;
-}
-/* Use only Streamlit's own popover chevron. No custom glyph and no SVG hiding. */
-[data-testid="stPopover"] button [data-testid="stIconMaterial"] {
-    color:#5e7180!important;
-}
-[data-testid="stPopover"] > button:hover,
-[data-testid="stPopover"] > div > button:hover {
-    background:#edf3f6!important;
-    color:#344f61!important;
-}
+/* Rebuilt single-edge toggle: no Streamlit chevron or duplicate label. */
+[data-testid="stSidebarCollapsedControl"],[data-testid="collapsedControl"],
+[data-testid="stSidebarCollapseButton"],[data-testid="stSidebarNavCollapseButton"]{display:none!important}
+[data-testid="stPopover"]{position:fixed!important;left:0!important;top:6px!important;z-index:2147483000!important;margin:0!important;padding:0!important;width:32px!important;min-width:32px!important}
+[data-testid="stPopover"] button{position:relative!important;display:block!important;width:32px!important;min-width:32px!important;height:38px!important;min-height:38px!important;padding:0!important;margin:0!important;border:0!important;border-radius:0 8px 8px 0!important;background:rgba(255,248,233,.96)!important;color:#774824!important;font-size:0!important;box-shadow:0 2px 5px rgba(88,47,18,.14)!important}
+[data-testid="stPopover"] button > *{visibility:hidden!important}
+[data-testid="stPopover"] button::after{content:"›"!important;position:absolute!important;left:9px!important;top:0!important;height:38px!important;display:flex!important;align-items:center!important;justify-content:center!important;font:700 27px/1 Arial,sans-serif!important;color:#774824!important;visibility:visible!important}
+[data-testid="stPopover"] button:hover{background:#f6e4c3!important}
 .block-container{max-width:1500px;padding-top:1.8rem;padding-bottom:4rem}
 h1,h2,h3{color:#485760!important;letter-spacing:-.025em;font-weight:700!important}
 h1{font-size:2.35rem!important}
@@ -387,6 +367,45 @@ p,li,[data-testid="stCaptionContainer"]{color:#695545!important}
 [data-testid="stMetric"]{background:#fff6e5e8!important}
 [data-testid="stMetricLabel"],[data-testid="stMetricValue"]{color:#63442d!important}
 [data-testid="stPopover"] button{color:#704826!important}
+
+/* Unified autumn UI for all Streamlit control surfaces and tables. */
+[data-testid="stApp"]{color:#4c3323!important}
+[data-testid="stTabs"] [role="tab"]{color:#65482e!important;font-weight:650!important;font-size:15px!important}
+[data-testid="stTabs"] [role="tab"][aria-selected="true"]{color:#a45729!important;border-bottom:3px solid #c77737!important}
+[data-testid="stWidgetLabel"] p,[data-testid="stSelectbox"] label p,[data-testid="stTextInput"] label p{color:#634329!important}
+div[data-baseweb="select"]>div,div[data-baseweb="input"]>div,input,textarea{
+  background:#fff8ec!important;border-color:#ddc39d!important;color:#503723!important;
+}
+div[data-baseweb="popover"],[data-baseweb="menu"],[role="listbox"],[role="option"]{
+  background:#fff7e9!important;color:#513923!important;
+}
+div[data-testid="stAlert"]{background:#fff1d8!important;color:#68482e!important;border:1px solid #e6c899!important;border-radius:10px!important}
+div[data-testid="stAlert"] p,div[data-testid="stAlert"] div{color:#67462a!important}
+[data-testid="stExpander"] details,[data-testid="stExpander"] summary{background:#fff6e6!important;color:#563c27!important}
+[data-testid="stDataFrame"]{background:#fffbf3!important;border-color:#dec59e!important}
+[data-testid="stPlotlyChart"]{background:rgba(255,250,241,.78)!important;border-radius:12px!important}
+[data-testid="stButton"] button,[data-testid="stDownloadButton"] button{background:#f2dfbc!important;color:#684227!important;border:1px solid #dabb88!important}
+.radar-hint{background:#fff0d5!important;border-left-color:#bd713b!important;color:#704926!important}
+.radar-hint b{color:#663b22!important}
+.radar-table-wrap{width:100%;overflow-x:auto;border:1px solid #dfc6a1!important;border-radius:14px!important;background:#fffbf2!important}
+.radar-rank-table{width:100%;border-collapse:collapse;min-width:920px;font-size:16px;color:#543922!important}
+.radar-rank-table thead th{background:#efddb9!important;color:#644329!important;text-align:left;font-size:14px;font-weight:750;padding:16px 14px;white-space:nowrap;border-bottom:1px solid #d7b687!important}
+.radar-rank-table tbody td{border-top:1px solid #e9d9bd!important;padding:18px 14px;font-variant-numeric:tabular-nums;white-space:nowrap;font-size:16px;color:#4f3827!important}
+.radar-rank-table tbody tr:hover{background:#fff1d9!important}
+.radar-rank-table .rank-no{width:50px;color:#957859!important;font-weight:650}
+.radar-rank-table .rank-name{font-weight:750;color:#624128!important;min-width:155px}
+.radar-rank-table th:nth-child(3),.radar-rank-table td:nth-child(3){min-width:230px;width:30%}
+.radar-volume-cell{display:flex;gap:12px;align-items:center;justify-content:space-between}
+.radar-bar-track{min-width:105px;flex:1;height:12px;background:#edd9b9!important;border-radius:8px;overflow:hidden}
+.radar-bar-fill{height:100%;background:linear-gradient(90deg,#a54f24,#df8d39)!important;border-radius:8px}
+.radar-volume-cell span{min-width:80px;text-align:right;font-weight:750;font-size:15px;color:#674028!important}
+.radar-missing{color:#987f6a}
+.exchange-cell{display:inline-flex;align-items:center;gap:10px;vertical-align:middle}
+.exchange-logo,.exchange-monogram{width:30px;height:30px;min-width:30px;border-radius:50%;object-fit:contain}
+.exchange-monogram{display:inline-flex;align-items:center;justify-content:center;background:#f2dfbf;color:#80512c;font-size:14px;font-weight:700}
+.benchmark-wrap{margin:5px 0 18px}
+.benchmark-wrap .radar-rank-table tbody td{padding:12px 14px}
+.benchmark-wrap .radar-rank-table th:nth-child(2),.benchmark-wrap .radar-rank-table td:nth-child(2){min-width:230px;width:30%}
 </style>""",unsafe_allow_html=True)
 # Keep the exact uploaded 1200×1600 JPEG in the repository (no lossy re-encoding).
 # Scale to the viewport height rather than covering its width, which greatly
@@ -616,7 +635,7 @@ def readable_metrics(frame, rename):
         if field in result:result[field]=result[field].map(integer_fmt)
     return result.rename(columns=rename)
 
-radar_tabs=st.tabs(['⭐ 관심 거래소','📈 경쟁 비교','🔎 전체 스캐너','🔌 데이터 출처','🧮 포인트 계산기'])
+radar_tabs=st.tabs(['🎃 관심 거래소','🐿️ 경쟁 비교','🍄 전체 스캐너','🍁 데이터 출처','🐱 포인트 계산기'])
 @st.cache_data(ttl=300,show_spinner=False)
 def load_public_market_history():
     url='https://raw.githubusercontent.com/krwdigger/perp-farming-radar/main/data/market_snapshots.csv'
@@ -805,30 +824,6 @@ with radar_tabs[0]:
                     '<td>'+table_cell(ratio)+'</td>'
                     '<td>'+table_cell(oi_delta)+'</td>'
                     '<td>'+table_cell(traders)+'</td></tr>')
-    st.markdown("""<style>
-    .radar-table-wrap{width:100%;overflow-x:auto;border:1px solid #d8e2e6;border-radius:14px;background:#fffefa}
-    .radar-rank-table{width:100%;border-collapse:collapse;min-width:920px;font-size:16px;color:#344f61}
-    .radar-rank-table thead th{background:#edf3f6;color:#6d8190;text-align:left;
-        font-size:14px;font-weight:700;padding:16px 14px;white-space:nowrap}
-    .radar-rank-table tbody td{border-top:1px solid #e6ecee;padding:18px 14px;
-        font-variant-numeric:tabular-nums;white-space:nowrap;font-size:16px}
-    .radar-rank-table tbody tr:hover{background:#f1f7fa}
-    .radar-rank-table .rank-no{width:50px;color:#8799a4;font-weight:650}
-    .radar-rank-table .rank-name{font-weight:730;color:#36586c;min-width:155px}
-    .radar-rank-table th:nth-child(3),.radar-rank-table td:nth-child(3){min-width:230px;width:30%}
-    .radar-volume-cell{display:flex;gap:12px;align-items:center;justify-content:space-between}
-    .radar-bar-track{min-width:105px;flex:1;height:11px;background:#e3edf2;border-radius:8px;overflow:hidden}
-    .radar-bar-fill{height:100%;background:#76a9c1;border-radius:8px}
-    .radar-volume-cell span{min-width:80px;text-align:right;font-weight:750;font-size:15px;color:#35556a}
-    .radar-missing{color:#a5afb6}
-    .exchange-cell{display:inline-flex;align-items:center;gap:10px;vertical-align:middle}
-    .exchange-logo,.exchange-monogram{width:30px;height:30px;min-width:30px;border-radius:50%;object-fit:contain}
-    .exchange-monogram{display:inline-flex;align-items:center;justify-content:center;background:#e4edf2;color:#57788c;font-size:14px;font-weight:700}
-    .benchmark-wrap{margin:5px 0 18px}
-    .benchmark-wrap .radar-rank-table tbody td{padding:12px 14px}
-    .benchmark-wrap .radar-rank-table th:nth-child(2),.benchmark-wrap .radar-rank-table td:nth-child(2){min-width:230px;width:30%}
-
-    </style>""",unsafe_allow_html=True)
     table_header='<div class="radar-table-wrap"><table class="radar-rank-table"><thead><tr><th>#</th><th>Exchange</th><th>24H Volume</th><th>Open Interest</th><th>Vol / OI</th><th>OI 7D</th><th>7D Traders</th></tr></thead><tbody>'
     st.markdown(table_header+''.join(body)+'</tbody></table></div>',unsafe_allow_html=True)
     st.caption('Vol/OI는 거래 회전율에 가까운 시장 활동 지표입니다. 파밍 수익률이나 활성 지갑 수의 대체치는 아닙니다. OI 7D는 일주일 전 기록이 있는 경우에만 표시합니다.')
