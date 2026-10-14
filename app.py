@@ -630,6 +630,22 @@ html,body,[data-testid="stApp"],[data-testid="stApp"] *,
 .congestion-cell strong{font-size:15px!important;font-weight:700!important;color:#6b432a}
 .pumpkin-meter{font-size:19px!important;letter-spacing:1px;white-space:nowrap;line-height:1.2}
 .pumpkin-empty{color:#cdb58b;font-size:15px}
+
+/* The 9-column research matrix scrolls horizontally on small screens. */
+.fundraising-ranking .radar-rank-table{min-width:1390px!important}
+.fundraising-ranking .funding-col{min-width:145px;font-weight:700!important}
+.fundraising-ranking .investor-col{min-width:170px;max-width:240px;white-space:normal!important}
+.fundraising-ranking .tier-col{text-align:center;min-width:110px}
+.fundraising-ranking th:nth-child(7),.fundraising-ranking th:nth-child(8),
+.fundraising-ranking th:nth-child(9){white-space:nowrap}
+.fundraising-ranking .funding-col small{font-size:11px!important;color:#927654}
+.funding-source{color:#965222!important;text-decoration:underline;text-underline-offset:3px}
+.farming-tier{display:inline-flex;align-items:center;justify-content:center;
+ min-width:34px;border-radius:6px;padding:4px 9px;
+ font-size:15px!important;font-weight:800!important}
+.tier-s{background:#ecd2a1;color:#6d3b16}.tier-a{background:#eddfbd;color:#825021}
+.tier-b{background:#f0e8d3;color:#6b563a}.tier-c{background:#f0eee6;color:#706d62}
+.tier-d{background:#eee8e5;color:#7a635c}.tier-unknown{color:#947b69}
 </style>""",unsafe_allow_html=True)
 # Keep the exact uploaded 1200×1600 JPEG in the repository (no lossy re-encoding).
 # Scale to the viewport height rather than covering its width, which greatly
@@ -1162,22 +1178,115 @@ with radar_tabs[0]:
         return ('<div class="radar-volume-cell"><div class="radar-bar-track">'
                 '<div class="radar-bar-fill" style="width:'+f'{percentage:.2f}'+'%"></div>'
                 '</div><span>'+table_cell(compact_usd(value))+'</span></div>')
+    # Fundraising research is curated with source links and explicit scope.
+    # The S/A/B/C/D tier is our editorial *research priority*, not a
+    # standardized crypto-industry grade or an expected token return.
+    research_file=DATA_DIR/'data'/'fundraising_research.csv'
+    try:
+        funding=pd.read_csv(research_file,keep_default_na=False)
+        funding_by_name={str(rec['project']):rec for rec in funding.to_dict('records')}
+    except Exception:
+        funding_by_name={}
+
+    def research_funding_grade(record):
+        if not record or record.get('verified')=='no':
+            return ('미평가','근거 부족')
+        name=str(record.get('project',''))
+        amount=pd.to_numeric(record.get('amount_usd',''),errors='coerce')
+        if record.get('scope')=='parent':
+            return ('B','별도 시장·포인트 프로그램의 직접 투자금이 아님')
+        if record.get('scope')=='ecosystem':
+            return ('B','블록체인 생태계 펀딩: 해당 앱의 보상과 별개')
+        if name=='StandX':
+            return ('B','자체 조달 운영: VC가 없다는 이유로 감점하지 않음')
+        if pd.isna(amount):
+            return ('B','금액 미공개: 주요 투자사만 확인됨')
+        lead=str(record.get('lead_investor','')).lower()
+        strong=any(term in lead for term in (
+            'dragonfly','founders fund','general catalyst','a16z',
+            'paradigm','coinbase','bain capital','ribbit','robinhood'))
+        # Published funding thresholds are common screening shortcuts.
+        # Grade cutoffs/weights are explicitly project-specific heuristics.
+        if amount>=30000000 and strong:return ('S','대형 투자 라운드 + 주요 투자사')
+        if amount>=8000000 and strong:return ('A','투자 규모와 투자사 모두 우수')
+        if amount>=3000000 and strong:return ('A','유의미한 투자 + 주요 투자사')
+        if amount>=3000000:return ('B','공개 펀딩 확보')
+        if amount>=1000000:return ('C','초기 투자 확인')
+        return ('D','초기 투자 소규모 확인')
+
+    def fundraising_cells(project):
+        record=funding_by_name.get(str(project))
+        if not record:
+            return ('<span class="radar-missing">미확인</span>',
+                    '<span class="radar-missing">—</span>',
+                    '<span class="radar-missing">미평가</span>')
+        source=str(record.get('source_url','')).strip()
+        amount=str(record.get('display_amount','')).strip() or '미확인'
+        investors=str(record.get('investors','')).strip() or '미확인'
+        lead=str(record.get('lead_investor','')).strip()
+        scope=str(record.get('scope',''))
+        status=str(record.get('verified',''))
+        grade,why=research_funding_grade(record)
+        grade_class=grade.lower() if grade in ('S','A','B','C','D') else 'unknown'
+        if source.startswith('https://'):
+            amount_html=('<a class="funding-source" href="'+html.escape(source,quote=True)
+                         +'" target="_blank" rel="noopener noreferrer" title="투자 자료 출처">'
+                         +html.escape(amount)+'</a>')
+        else:
+            amount_html=html.escape(amount)
+        qualifier=(' <small>· 모기업</small>' if scope=='parent' else
+                   ' <small>· 생태계</small>' if scope=='ecosystem' else
+                   ' <small>· 자체 조달</small>' if project=='StandX' else '')
+        if status=='partial':
+            qualifier+=' <small>· 추정</small>'
+        investor_html=html.escape(lead or investors)
+        investor_html='<span title="'+html.escape(investors,quote=True)+'">'+investor_html+'</span>'
+        grade_html=('<span class="farming-tier tier-'+grade_class+'" title="'
+                    +html.escape(why,quote=True)+'">'+html.escape(grade)+'</span>')
+        return (amount_html+qualifier,investor_html,grade_html)
+
     body=[]
     for _,entry in rank.iterrows():
         row_oi_text=compact_usd(entry['oi_usd'])
         ratio=f"{entry['volume_oi_ratio']:.2f}×" if pd.notna(entry['volume_oi_ratio']) else '—'
+        raised_html,investor_html,grade_html=fundraising_cells(entry['watch_name'])
         body.append('<tr><td class="rank-no">'+table_cell(int(entry['#']))+'</td>'
                     '<td class="rank-name">'+exchange_logo_html(entry['watch_name'])+'</td>'
                     '<td>'+volume_bar(entry['volume_24h_usd'])+'</td>'
                     '<td>'+table_cell(row_oi_text)+'</td>'
                     '<td>'+table_cell(ratio)+'</td>'
-                    '<td>'+congestion_pumpkins(entry['activity_congestion'])+'</td></tr>')
-    table_header=('<div class="radar-table-wrap"><table class="radar-rank-table"><thead><tr>'
-                  '<th>#</th><th>Exchange</th><th>24H Volume</th>'
+                    '<td>'+congestion_pumpkins(entry['activity_congestion'])+'</td>'
+                    '<td class="funding-col">'+raised_html+'</td>'
+                    '<td class="investor-col">'+investor_html+'</td>'
+                    '<td class="tier-col">'+grade_html+'</td></tr>')
+    table_header=('<div class="radar-table-wrap fundraising-ranking"><table class="radar-rank-table">'
+                  '<thead><tr><th>#</th><th>Exchange</th><th>24H Volume</th>'
                   '<th>Open Interest</th><th>Vol / OI</th><th>혼잡도</th>'
+                  '<th>투자유치</th><th>주요 투자사</th><th>검토 등급</th>'
                   '</tr></thead><tbody>')
     st.markdown(table_header+''.join(body)+'</tbody></table></div>',unsafe_allow_html=True)
-    st.caption('추정 혼잡도: 값이 확보된 관심 거래소 간 24H Volume 순위 60% + 현재 OI 순위 40%. 호박이 많을수록 상대적으로 덜 붐비는 시장입니다. 실제 트레이더 수·파밍 수익률을 뜻하지 않으며, 데이터 부족 시 평가하지 않습니다.')
+    st.caption('추정 혼잡도: 관측된 관심 거래소의 24H Volume 순위 60% + OI 순위 40%. 투자/등급은 실제 보상액이나 파밍 성공확률이 아닌 리서치 우선순위이며, 투자 미공개 또는 별도 모기업·생태계 투자금은 구분합니다.')
+    with st.expander('펀드레이징 출처 · S~D 등급 산정 기준',expanded=False):
+        st.markdown(
+            '**등급은 업계의 공식 공통 규격이 아니라 공개 투자 라운드 분석에서 쓰는 '
+            '투자 규모·리드 투자사·투자 대상 일치 여부를 활용한 자체 리서치 등급입니다.** '
+            'S: 3천만 달러 이상 및 검증된 주요 리드 투자사, '
+            'A: 8백만 달러 이상+주요 리드 또는 3백만 달러 이상+주요 리드, '
+            'B: 공개 투자 확인 또는 유명 전략 투자이나 금액 비공개·자체 운영·연결된 모기업 투자, '
+            'C: 공개 투자 1백만 달러 이상, D: 1백만 달러 미만. '
+            '검증할 수 없는 경우 미평가. 자금 조달 규모가 작다는 사실만으로 파밍 기회가 낮다는 뜻은 아닙니다.'
+        )
+        st.warning('주의: VC 투자만으로 에어드랍 시행·포인트 전환·토큰 발행이 보장되지 않습니다. 특히 Lighter 모기업 투자금과 Robinhood Chain 전용 포인트를 혼동하지 않습니다.')
+        if not funding_by_name:
+            st.info('투자 자료 파일을 불러오지 못했습니다.')
+        else:
+            st.dataframe(
+                funding[['project','display_amount','investors','round','scope','note','source_url']]
+                .rename(columns={'project':'거래소','display_amount':'공개 투자금','investors':'투자사',
+                                 'round':'라운드','scope':'투자 대상','note':'검증 메모','source_url':'출처'}),
+                hide_index=True,use_container_width=True,
+                column_config={'출처':st.column_config.LinkColumn('근거 링크')}
+            )
     def ranking_with_logos(frame, field, accent, axis_title):
         # Use categorical text positions, hiding only Plotly's default labels.
         # Logos and names live in the left margin, aligned to each bar's y value.
