@@ -300,12 +300,9 @@ html,body,[data-testid="stApp"],[class*="css"]{font-family:'DM Sans','Noto Sans 
     font-weight:400!important;
     box-shadow:none!important;
 }
-/* Popover renders its own trailing chevron: keep only the custom » label. */
-[data-testid="stPopover"] > button [data-testid="stIconMaterial"],
-[data-testid="stPopover"] > div > button [data-testid="stIconMaterial"],
-[data-testid="stPopover"] > button svg,
-[data-testid="stPopover"] > div > button svg {
-    display:none!important;
+/* Use only Streamlit's own popover chevron. No custom glyph and no SVG hiding. */
+[data-testid="stPopover"] button [data-testid="stIconMaterial"] {
+    color:#5e7180!important;
 }
 [data-testid="stPopover"] > button:hover,
 [data-testid="stPopover"] > div > button:hover {
@@ -344,7 +341,7 @@ st.markdown("""<div class="radar-banner">
 <div class="radar-chip">● LIVE MARKET DATA · CLOUD DANCER EDITION</div></div>""",unsafe_allow_html=True)
 
 # Independent left-edge settings control replaces the fragile native sidebar opener.
-with st.popover('»', help='데이터 연결 및 설정 열기'):
+with st.popover(' ', help='데이터 연결 및 설정 열기'):
     st.header('데이터 연결')
     pro_key=st.text_input('DefiLlama Pro API key (선택)', type='password', help='유료 derivatives 거래량 API용. 키는 저장하지 않습니다.')
     use_hl=st.checkbox('Hyperliquid 시장 데이터 불러오기', value=True)
