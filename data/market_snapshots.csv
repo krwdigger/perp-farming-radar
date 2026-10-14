@@ -1,0 +1,6 @@
+captured_at_utc,venue,volume_24h_usd,oi_usd,markets,source,status,error
+2026-10-14T10:32:50+00:00,Variational,3116790519.569142,2155935988.3203163,,Official Omni API,ok,
+2026-10-14T10:32:50+00:00,StandX,103494495.56980301,30358905.452152,,Official public overview,ok,
+2026-10-14T10:32:50+00:00,Pacifica,,,78,Official public market info (market count only),ok,
+2026-10-14T10:32:50+00:00,Arcus,,,70,Public REST market list (market count only),ok,
+2026-10-14T10:32:50+00:00,Hyperliquid,4264605912.0218368,11695206052.376978,234,Official info API,ok,
