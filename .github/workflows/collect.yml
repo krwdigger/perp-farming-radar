@@ -1,0 +1,32 @@
+name: Collect Perp Market Snapshots
+on:
+  schedule:
+    - cron: '17 */4 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: market-snapshots
+  cancel-in-progress: false
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Collect public metrics
+        run: python collect_metrics.py
+      - name: Commit append-only snapshot
+        run: |
+          git config user.name "perp-radar-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/market_snapshots.csv
+          if ! git diff --cached --quiet; then
+            git commit -m "data: append public market snapshots"
+            git push
+          fi
