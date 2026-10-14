@@ -13,7 +13,7 @@ import plotly.express as px
 import requests
 import streamlit as st
 
-st.set_page_config(page_title='Perp Farming Radar', page_icon='📡', layout='wide', initial_sidebar_state='collapsed')
+st.set_page_config(page_title='Perp Farming Radar', page_icon='🤔', layout='wide', initial_sidebar_state='collapsed')
 DATA_DIR = Path(__file__).resolve().parent
 SNAPSHOT_FILE = DATA_DIR / 'radar_snapshots.csv'
 WATCHLIST_FILE = DATA_DIR / 'watchlist.csv'
