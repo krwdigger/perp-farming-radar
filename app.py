@@ -895,7 +895,7 @@ def harvest_linear_bar(fig, values, height=360, money=True):
                    ticks='outside',tickcolor='#a07750',showticklabels=True,
                    showgrid=True,gridcolor='#e2cda9',zeroline=False,
                    tickfont=dict(family='Noto Sans KR, DM Sans, sans-serif',size=13,color='#62432c'),title_font=dict(size=14,color='#62432c')),
-        yaxis=dict(tickfont=dict(family='Noto Sans KR, DM Sans, sans-serif',size=13,color='#62432c'),showgrid=False,automargin=True,title=None))
+        yaxis=dict(tickfont=dict(family='Noto Sans KR, DM Sans, sans-serif',size=15,color='#62432c'),showgrid=False,automargin=True,title=None))
     return fig
 
 radar_tabs=st.tabs(['🧸 관심 거래소','🐿️ 경쟁 비교','🦊 전체 스캐너','🍁 데이터 출처'])
