@@ -1046,10 +1046,50 @@ html [data-testid="stAppViewContainer"] .block-container{
  background:#17131c!important;backdrop-filter:none!important;
 }
 </style>"""
+# Match the reference rankings palette only in dark mode; do not alter
+# light mode, layout dimensions, SVG internals, or any event handlers.
+if _dark_now:
+    _theme_css += """
+<style>
+/* Reference: rankings table plum background, muted bronze separators. */
+html [data-testid="stAppViewContainer"] .block-container{background:#17121a!important}
+html [data-testid="stMetric"],html [data-testid="stExpander"],
+html [data-testid="stDataFrame"],html .radar-table-wrap,
+html .venue-rank-chart,html .market-chart-panel{
+ background-color:#241d28!important;border-color:#594535!important;
+ color:#f0dfce!important
+}
+html [data-testid="stExpander"] summary{
+ background:#3c2a32!important;color:#f3dfbf!important
+}
+html .radar-rank-table thead th,html .radar-rank-table th{
+ background:#3c2a32!important;color:#f3dfbf!important;border-color:#684e38!important
+}
+html .radar-rank-table tbody td{background:#241d28!important;color:#f0dfce!important;border-color:#514038!important}
+html [data-baseweb="input"]>div,html [data-baseweb="select"]>div,
+html [data-testid="stTextInput"] input,html [data-testid="stApp"] textarea{
+ background-color:#30252c!important;border-color:#78563f!important;color:#f5e7d5!important
+}
+html [role="listbox"],html [role="option"],html [data-baseweb="menu"],
+html [data-baseweb="popover"],html [data-testid="stPopoverContent"]{
+ background-color:#2c2330!important;color:#f4e4d2!important;border-color:#76513b!important
+}
+html [data-testid="stButton"] button,html [data-testid="stDownloadButton"] button{
+ background-color:#3b2937!important;border-color:#aa7750!important;color:#ffead5!important
+}
+html [data-testid="stButton"] button:disabled,html [data-testid="stDownloadButton"] button:disabled{
+ background-color:#302834!important;color:#b6a194!important;opacity:1!important
+}
+html [data-testid="stAlert"]{background-color:#302632!important;border-color:#79563f!important}
+html [data-testid="stAlert"] p{color:#f0dcc6!important}
+html [data-testid="stCaptionContainer"] p{color:#cbb29e!important}
+html [data-testid="stDataFrame"] canvas{filter:none!important}
+</style>
+"""
 st.markdown(_theme_css, unsafe_allow_html=True)
 # Override chart colors at the Plotly figure layer rather than SVG CSS.
 def readable_plotly(fig):
-    bg = '#241e2a' if _dark_now else '#fff8ed'
+    bg = '#241d28' if _dark_now else '#fff8ed'
     fg = '#f5e6d8' if _dark_now else '#573d2d'
     grid = '#5c4b4e' if _dark_now else '#dfc6a5'
     fig.update_layout(
