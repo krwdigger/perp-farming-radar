@@ -1084,6 +1084,17 @@ html [data-testid="stAlert"]{background-color:#302632!important;border-color:#79
 html [data-testid="stAlert"] p{color:#f0dcc6!important}
 html [data-testid="stCaptionContainer"] p{color:#cbb29e!important}
 html [data-testid="stDataFrame"] canvas{filter:none!important}
+/* Override the old light alert CSS, including its inner panels. */
+html div[data-testid="stAlert"],
+html div[data-testid="stAlert"] > div,
+html [data-testid="stAlert"] [data-testid="stMarkdownContainer"]{
+ background:#302632!important;
+ color:#f0dcc6!important;
+ border-color:#79563f!important;
+}
+html div[data-testid="stAlert"] :is(p,span,div,svg){
+ color:#f0dcc6!important;
+}
 </style>
 """
 st.markdown(_theme_css, unsafe_allow_html=True)
@@ -2043,7 +2054,7 @@ with radar_tabs[1]:
                        color_discrete_sequence=['#be773e'],labels={'oi_usd':'OI (USD)','name':''})
             fig.update_traces(marker_line_width=0)
             harvest_linear_bar(fig,v['oi_usd'],height=max(330,len(v)*36+90))
-            st.plotly_chart(fig,use_container_width=True,theme=None)
+            st.plotly_chart(readable_plotly(fig),use_container_width=True,theme=None)
     st.info('현재 OI는 시간가중 OI 포인트와 다릅니다. 낮은 OI = 저경쟁 파밍이라고 가정하지 않습니다.')
 with radar_tabs[2]:
     st.subheader('전체 거래소 탐색')
