@@ -74,7 +74,7 @@ def fetch_catalog():
         stamp=number(p.get('listedAt'))
         if stamp and stamp > 10**12: stamp/=1000
         listed=datetime.fromtimestamp(stamp, tz=timezone.utc).date().isoformat() if stamp and 1e9 < stamp < 3e9 else None
-        result.append({'name':name, 'category':p.get('category'), 'chains': ', '.join(p.get('chains') or []), 'tvl_usd': number(p.get('tvl')), 'listed_date':listed, 'source':'DefiLlama catalog'})
+        result.append({'name':name, 'category':p.get('category'), 'chains': ', '.join(p.get('chains') or []), 'tvl_usd': number(p.get('tvl')), 'listed_date':listed, 'source':'DefiLlama catalog','logo_url':p.get('logo')})
     return pd.DataFrame(result).drop_duplicates('name')
 
 @st.cache_data(ttl=900, show_spinner=False)
@@ -598,6 +598,25 @@ def latest_oi_weekly_change(data,venue):
     if previous.empty or previous.iloc[-1]['oi_usd']<=0:return float('nan')
     return (now['oi_usd']/previous.iloc[-1]['oi_usd']-1)*100
 
+def exchange_logo_html(name):
+    # DefiLlama catalog logos are actual exchange assets, never guessed.
+    candidates={'Lighter':['lighter'],'Hyperliquid':['hyperliquid'],'StandX':['standx','standx perps'],'Nado':['nado'],'Variational':['variational'],
+                'Pacifica':['pacifica'],'Arcus':['arcus'],'QFEX':['qfex'],'N1':['n1'],'Entropy':['entropy'],'TxFlow':['txflow'],
+                'robinhoodchain.lighter':[],'hello.trade':['hello.trade']}
+    logos={}
+    if 'logo_url' in catalog.columns and 'name' in catalog.columns:
+        logos={norm(row['name']):row['logo_url'] for _,row in catalog.iterrows() if isinstance(row.get('logo_url'),str) and row['logo_url'].startswith('https://')}
+    url=next((logos.get(norm(n)) for n in candidates.get(name,[name]) if logos.get(norm(n))),None)
+    label=html.escape(str(name))
+    if url:
+        return '<span class="exchange-cell"><img class="exchange-logo" src="'+html.escape(url,quote=True)+'" alt="" loading="lazy" referrerpolicy="no-referrer"><span>'+label+'</span></span>'
+    return '<span class="exchange-cell"><span class="exchange-monogram">'+html.escape(str(name)[:1].upper())+'</span><span>'+label+'</span></span>'
+
+def market_volume_html(value,scale):
+    if pd.isna(value):return '<span class="radar-missing">—</span>'
+    portion=max(0,min(100,float(value)/max(float(scale),1)*100))
+    return '<div class="radar-volume-cell"><div class="radar-bar-track"><div class="radar-bar-fill" style="width:'+f'{portion:.2f}'+'%"></div></div><span>'+html.escape(compact_usd(value))+'</span></div>'
+
 with radar_tabs[0]:
     comparison=df[df['_id'].isin([norm('Hyperliquid'),norm('Lighter')])].copy()
     comparison['watch_name']=comparison['_id'].map({norm('Hyperliquid'):'Hyperliquid',norm('Lighter'):'Lighter'})
@@ -620,11 +639,17 @@ with radar_tabs[0]:
     # Two compact reference rows, deliberately not part of the farming rankings.
     if not benchmarks.empty:
         st.caption('시장 규모 비교군 · Hyperliquid / Lighter')
-        benchmarks['24H Volume']=benchmarks['volume_24h_usd'].map(compact_usd)
-        benchmarks['Open Interest']=benchmarks['oi_usd'].map(compact_usd)
-        benchmarks['Vol / OI']=(benchmarks['volume_24h_usd']/benchmarks['oi_usd'].replace(0,float('nan'))).map(lambda v:f'{v:.2f}×' if pd.notna(v) else '—')
-        st.dataframe(benchmarks[['watch_name','24H Volume','Open Interest','Vol / OI']].rename(columns={'watch_name':'비교군'}),
-                     hide_index=True,use_container_width=True,height=112)
+        benchmark_scale=max(1.0,float(benchmarks['volume_24h_usd'].max())) if benchmarks['volume_24h_usd'].notna().any() else 1.0
+        benchmark_rows=[]
+        for _,b in benchmarks.iterrows():
+            v=b['volume_24h_usd'];oi=b['oi_usd']
+            ratio=f'{v/oi:.2f}×' if pd.notna(v) and pd.notna(oi) and oi>0 else '—'
+            benchmark_rows.append('<tr><td class="rank-name">'+exchange_logo_html(b['watch_name'])+'</td>'
+                                  '<td>'+market_volume_html(v,benchmark_scale)+'</td>'
+                                  '<td>'+html.escape(compact_usd(oi))+'</td><td>'+html.escape(ratio)+'</td></tr>')
+        st.markdown('<div class="radar-table-wrap benchmark-wrap"><table class="radar-rank-table"><thead><tr>'
+                    '<th>비교군</th><th>24H Volume</th><th>Open Interest</th><th>Vol / OI</th>'
+                    '</tr></thead><tbody>'+''.join(benchmark_rows)+'</tbody></table></div>',unsafe_allow_html=True)
     control1,control2,control3=st.columns([2,1,1])
     search=control1.text_input('거래소 검색',placeholder='Variational / StandX / Pacifica',key='market_search')
     display_mode=control2.selectbox('지표',['전체','Volume 확보','OI 확보','Volume + OI 확보'],key='market_metric')
@@ -654,7 +679,7 @@ with radar_tabs[0]:
         oi_delta=f"{entry['oi_weekly_change_pct']:+.1f}%" if pd.notna(entry['oi_weekly_change_pct']) else '—'
         traders=integer_fmt(entry['active_wallets_7d'])
         body.append('<tr><td class="rank-no">'+table_cell(int(entry['#']))+'</td>'
-                    '<td class="rank-name">'+table_cell(entry['watch_name'])+'</td>'
+                    '<td class="rank-name">'+exchange_logo_html(entry['watch_name'])+'</td>'
                     '<td>'+volume_bar(entry['volume_24h_usd'])+'</td>'
                     '<td>'+table_cell(oi)+'</td>'
                     '<td>'+table_cell(ratio)+'</td>'
@@ -676,6 +701,13 @@ with radar_tabs[0]:
     .radar-bar-fill{height:100%;background:#76a9c1;border-radius:8px}
     .radar-volume-cell span{min-width:74px;text-align:right;font-weight:700}
     .radar-missing{color:#a5afb6}
+    .exchange-cell{display:inline-flex;align-items:center;gap:10px;vertical-align:middle}
+    .exchange-logo,.exchange-monogram{width:30px;height:30px;min-width:30px;border-radius:50%;object-fit:contain}
+    .exchange-monogram{display:inline-flex;align-items:center;justify-content:center;background:#e4edf2;color:#57788c;font-size:14px;font-weight:700}
+    .benchmark-wrap{margin:5px 0 18px}
+    .benchmark-wrap .radar-rank-table tbody td{padding:12px 14px}
+    .benchmark-wrap .radar-rank-table th:nth-child(2),.benchmark-wrap .radar-rank-table td:nth-child(2){min-width:230px;width:30%}
+
     </style>""",unsafe_allow_html=True)
     table_header='<div class="radar-table-wrap"><table class="radar-rank-table"><thead><tr><th>#</th><th>Exchange</th><th>24H Volume</th><th>Open Interest</th><th>Vol / OI</th><th>OI 7D</th><th>7D Traders</th></tr></thead><tbody>'
     st.markdown(table_header+''.join(body)+'</tbody></table></div>',unsafe_allow_html=True)
