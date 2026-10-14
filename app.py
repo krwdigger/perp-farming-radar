@@ -1215,7 +1215,7 @@ with radar_tabs[0]:
             try:
                 logo=round_exchange_logo(name,exchange_logo_url(name))
                 fig.add_layout_image(dict(source=logo,xref='paper',yref='y',
-                                          x=-0.235,y=y,sizex=0.055,sizey=0.53,
+                                          x=-0.27,y=y,sizex=0.095,sizey=0.54,
                                           xanchor='left',yanchor='middle',
                                           sizing='contain',layer='above'))
             except Exception:
