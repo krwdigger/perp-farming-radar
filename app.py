@@ -833,88 +833,98 @@ with radar_tabs[0]:
         v=watched.dropna(subset=['volume_24h_usd']).sort_values('volume_24h_usd')
         if not v.empty:
             fig=px.bar(v,x='volume_24h_usd',y='watch_name',orientation='h',text='volume_24h_usd',
-                       color_discrete_sequence=['#75aabe'],labels={'volume_24h_usd':'USD','watch_name':''})
+                       color_discrete_sequence=['#b96c32'],labels={'volume_24h_usd':'USD','watch_name':''})
             fig.update_traces(texttemplate='%{text:$,.3s}',textposition='outside',cliponaxis=False)
             fig.update_layout(height=max(260,len(v)*52+70),margin=dict(l=0,r=90,t=8,b=20),
                               paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',showlegend=False,
-                              font_color='#647682',xaxis=dict(tickformat='~s',gridcolor='#e4e9e9'))
+                              font_color='#65452d',xaxis=dict(tickformat='~s',gridcolor='#ddc9ac',showgrid=True,ticks='outside',showticklabels=True,nticks=6,tickfont=dict(size=13,color='#63452f'),title_font=dict(size=14,color='#63452f'),type='linear',rangemode='tozero'))
             st.plotly_chart(fig,use_container_width=True)
     with chart_b:
         st.markdown('#### Open Interest Rankings')
         v=watched.dropna(subset=['oi_usd']).sort_values('oi_usd')
         if not v.empty:
             fig=px.bar(v,x='oi_usd',y='watch_name',orientation='h',text='oi_usd',
-                       color_discrete_sequence=['#a1a9ba'],labels={'oi_usd':'USD','watch_name':''})
+                       color_discrete_sequence=['#d59b54'],labels={'oi_usd':'USD','watch_name':''})
             fig.update_traces(texttemplate='%{text:$,.3s}',textposition='outside',cliponaxis=False)
             fig.update_layout(height=max(260,len(v)*52+70),margin=dict(l=0,r=90,t=8,b=20),
                               paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',showlegend=False,
-                              font_color='#647682',xaxis=dict(tickformat='~s',gridcolor='#e4e9e9'))
+                              font_color='#65452d',xaxis=dict(tickformat='~s',gridcolor='#ddc9ac',showgrid=True,ticks='outside',showticklabels=True,nticks=6,tickfont=dict(size=13,color='#63452f'),title_font=dict(size=14,color='#63452f'),type='linear',rangemode='tozero'))
             st.plotly_chart(fig,use_container_width=True)
     st.markdown('#### 시장 위치 분석')
     both=watched.dropna(subset=['volume_24h_usd','oi_usd']).copy()
     both=both[(both['volume_24h_usd']>0)&(both['oi_usd']>0)]
-    if not both.empty:
+    if both.empty:
+        st.info('현재 거래량과 OI가 모두 확보된 거래소가 없어 좌표를 표시할 수 없습니다.')
+    else:
         import math
-        volumes=both['volume_24h_usd']
-        low,high=float(volumes.min()),float(volumes.max())
-        def marker_size(volume):
-            # Circle area scales with 24H volume; perceptible without overpowering labels.
-            fraction=(float(volume)-low)/(high-low) if high>low else 0.5
-            return 43+29*math.sqrt(fraction)
-        lx=both['oi_usd'].map(lambda v:math.log10(v))
-        ly=both['volume_24h_usd'].map(lambda v:math.log10(v))
-        xmin,xmax=float(lx.min()),float(lx.max())
-        ymin,ymax=float(ly.min()),float(ly.max())
-        xpad=max((xmax-xmin)*0.23,0.24)
-        ypad=max((ymax-ymin)*0.26,0.26)
-        xlo,xhi=xmin-xpad,xmax+xpad
-        ylo,yhi=ymin-ypad,ymax+ypad
-        fig=px.scatter(both,x='oi_usd',y='volume_24h_usd',hover_name='watch_name',
-                       log_x=True,log_y=True,
-                       labels={'oi_usd':'Open Interest (USD)','volume_24h_usd':'24H Volume (USD)'})
-        fig.update_traces(marker=dict(size=45,color='rgba(0,0,0,0)'),
+        # Genuine linear scales: equal money differences have equal on-screen spacing.
+        xmax=float(both['oi_usd'].max())*1.17
+        ymax=float(both['volume_24h_usd'].max())*1.22
+        def nice_tick(limit):
+            rough=max(float(limit)/5,1)
+            decade=10**math.floor(math.log10(rough))
+            return min((1,2,2.5,5,10),key=lambda v:abs(v*decade-rough))*decade
+        def usd_axis(v):
+            if v>=1e9:return f'${v/1e9:g}B'
+            if v>=1e6:return f'${v/1e6:g}M'
+            if v>=1e3:return f'${v/1e3:g}K'
+            return f'${v:,.0f}'
+        # Explicit values and positions make axes consistent and auditable.
+        xstep=nice_tick(xmax)
+        ystep=nice_tick(ymax)
+        xticks=[i*xstep for i in range(int(xmax/xstep)+1)]
+        yticks=[i*ystep for i in range(int(ymax/ystep)+1)]
+        fig=px.scatter(
+            both,x='oi_usd',y='volume_24h_usd',hover_name='watch_name',
+            labels={'oi_usd':'Open Interest (USD)','volume_24h_usd':'24H Volume (USD)'},
+            range_x=[0,xmax],range_y=[0,ymax]
+        )
+        amounts=both['volume_24h_usd']
+        vmin=float(amounts.min());vmax=float(amounts.max())
+        def logo_diameter(value):
+            normalized=(float(value)-vmin)/(vmax-vmin) if vmax>vmin else 0.5
+            return 46+28*math.sqrt(normalized)
+        diameters=[logo_diameter(v) for v in amounts]
+        # Visible markers mean the scatter survives if an external logo cannot render.
+        fig.update_traces(marker=dict(size=diameters,color='#db9a5f',
+                                      opacity=0.58,line=dict(color='#8b4b2d',width=1.5)),
                           hovertemplate='<b>%{hovertext}</b><br>OI: $%{x:,.0f}<br>24H Volume: $%{y:,.0f}<extra></extra>')
         for _,entry in both.iterrows():
-            xpos=(math.log10(float(entry['oi_usd']))-xlo)/(xhi-xlo)
-            ypos=(math.log10(float(entry['volume_24h_usd']))-ylo)/(yhi-ylo)
-            diameter=marker_size(entry['volume_24h_usd'])
-            # Domain coordinates permit identically sized circular icons on log scales.
-            fig.add_layout_image(dict(
-                source=round_exchange_logo(str(entry['watch_name']),exchange_logo_url(entry['watch_name'])),
-                xref='x domain',yref='y domain',x=xpos,y=ypos,
-                sizex=diameter/900,sizey=diameter/430,
-                xanchor='center',yanchor='middle',sizing='contain',layer='above'))
-            fig.add_annotation(x=xpos,y=min(0.985,ypos+diameter/760+0.018),
+            xp=float(entry['oi_usd'])/xmax
+            yp=float(entry['volume_24h_usd'])/ymax
+            diameter=logo_diameter(entry['volume_24h_usd'])
+            try:
+                logo=round_exchange_logo(str(entry['watch_name']),exchange_logo_url(entry['watch_name']))
+                fig.add_layout_image(dict(
+                    source=logo,xref='x domain',yref='y domain',x=xp,y=yp,
+                    sizex=diameter/880,sizey=diameter/405,
+                    xanchor='center',yanchor='middle',sizing='contain',layer='above'))
+            except Exception:
+                pass
+            fig.add_annotation(x=xp,y=min(0.98,yp+0.082),
                                xref='x domain',yref='y domain',showarrow=False,
                                text=html.escape(str(entry['watch_name'])),
-                               font=dict(size=14,color='#2f4658',family='Arial'),
-                               bgcolor='rgba(255,255,255,0.92)',borderpad=3)
-        def axis_ticks(lo,hi):
-            candidates=[1,2,5]
-            ticks=[]
-            for power in range(math.floor(lo)-1,math.ceil(hi)+2):
-                for unit in candidates:
-                    logvalue=power+math.log10(unit)
-                    if lo<=logvalue<=hi:
-                        value=unit*10**power
-                        label=f'${value/1e9:g}B' if value>=1e9 else (f'${value/1e6:g}M' if value>=1e6 else f'${value:,.0f}')
-                        ticks.append((value,label))
-            return ticks
-        xticks=axis_ticks(xlo,xhi)
-        yticks=axis_ticks(ylo,yhi)
-        fig.update_layout(height=515,margin=dict(t=24,l=22,r=35,b=24),
-                          paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',
-                          font=dict(family='Arial',size=14,color='#3f5565'),showlegend=False,
-                          xaxis=dict(range=[xlo,xhi],tickmode='array',
-                                     tickvals=[v for v,_ in xticks],ticktext=[t for _,t in xticks],
-                                     title_font=dict(size=15),tickfont=dict(size=13),
-                                     showgrid=True,gridcolor='#e2e9ed',minor=dict(showgrid=False),zeroline=False),
-                          yaxis=dict(range=[ylo,yhi],tickmode='array',
-                                     tickvals=[v for v,_ in yticks],ticktext=[t for _,t in yticks],
-                                     title_font=dict(size=15),tickfont=dict(size=13),
-                                     showgrid=True,gridcolor='#e2e9ed',minor=dict(showgrid=False),zeroline=False))
-        st.plotly_chart(fig,use_container_width=True)
-        st.caption('원형 로고의 크기는 24시간 거래량에 비례합니다. 가로축은 OI, 세로축은 거래량이며 두 축 모두 로그 눈금입니다.')
+                               font=dict(size=14,color='#603e2b',family='Arial'),
+                               bgcolor='rgba(255,249,237,0.92)',borderpad=3)
+        fig.update_layout(
+            height=545,margin=dict(t=28,l=26,r=36,b=32),
+            paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(255,249,236,0.64)',
+            font=dict(family='Arial',size=14,color='#62472f'),showlegend=False,
+            xaxis=dict(type='linear',range=[0,xmax],tickmode='array',tickvals=xticks,
+                       ticktext=[usd_axis(v) for v in xticks],tickfont=dict(size=13,color='#64472f'),
+                       title_font=dict(size=15,color='#604127'),
+                       showgrid=True,gridcolor='#ddc8a8',gridwidth=1,
+                       showline=True,linecolor='#aa855c',ticks='outside',
+                       zeroline=True,zerolinecolor='#cbb492'),
+            yaxis=dict(type='linear',range=[0,ymax],tickmode='array',tickvals=yticks,
+                       ticktext=[usd_axis(v) for v in yticks],tickfont=dict(size=13,color='#64472f'),
+                       title_font=dict(size=15,color='#604127'),
+                       showgrid=True,gridcolor='#ddc8a8',gridwidth=1,
+                       showline=True,linecolor='#aa855c',ticks='outside',
+                       zeroline=True,zerolinecolor='#cbb492')
+        )
+        st.plotly_chart(fig,use_container_width=True,theme=None)
+        st.caption('가로축 OI · 세로축 24시간 거래량: 모두 선형 눈금입니다. 같은 금액 차이는 같은 거리로 표시됩니다. 원형 로고 크기는 거래량에 따라 달라집니다.')
     with st.expander('데이터 제공 범위 및 미확보 항목'):
         coverage=watched[['watch_name','volume_source','oi_source']].copy()
         coverage['Volume']=watched['volume_24h_usd'].map(lambda x:'확보' if pd.notna(x) else '미확보')
@@ -936,7 +946,7 @@ with radar_tabs[1]:
         if v.empty:st.info('OI 데이터 미확보')
         else:
             fig=px.bar(v,x='oi_usd',y='name',orientation='h',labels={'oi_usd':'OI USD','name':'DEX'})
-            fig.update_layout(height=560,paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',font_color='#647682')
+            fig.update_layout(height=560,paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',font_color='#65452d')
             st.plotly_chart(fig,use_container_width=True)
     st.info('현재 OI는 시간가중 OI 포인트와 다릅니다. 낮은 OI = 저경쟁 파밍이라고 가정하지 않습니다.')
 with radar_tabs[2]:
