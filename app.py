@@ -283,29 +283,35 @@ st.markdown("""<style>
 html,body,[data-testid="stApp"],[class*="css"]{font-family:'DM Sans','Noto Sans KR',sans-serif}
 [data-testid="stAppViewContainer"]{background:linear-gradient(160deg,#f8efdf 0%,#fbf5e9 38%,#f7edd8 100%);color:#573d2d}
 [data-testid="stSidebar"]{background:#f7e9d1;border-right:1px solid #dfc39d}
-/* Stable Streamlit-native opener: no injected JS or hidden trigger. */
+/* The only visible settings toggle lives directly under document.body.
+   The native Streamlit popover is retained solely as a working settings trigger. */
 [data-testid="stSidebarCollapsedControl"],
 [data-testid="collapsedControl"],
 [data-testid="stSidebarCollapseButton"],
 [data-testid="stSidebarNavCollapseButton"]{display:none!important}
 [data-testid="stHeader"]{background:transparent!important}
+/* Keep the actual trigger mounted and clickable via script, but invisible. */
 [data-testid="stPopover"]{
- position:fixed!important;top:8px!important;left:0!important;
- width:35px!important;min-width:35px!important;margin:0!important;
- padding:0!important;z-index:2147483000!important;
- opacity:1!important;pointer-events:auto!important;transform:none!important;
+  width:1px!important;min-width:1px!important;height:1px!important;
+  padding:0!important;margin:0!important;opacity:0!important;
+  overflow:hidden!important;pointer-events:none!important;
 }
 [data-testid="stPopover"] button{
- display:flex!important;align-items:center!important;justify-content:center!important;
- position:relative!important;width:35px!important;min-width:35px!important;
- height:40px!important;min-height:40px!important;margin:0!important;padding:0!important;
- border:1px solid #d2ac7e!important;border-left:0!important;
- border-radius:0 10px 10px 0!important;background:#fff6e7!important;
- color:#754622!important;font:700 24px/1 Arial,sans-serif!important;
- box-shadow:0 3px 12px rgba(70,39,17,.16)!important;
+  width:1px!important;height:1px!important;min-height:1px!important;
+  min-width:1px!important;padding:0!important;margin:0!important;
 }
-[data-testid="stPopover"] button:hover{background:#f2dbb5!important}
-[data-testid="stPopover"] button svg{display:none!important}
+#radar-edge-toggle{
+  position:fixed!important;top:8px!important;left:0!important;right:auto!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  width:38px!important;height:40px!important;padding:0!important;margin:0!important;
+  border:1px solid #d2ac7e!important;border-left:0!important;
+  border-radius:0 10px 10px 0!important;background:#fff6e7!important;
+  box-shadow:0 3px 12px rgba(70,39,17,.16)!important;color:#754622!important;
+  font:700 24px/1 Arial,sans-serif!important;cursor:pointer!important;
+  transform:none!important;z-index:2147483640!important;box-sizing:border-box!important;
+}
+#radar-edge-toggle:hover{background:#f2dbb5!important}
+#radar-edge-toggle:focus-visible{outline:2px solid #ba743c!important;outline-offset:2px!important}
 .block-container{max-width:1500px;padding-top:1.8rem;padding-bottom:4rem}
 h1,h2,h3{color:#573d2d!important;letter-spacing:-.025em;font-weight:700!important}
 h1{font-size:2.35rem!important}
@@ -562,7 +568,7 @@ st.markdown(
 )
 
 # Independent left-edge settings control replaces the fragile native sidebar opener.
-with st.popover('❯', help='데이터 연결 및 설정 열기'):
+with st.popover(' ', help='데이터 연결 및 설정 열기'):
     st.header('데이터 연결')
     pro_key=st.text_input('DefiLlama Pro API key (선택)', type='password', help='유료 derivatives 거래량 API용. 키는 저장하지 않습니다.')
     use_hl=st.checkbox('Hyperliquid 시장 데이터 불러오기', value=True)
@@ -573,6 +579,30 @@ with st.popover('❯', help='데이터 연결 및 설정 열기'):
 
 
 
+
+# Browser-level opener.  This only operates on our own static DOM; it never
+# interpolates user inputs.  Streamlit's popover remains the functional backend.
+st.html("""
+<script>
+(() => {
+  const id = 'radar-edge-toggle';
+  let button = document.getElementById(id);
+  if (!button) {
+    button = document.createElement('button');
+    button.id = id;
+    button.type = 'button';
+    button.textContent = '❯';
+    button.setAttribute('aria-label', '데이터 연결 설정 열기');
+    button.title = '데이터 연결 설정 열기';
+    document.body.appendChild(button);
+  }
+  button.onclick = () => {
+    const trigger = document.querySelector('[data-testid="stPopover"] button');
+    if (trigger) trigger.click();
+  };
+})();
+</script>
+""", unsafe_allow_javascript=True)
 
 errors=[]
 with st.spinner('공개 데이터 수집 중…'):
