@@ -514,24 +514,54 @@ div[data-testid="stAlert"] svg,[data-testid="stAlert"] [data-testid="stIconMater
 [data-testid="stApp"] [data-testid="stPlotlyChart"]{
  background:rgba(255,248,236,.55)!important}
 
-/* Flat tabs: no bright hover blocks or animated underline. */
-[data-testid="stTabs"] [data-baseweb="tab-list"]{gap:18px!important;border-bottom:1px solid #dcc19d!important}
+/* Tabs: no traveling indicator, no overlapping borders, no reflow animation.
+   Streamlit/BaseWeb draws its own moving tab-highlight separate from tab buttons. */
+[data-testid="stTabs"] [data-baseweb="tab-highlight"],
+[data-testid="stTabs"] [data-baseweb="tab-border"],
+.stTabs [data-baseweb="tab-highlight"],
+.stTabs [data-baseweb="tab-border"]{
+ display:none!important;visibility:hidden!important;opacity:0!important;
+ width:0!important;height:0!important;transition:none!important;animation:none!important;
+}
+[data-testid="stTabs"] [data-baseweb="tab-list"],
+.stTabs [data-baseweb="tab-list"]{
+ display:flex!important;gap:18px!important;
+ border:0!important;border-bottom:1px solid #d9bc95!important;
+ background:transparent!important;overflow:visible!important;
+}
 [data-testid="stTabs"] [data-baseweb="tab"],
 [data-testid="stTabs"] [role="tab"]{
- border-radius:0!important;background:transparent!important;box-shadow:none!important;
+ position:relative!important;box-sizing:border-box!important;
+ padding:12px 5px 13px!important;margin:0!important;
+ border:0!important;border-bottom:0!important;border-radius:0!important;
+ background:transparent!important;background-color:transparent!important;
+ color:#68442e!important;font-weight:700!important;font-size:15px!important;
+ box-shadow:none!important;outline:0!important;
  transition:none!important;animation:none!important;transform:none!important;
- padding:11px 5px!important;color:#68442e!important;white-space:nowrap!important
+ will-change:auto!important;white-space:nowrap!important;
+}
+[data-testid="stTabs"] [role="tab"]::after{
+ content:""!important;display:block!important;position:absolute!important;
+ left:0!important;right:0!important;bottom:-1px!important;height:3px!important;
+ width:auto!important;background:transparent!important;
+ border:0!important;opacity:0!important;pointer-events:none!important;
+ transition:none!important;animation:none!important;transform:none!important;
+}
+[data-testid="stTabs"] [role="tab"][aria-selected="true"]{
+ color:#a2592d!important;background:transparent!important;
+ border:0!important;box-shadow:none!important;
+}
+[data-testid="stTabs"] [role="tab"][aria-selected="true"]::after{
+ background:#b76c34!important;opacity:1!important;
 }
 [data-testid="stTabs"] [role="tab"]:hover,
 [data-testid="stTabs"] [role="tab"]:focus-visible{
- background:transparent!important;box-shadow:none!important;color:#ad622e!important
+ color:#9d552e!important;background:transparent!important;
+ box-shadow:none!important;border:0!important;
 }
-[data-testid="stTabs"] [role="tab"][aria-selected="true"]{
- background:transparent!important;border-bottom:2px solid #b96e36!important;color:#9d552c!important
-}
-[data-testid="stTabs"] [data-baseweb="tab-highlight"],
-[data-testid="stTabs"] [data-baseweb="tab-border"]{
- transition:none!important;animation:none!important
+[data-testid="stTabs"] [role="tab"] *,
+[data-testid="stTabs"] [role="tab"]::before{
+ transition:none!important;animation:none!important;
 }
 </style>""",unsafe_allow_html=True)
 # Keep the exact uploaded 1200×1600 JPEG in the repository (no lossy re-encoding).
