@@ -1307,7 +1307,7 @@ with radar_tabs[0]:
             hovertemplate='<b>%{customdata}</b><br>'+axis_title+': %{text}<extra></extra>'
         ))
         harvest_linear_bar(fig,values,height=max(310,len(v)*59+95))
-        fig.update_layout(margin=dict(l=205,r=95,t=20,b=64),
+        fig.update_layout(margin=dict(l=220,r=95,t=20,b=64),
                           font=dict(family='Noto Sans KR, DM Sans, sans-serif',
                                     size=15,color='#62432c'),
                           yaxis=dict(type='linear',range=[-0.6,len(v)-0.4],
@@ -1316,15 +1316,15 @@ with radar_tabs[0]:
         # Align both glyphs to the actual numeric bar center. The overlay
         # is outside the plotting rectangle and never alters bar placement.
         for y,name in enumerate(names):
-            fig.add_annotation(x=-0.17,y=y,xref='paper',yref='y',
+            fig.add_annotation(x=-0.075,y=y,xref='paper',yref='y',
                                text='<b>'+html.escape(name)+'</b>',
-                               showarrow=False,xanchor='left',yanchor='middle',
+                               showarrow=False,xanchor='right',yanchor='middle',
                                font=dict(family='Noto Sans KR, DM Sans, sans-serif',
-                                         size=15,color='#624128'),align='left')
+                                         size=15,color='#624128'),align='right')
             try:
                 logo=round_exchange_logo(name,exchange_logo_url(name))
                 fig.add_layout_image(dict(source=logo,xref='paper',yref='y',
-                                          x=-0.27,y=y,sizex=0.095,sizey=0.54,
+                                          x=-0.51,y=y,sizex=0.10,sizey=0.54,
                                           xanchor='left',yanchor='middle',
                                           sizing='contain',layer='above'))
             except Exception:
