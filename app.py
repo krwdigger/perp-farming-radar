@@ -382,38 +382,9 @@ with radar_tabs[0]:
     st.subheader('관심 프로젝트 · Watchlist')
     watched=df[df['is_watchlist'].fillna(False).astype(bool)].copy()
     watched['상태']=watched.apply(lambda r:'참여자 데이터' if pd.notna(r['active_wallets_7d']) else ('시장 데이터' if pd.notna(r['oi_usd']) or pd.notna(r['volume_24h_usd']) or pd.notna(r['volume_7d_usd']) else '미연동'),axis=1)
-    # Primary goal: weekly trader crowding. Points are optional.
-    wallet_available=watched['active_wallets_7d'].notna()
-    oi_available=watched['oi_usd'].notna()
-    d1,d2,d3=st.columns(3)
-    d1.metric('7일 활성 거래 지갑 확보',f'{int(wallet_available.sum())}/{len(watched)}')
-    d2.metric('현재 OI 확보',f'{int(oi_available.sum())}/{len(watched)}')
-    d3.metric('활성 지갑 미확보',f'{int((~wallet_available).sum())}/{len(watched)}')
-    st.info('**목표: 이번 주 어느 거래소에 사람이 몰리는가.** 활성 지갑 수와 7일 증감률을 우선하고, OI 규모와 7일 증감률은 보조 경쟁 지표로 사용합니다. 포인트 데이터는 필수 조건이 아닙니다.')
-    st.markdown('#### 이번 주 파밍 경쟁 변화')
-    st.caption('7일 활성 거래자 변화와 OI 변화가 수집된 거래소만 표시합니다. 수치가 확보되지 않았다면 근거 없는 빈집 순위는 만들지 않습니다.')
-    crowd=watched[watched['wallet_change_pct'].notna()].copy()
-    if not crowd.empty:
-        crowd=crowd.sort_values('wallet_change_pct')
-        st.dataframe(crowd[['watch_name','active_wallets_7d','wallet_change_pct','oi_usd']].rename(
-            columns={'watch_name':'프로젝트','active_wallets_7d':'7D 활성 지갑','wallet_change_pct':'전주 대비 지갑 증감 %','oi_usd':'현재 OI ($)'}),
-            hide_index=True,use_container_width=True)
-    else:
-        st.info('아직 지갑별 주간 활동의 연속 데이터가 없어 거래자 유입·이탈 순위를 계산할 수 없습니다. 이번 주 빈집 후보는 판정 보류입니다.')
-    st.markdown('#### 시장 활동 · 스케일 비교')
-    vplot=watched.dropna(subset=['oi_usd']).sort_values('oi_usd',ascending=False)
-    if not vplot.empty:
-        fig=px.bar(vplot,x='oi_usd',y='watch_name',orientation='h',text='oi_usd',
-                   color_discrete_sequence=['#94b9ca'],labels={'oi_usd':'현재 OI (USD)','watch_name':''})
-        fig.update_traces(texttemplate='%{text:$,.3s}',textposition='outside',cliponaxis=False)
-        fig.update_layout(height=max(230,80+len(vplot)*52),margin=dict(l=0,r=95,t=10,b=25),
-                          paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',font_color='#627581',
-                          yaxis={'categoryorder':'total ascending'})
-        fig.update_xaxes(tickformat='~s',gridcolor='#e1e7e9')
-        st.plotly_chart(fig,use_container_width=True)
-        st.caption('시장 OI 규모 비교만 나타냅니다. 낮은 OI가 곧 빈집이라는 의미는 아닙니다.')
+    # User-facing home prioritizes actionable comparisons; diagnostics live in Data Sources.
     st.markdown('### Perp DEX Rankings')
-    st.caption('CoinMarketCap형 비교 테이블 · Theddari형 변화 추적 · 볼륨 바는 상대 규모, 혼잡 색상은 **실제 지갑 변화 데이터** 기준')
+    st.caption('거래량·OI·7일 활성 지갑 비교 | 지갑 변화율 확인 시에만 혼잡도 색상을 표시합니다.')
     f1,f2,f3=st.columns([2,1,1])
     search=f1.text_input('거래소 검색',placeholder='Variational, StandX, Nado…',key='watch_search')
     choice=f2.selectbox('데이터',['전체','24H Volume 확보','OI 확보','7D 지갑 확보'],key='watch_data_filter')
@@ -460,7 +431,7 @@ with radar_tabs[0]:
         x.metric('이번 주 유입 감소 최상위',str(falling['watch_name']),f"{falling['wallet_change_pct']:+.1f}% (7D 지갑)")
         y.metric('이번 주 유입 증가 최상위',str(rising['watch_name']),f"{rising['wallet_change_pct']:+.1f}% (7D 지갑)")
     else:
-        st.caption('지갑별 7일 변화 데이터가 없어 유입·이탈 리더보드는 아직 제공되지 않습니다.')
+        st.caption('')
     st.caption('색상은 **파밍 효율 등급이 아니라** 거래 지갑 유입 변화 구분입니다. 미확보 지갑 수를 거래량으로 추정하지 않습니다.')
     st.markdown('#### 📊 관심 거래소 시장 규모 비교')
     chart_left, chart_right=st.columns(2)
