@@ -403,9 +403,34 @@ if errors:
     with st.expander('⚠️ 일부 API 조회 오류'):
         for e in errors:st.write(e)
 radar_tabs=st.tabs(['⭐ 관심 거래소','📈 경쟁 비교','🔎 전체 스캐너','🔌 데이터 출처','🧮 포인트 계산기'])
+@st.cache_data(ttl=300,show_spinner=False)
+def load_public_market_history():
+    url='https://raw.githubusercontent.com/krwdigger/perp-farming-radar/main/data/market_snapshots.csv'
+    data=pd.read_csv(url)
+    for key in ['oi_usd','volume_24h_usd']:
+        data[key]=pd.to_numeric(data[key],errors='coerce')
+    data['captured_at_utc']=pd.to_datetime(data['captured_at_utc'],utc=True,errors='coerce')
+    data=data[(data['status']=='ok') & data['captured_at_utc'].notna()]
+    return data
+
+def latest_oi_weekly_change(data,venue):
+    match=data[(data['venue']==venue)&data['oi_usd'].notna()].sort_values('captured_at_utc')
+    if match.empty:return float('nan')
+    now=match.iloc[-1]
+    previous=match[match['captured_at_utc']<=now['captured_at_utc']-pd.Timedelta(days=7)]
+    if previous.empty or previous.iloc[-1]['oi_usd']<=0:return float('nan')
+    return (now['oi_usd']/previous.iloc[-1]['oi_usd']-1)*100
+
 with radar_tabs[0]:
     st.subheader('관심 프로젝트 · Watchlist')
     watched=df[df['is_watchlist'].fillna(False).astype(bool)].copy()
+    try:
+        market_history=load_public_market_history()
+        watched['oi_weekly_change_pct']=watched['watch_name'].map(lambda n:latest_oi_weekly_change(market_history,n))
+    except Exception:
+        market_history=pd.DataFrame()
+        watched['oi_weekly_change_pct']=float('nan')
+
     watched['상태']=watched.apply(lambda r:'참여자 데이터' if pd.notna(r['active_wallets_7d']) else ('시장 데이터' if pd.notna(r['oi_usd']) or pd.notna(r['volume_24h_usd']) or pd.notna(r['volume_7d_usd']) else '미연동'),axis=1)
     # User-facing home prioritizes actionable comparisons; diagnostics live in Data Sources.
     st.markdown('### Perp DEX Rankings')
@@ -435,10 +460,11 @@ with radar_tabs[0]:
     display['혼잡 변화']=display['wallet_change_pct'].apply(crowd_label)
     display['Volume']=display['volume_24h_usd'].map(compact_usd)
     display['OI']=display['oi_usd'].map(compact_usd)
+    display['OI 7D 변화']=display['oi_weekly_change_pct'].map(lambda x:f'{x:+.1f}%' if pd.notna(x) else '—')
     display['활성 지갑']=display['active_wallets_7d'].map(integer_fmt)
     display['지갑당 7D Volume']=display['volume_per_active_wallet_7d_usd'].map(compact_usd)
     display['7D 변화']=display['wallet_change_pct'].apply(lambda x:f'{x:+.1f}%' if pd.notna(x) else '—')
-    st.dataframe(display[['순위','watch_name','volume_24h_usd','Volume','OI','활성 지갑','지갑당 7D Volume','7D 변화','혼잡 변화']].rename(
+    st.dataframe(display[['순위','watch_name','volume_24h_usd','Volume','OI','OI 7D 변화','활성 지갑','지갑당 7D Volume','7D 변화','혼잡 변화']].rename(
         columns={'watch_name':'프로젝트','volume_24h_usd':'거래량 바 (24H)'}),
         hide_index=True,use_container_width=True,height=min(570,max(245,42*(len(display)+1)+10)),
         column_config={
