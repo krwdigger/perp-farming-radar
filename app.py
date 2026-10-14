@@ -19,6 +19,20 @@ import requests
 import streamlit as st
 
 st.set_page_config(page_title='빈집털이', page_icon='🤔', layout='wide', initial_sidebar_state='collapsed')
+
+# Set the page background before expensive charts and API-backed widgets render.
+# Full component styling remains in the existing dark-mode stylesheet below.
+if st.session_state.get('theme_is_dark_v2', False):
+    st.markdown("""
+    <style>
+    [data-testid="stAppViewContainer"]{
+      background-color:#130f17!important;background-image:none!important;
+    }
+    [data-testid="stAppViewContainer"] .block-container{
+      background:#17121a!important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 # Default Plotly palette for graphs without a chart-specific color scale.
 # Explicitly pass theme=None to Streamlit charts so its default cool palette
 # cannot override this warm template.
@@ -1037,15 +1051,19 @@ html.radar-dark .farming-ranking *{color:#dfc2aa!important}
 if 'theme_is_dark_v2' not in st.session_state:
     st.session_state['theme_is_dark_v2'] = False
 
+def _toggle_radar_theme():
+    # Native Streamlit callbacks run before the next render; do not
+    # trigger a second rerun from inside the button body.
+    st.session_state['theme_is_dark_v2'] = not st.session_state['theme_is_dark_v2']
+
 _theme_left, _theme_right = st.columns([10, 1], gap='small')
 with _theme_right:
-    if st.button(
+    st.button(
         'DARK' if st.session_state['theme_is_dark_v2'] else 'LIGHT',
         key='theme_action_v3',
         use_container_width=True,
-    ):
-        st.session_state['theme_is_dark_v2'] = not st.session_state['theme_is_dark_v2']
-        st.rerun()
+        on_click=_toggle_radar_theme,
+    )
 
 _dark_now = st.session_state['theme_is_dark_v2']
 _theme_css = _theme_widget.split('</style>', 1)[0] + '</style>'
