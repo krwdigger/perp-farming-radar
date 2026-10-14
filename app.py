@@ -1053,17 +1053,49 @@ html.radar-dark [data-testid="stAppViewContainer"]{
 html.radar-dark [data-testid="stMain"],
 html.radar-dark [data-testid="stMainBlockContainer"]{background-color:transparent!important}
 </style>"""
-# The dark background uses its own photo asset (same 3:4 proportion as
-# pumpkin_original.jpg).  A 75% plum overlay stays over the photo.
+# Prepare the supplied Halloween photo only once. Keep exactly the
+# light-mode image sizing (auto min(100vh, 1600px), centered and repeat-x).
+# Apply a 75% dark-plum overlay to the photograph; only the warm, bright
+# jack-o-lantern cutouts are selectively restored with a soft warm glow.
+@st.cache_data(show_spinner=False)
+def _lit_dark_pumpkin_photo(photo_bytes):
+    import numpy as np
+    from PIL import ImageFilter
+
+    with Image.open(BytesIO(photo_bytes)) as photo:
+        original = np.asarray(photo.convert('RGB'), dtype=np.float32)
+    red, green, blue = original[:,:,0], original[:,:,1], original[:,:,2]
+    # Bright golden, internally illuminated faces; exclude ordinary orange
+    # pumpkin skin and neutral-toned hay using saturation/hue thresholds.
+    warm = np.clip((green - 110.0) / 80.0, 0, 1)
+    yellow = np.clip((green - blue - 45.0) / 65.0, 0, 1)
+    bright = np.clip((red - 185.0) / 55.0, 0, 1)
+    balanced = np.clip((145.0 - (red - green)) / 50.0, 0, 1)
+    flame = warm * yellow * bright * balanced
+    glow_source = Image.fromarray(np.uint8(flame * 255), 'L')
+    halo = np.asarray(glow_source.filter(ImageFilter.GaussianBlur(12)), dtype=np.float32) / 255.0
+    # 75% opaque plum overlay on non-emissive areas.
+    plum = np.array([19.0,14.0,23.0], dtype=np.float32)
+    dark = original * .25 + plum * .75
+    light_weight = np.clip(flame * .90 + halo * .24, 0, 1)[:,:,None]
+    lit = dark * (1.0-light_weight) + original * light_weight
+    result = Image.fromarray(np.uint8(np.clip(lit,0,255)), 'RGB')
+    output = BytesIO()
+    result.save(output,format='WEBP',quality=85,method=5)
+    return base64.b64encode(output.getvalue()).decode('ascii')
+
 _dark_pumpkin_asset = DATA_DIR / 'assets' / 'pumpkin_dark.webp'
 if _dark_pumpkin_asset.is_file():
-    _dark_pumpkin_b64 = base64.b64encode(_dark_pumpkin_asset.read_bytes()).decode('ascii')
+    _dark_pumpkin_b64 = _lit_dark_pumpkin_photo(_dark_pumpkin_asset.read_bytes())
     _theme_css += (
         '<style>'
         'html.radar-dark [data-testid="stAppViewContainer"]{'
-        'background:linear-gradient(rgba(19,14,23,.75),rgba(19,14,23,.75)),'
-        'url("data:image/webp;base64,'+_dark_pumpkin_b64+'") '
-        'center top/auto min(100vh, 1600px) repeat-x scroll #17121a!important;'
+        'background-image:url("data:image/webp;base64,'+_dark_pumpkin_b64+'")!important;'
+        'background-color:#17121a!important;'
+        'background-position:center top!important;'
+        'background-size:auto min(100vh, 1600px)!important;'
+        'background-repeat:repeat-x!important;'
+        'background-attachment:scroll!important;'
         'background-blend-mode:normal!important;'
         '}'
         'html.radar-dark [data-testid="stMain"],'
