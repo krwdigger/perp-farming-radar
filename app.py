@@ -140,8 +140,32 @@ def fmt_money(x):
     if abs(x)>=1e3:return f'${x/1e3:,.1f}K'
     return f'${x:,.0f}'
 
-st.title('📡 Perp Farming Radar')
-st.caption('다수 Perp DEX의 경쟁 혼잡도와 포인트 효율을 분리해 보여주는 읽기 전용 MVP · 실제 데이터 / 수동 입력 / 계산된 추정치를 명확히 구분')
+
+st.markdown("""<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+html,body,[class*="css"],[data-testid="stApp"]{font-family:Inter,'Pretendard',sans-serif}
+[data-testid="stAppViewContainer"]{background:radial-gradient(ellipse 980px 490px at 60% -200px,#193d4e,transparent 80%),#090f1a;color:#e9f2ff}
+[data-testid="stSidebar"]{background:#0e1827;border-right:1px solid #23384d}
+.block-container{max-width:1480px;padding-top:1.7rem;padding-bottom:4rem}
+h1,h2,h3{color:#f1f7ff;letter-spacing:-.035em}
+h1{font-size:2.3rem!important;font-weight:800!important}
+[data-testid="stMetric"]{background:#122033;border:1px solid #2b4056;border-radius:15px;padding:15px 18px}
+[data-testid="stMetricLabel"]{color:#9cb4c9}
+[data-testid="stMetricValue"]{color:#e2f4ff}
+[data-testid="stDataFrame"]{border:1px solid #2b4055;border-radius:12px;overflow:hidden}
+.stTabs [data-baseweb="tab-list"]{gap:10px;border-bottom:1px solid #274054}
+.stTabs [data-baseweb="tab"]{border-radius:9px;color:#bad0e3}
+.radar-banner{background:linear-gradient(110deg,#123847,#132336);padding:23px 28px;border:1px solid #31566b;border-radius:18px;margin-bottom:19px}
+.radar-overline{font-weight:800;letter-spacing:.17em;color:#53dbca;font-size:12px}
+.radar-description{font-size:13px;color:#b9c9d9;margin-top:6px}
+.radar-chip{display:inline-block;background:#163c40;color:#6fe0c7;padding:5px 10px;border-radius:40px;margin-top:12px;font-size:11px;font-weight:800}
+.radar-hint{padding:11px 14px;background:#132237;border-left:3px solid #478fac;border-radius:7px;color:#b5c9dd;font-size:13px}
+</style>""",unsafe_allow_html=True)
+st.markdown("""<div class="radar-banner"><div class="radar-overline">PERP DEX INTELLIGENCE / MARKET RESEARCH</div>
+<h1 style="margin:6px 0 0">◈ Perp Farming Radar</h1>
+<div class="radar-description">관심 거래소 · 시장 지표 · 파밍 경쟁도 · 데이터 신뢰도를 한눈에</div>
+<div class="radar-chip">● LIVE API · source-aware analytics</div></div>""",unsafe_allow_html=True)
+
 with st.sidebar:
     st.header('데이터 연결')
     pro_key=st.text_input('DefiLlama Pro API key (선택)', type='password', help='유료 derivatives 거래량 API용. 키는 저장하지 않습니다.')
@@ -248,116 +272,103 @@ mask=df['active_wallets_7d'].ge(0)
 df['wallet_competition_percentile']=float('nan')
 if mask.any():df.loc[mask,'wallet_competition_percentile']=df.loc[mask,'active_wallets_7d'].rank(pct=True,method='average')*100
 
-with st.expander('수집 상태 및 해석', expanded=bool(errors)):
-    st.write(f"프로토콜 목록: **{len(df):,}개** · 활성 지갑 제공: **{int(df['active_wallets_7d'].notna().sum())}개** · 주간 포인트 제공: **{int(df['weekly_points'].notna().sum())}개**")
-    st.write('OI는 거래소마다 집계 시점과 방식이 다를 수 있습니다. TVL을 거래량 또는 포인트 효율로 해석하지 않습니다.')
-    if errors:st.warning('일부 API를 가져오지 못했습니다: '+' | '.join(errors))
 
-c1,c2,c3,c4=st.columns(4)
-c1.metric('추적 프로젝트',f'{len(df):,}개')
-c2.metric('활성 지갑 자료 확보',f"{df['active_wallets_7d'].notna().sum():,}개")
-c3.metric('OI 자료 확보',f"{df['oi_usd'].notna().sum():,}개")
-c4.metric('주간 포인트 자료 확보',f"{df['weekly_points'].notna().sum():,}개")
-
-st.caption(f'수집 시각: {FETCHED_AT} · 시장별 수집 지연은 다를 수 있습니다 · 주간 활성 지갑/포인트는 자동 제공되지 않음')
-st.subheader('📡 데이터 연결 현황')
-status_rows = [
-    {'소스':'DefiLlama 프로토콜 목록','제공 항목':'거래소 목록 · TVL(해당 시)','상태':'연결 성공' if not catalog.empty else '조회 실패','갱신 방식':'15분 캐시'},
-    {'소스':'DefiLlama OI 개요','제공 항목':'거래소별 OI','상태':'연결 성공' if not oi.empty else '조회 실패/결과 없음','갱신 방식':'15분 캐시'},
-    {'소스':'Variational Omni 공식 공개 시장 API','제공 항목':'Variational 24h Volume · 현재 OI','상태':'연결 성공' if va else '조회 실패','갱신 방식':'5분 캐시'},
-    {'소스':'StandX 공식 공개 시장 API','제공 항목':'StandX 24h Volume · 현재 OI','상태':'연결 성공' if sx else '조회 실패','갱신 방식':'5분 캐시'},
-    {'소스':'Hyperliquid 공식 API','제공 항목':'Hyperliquid 현물 아닌 무기한 선물 시장의 24h Volume 및 OI','상태':'연결 성공' if hl else ('비활성화' if not use_hl else '조회 실패'),'갱신 방식':'2분 캐시'},
-    {'소스':'DefiLlama Pro derivatives','제공 항목':'거래소별 24h/7d Volume','상태':'연결 성공' if not pro.empty else ('API 키 필요' if not pro_key else '조회 실패/결과 없음'),'갱신 방식':'15분 캐시'},
-    {'소스':'참여자 · 포인트 데이터','제공 항목':'7d 활성 지갑 · 포인트 풀 · 지갑별 거래량','상태':'CSV 입력 가능' if uploaded else '공식 소스 미연동','갱신 방식':'사용자 입력'},
-]
-with st.expander('수집 소스와 상태 확인', expanded=False):
+st.caption('API 갱신 시각: '+datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')+' · 무료 데이터의 범위와 실제 갱신 간격은 거래소마다 다릅니다')
+st.markdown('<div class="radar-hint"><b>빈집 탐지 원칙</b> · 거래량/OI가 적은 것과 포인트 경쟁률이 낮은 것은 다릅니다. 활성 지갑·배분 풀 미확보 프로젝트에는 임의 점수를 부여하지 않습니다.</div>',unsafe_allow_html=True)
+st.write('')
+k1,k2,k3,k4,k5=st.columns(5)
+k1.metric('추적 프로젝트',f'{len(df):,}')
+k2.metric('거래량 데이터',f"{df[['volume_24h_usd','volume_7d_usd']].notna().any(axis=1).sum():,}")
+k3.metric('OI 데이터',f"{df['oi_usd'].notna().sum():,}")
+k4.metric('7D 활성 지갑',f"{df['active_wallets_7d'].notna().sum():,}")
+k5.metric('주간 포인트',f"{df['weekly_points'].notna().sum():,}")
+if errors:
+    with st.expander('⚠️ 일부 API 조회 오류'):
+        for e in errors:st.write(e)
+radar_tabs=st.tabs(['⭐ 관심 거래소','📈 경쟁 비교','🔎 전체 스캐너','🔌 데이터 출처','🧮 포인트 계산기'])
+with radar_tabs[0]:
+    st.subheader('관심 프로젝트 · Watchlist')
+    watched=df[df['is_watchlist'].fillna(False).astype(bool)].copy()
+    watched['상태']=watched.apply(lambda r:'참여자 데이터' if pd.notna(r['active_wallets_7d']) else ('시장 데이터' if pd.notna(r['oi_usd']) or pd.notna(r['volume_24h_usd']) or pd.notna(r['volume_7d_usd']) else '미연동'),axis=1)
+    w1,w2=st.columns([2,1])
+    choice=w1.selectbox('데이터 상태',['모두 보기','시장 데이터','참여자 데이터','미연동'])
+    order=w2.selectbox('정렬',['관심 목록','OI 높은 순','OI 낮은 순','24H 거래량 순'])
+    if choice!='모두 보기':watched=watched[watched['상태']==choice]
+    if order=='OI 높은 순':watched=watched.sort_values('oi_usd',ascending=False,na_position='last')
+    elif order=='OI 낮은 순':watched=watched.sort_values('oi_usd',ascending=True,na_position='last')
+    elif order=='24H 거래량 순':watched=watched.sort_values('volume_24h_usd',ascending=False,na_position='last')
+    viewcols=['watch_name','상태','volume_24h_usd','volume_7d_usd','oi_usd','active_wallets_7d','weekly_points']
+    st.dataframe(watched[viewcols].rename(columns={'watch_name':'프로젝트','volume_24h_usd':'24H Volume ($)','volume_7d_usd':'7D Volume ($)','oi_usd':'현재 OI ($)','active_wallets_7d':'7D 지갑','weekly_points':'주간 포인트'}),hide_index=True,use_container_width=True,height=445)
+    st.caption('미확보 수치는 0이 아닙니다. 거래량/OI가 있어도 포인트 효율을 계산할 수 있다는 뜻은 아닙니다.')
+    with st.expander('관심 거래소별 데이터 출처 및 수집 상태'):
+        st.dataframe(watched[['watch_name','volume_source','oi_source','market_data_time']].rename(columns={'watch_name':'거래소','volume_source':'거래량 출처','oi_source':'OI 출처','market_data_time':'데이터 조회 시각'}),hide_index=True,use_container_width=True)
+    st.download_button('관심 프로젝트 데이터 CSV',watched.to_csv(index=False).encode('utf-8-sig'),'watchlist_metrics.csv','text/csv')
+with radar_tabs[1]:
+    st.subheader('참여자 경쟁도 vs 시장 OI')
+    ca,cb=st.columns(2)
+    with ca:
+        st.markdown('#### A · 7일 활성 지갑')
+        v=df.dropna(subset=['active_wallets_7d']).sort_values('active_wallets_7d').tail(20)
+        if v.empty:st.info('활성 지갑 데이터 미확보 · 온체인 지갑 분석 연동 필요')
+        else:st.plotly_chart(px.bar(v,x='active_wallets_7d',y='name',orientation='h'),use_container_width=True)
+    with cb:
+        st.markdown('#### B · OI 규모 상위 20개')
+        v=df.dropna(subset=['oi_usd']).nlargest(20,'oi_usd').sort_values('oi_usd')
+        if v.empty:st.info('OI 데이터 미확보')
+        else:
+            fig=px.bar(v,x='oi_usd',y='name',orientation='h',labels={'oi_usd':'OI USD','name':'DEX'})
+            fig.update_layout(height=560,paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',font_color='#c5d6e7')
+            st.plotly_chart(fig,use_container_width=True)
+    st.info('현재 OI는 시간가중 OI 포인트와 다릅니다. 낮은 OI = 저경쟁 파밍이라고 가정하지 않습니다.')
+with radar_tabs[2]:
+    st.subheader('전체 거래소 탐색')
+    q1,q2,q3=st.columns([2,1,1])
+    query=q1.text_input('검색',placeholder='Perp DEX 이름')
+    flt=q2.selectbox('데이터 필터',['전체','OI 확보','거래량 확보','지갑 확보'])
+    starred=q3.checkbox('관심 목록만')
+    v=df.copy()
+    if query:v=v[v['name'].astype(str).str.contains(query,case=False,na=False,regex=False)]
+    if starred:v=v[v['is_watchlist'].fillna(False).astype(bool)]
+    if flt=='OI 확보':v=v[v['oi_usd'].notna()]
+    elif flt=='거래량 확보':v=v[v[['volume_24h_usd','volume_7d_usd']].notna().any(axis=1)]
+    elif flt=='지갑 확보':v=v[v['active_wallets_7d'].notna()]
+    sc=['name','chains','listed_date','volume_24h_usd','volume_7d_usd','oi_usd','active_wallets_7d','weekly_points']
+    for col in sc:
+        if col not in v:v[col]=None
+    st.caption(f'검색 결과 {len(v):,}개 · 목록 등록일은 실제 서비스 출시일과 다를 수 있음')
+    st.dataframe(v[sc].rename(columns={'name':'거래소','chains':'체인','listed_date':'목록 등록일','volume_24h_usd':'24H Volume','volume_7d_usd':'7D Volume','oi_usd':'OI','active_wallets_7d':'7D 지갑','weekly_points':'주간 포인트'}),hide_index=True,use_container_width=True,height=570)
+    st.download_button('스캐너 CSV 내보내기',v[sc].to_csv(index=False).encode('utf-8-sig'),'perp_scanner.csv','text/csv')
+with radar_tabs[3]:
+    st.subheader('데이터 연결 현황')
+    status_rows=[
+      {'소스':'DefiLlama 프로토콜 목록','항목':'Perp DEX 목록','상태':'연결 성공' if not catalog.empty else '실패','캐시':'15분'},
+      {'소스':'DefiLlama OI 개요','항목':'OI','상태':'연결 성공' if not oi.empty else '실패','캐시':'15분'},
+      {'소스':'Variational Omni 공식 API','항목':'24H Volume / OI','상태':'연결 성공' if va else '실패','캐시':'5분'},
+      {'소스':'StandX 공식 API','항목':'24H Volume / OI','상태':'연결 성공' if sx else '실패','캐시':'15분'},
+      {'소스':'Hyperliquid 공식 API','항목':'24H Volume / OI','상태':'연결 성공' if hl else '미사용/실패','캐시':'2분'},
+      {'소스':'DefiLlama Pro','항목':'7D Volume','상태':'연결 성공' if not pro.empty else '유료 키 필요' if not pro_key else '실패','캐시':'15분'},
+      {'소스':'참여자/포인트','항목':'7D 지갑 / 포인트','상태':'사용자 CSV' if uploaded else '미연동','캐시':'수동'}]
     st.dataframe(pd.DataFrame(status_rows),hide_index=True,use_container_width=True)
-    st.caption('전체 추적 프로젝트 수는 검증된 포인트 프로그램 수와 다릅니다. API/OI 수치가 있어도 동일 브랜드의 다른 거래소일 수 있으므로 식별 검증이 필요합니다.')
-
-st.subheader('⭐ 관심 프로젝트 (11개)')
-watch_view=df[df['is_watchlist'].fillna(False).astype(bool)].copy()
-watch_view['data_status']=watch_view.apply(lambda x: '활성 지갑 있음' if pd.notna(x['active_wallets_7d']) else ('거래/OI 일부 확보' if pd.notna(x['volume_24h_usd']) or pd.notna(x['volume_7d_usd']) or pd.notna(x['oi_usd']) else '연동 필요'),axis=1)
-watch_view=watch_view.merge(watch[['name','tracking_note']],left_on='watch_name',right_on='name',how='left',suffixes=('','_watch'))
-st.dataframe(watch_view[['watch_name','data_status','active_wallets_7d','volume_7d_usd','oi_usd','weekly_points','tracking_note']].rename(columns={'watch_name':'관심 프로젝트','data_status':'데이터 상태','active_wallets_7d':'7d 활성 지갑','volume_7d_usd':'7d 거래량 $','oi_usd':'OI $','weekly_points':'주간 포인트','tracking_note':'추적 참고'}),hide_index=True,use_container_width=True)
-st.caption('프로젝트 11개 등록 완료 ≠ 실시간 데이터 연동 완료. N/A는 0이 아닙니다. 24h Volume과 7d Volume은 별도 지표입니다. OI 매칭도 거래소 식별 검증이 필요합니다.')
-with st.expander('⭐ 관심 프로젝트 데이터 확보 현황 자세히'):
-    detail_cols=['watch_name','volume_24h_usd','volume_7d_usd','oi_usd','oi_source','volume_source','market_data_time','active_wallets_7d','weekly_points']
-    detail=watch_view[detail_cols].copy()
-    for k in ['oi_source','volume_source','market_data_time']:
-        detail[k]=detail[k].fillna('확인 필요')
-    st.dataframe(detail.rename(columns={'watch_name':'프로젝트','volume_24h_usd':'24h 거래량 $','volume_7d_usd':'7d 거래량 $','oi_usd':'OI $','oi_source':'OI 출처','volume_source':'거래량 출처','market_data_time':'시장 데이터 조회시각','active_wallets_7d':'7d 활성 지갑','weekly_points':'주간 포인트'}),hide_index=True,use_container_width=True)
-    st.download_button('관심 프로젝트 연동 현황 CSV',detail.to_csv(index=False).encode('utf-8-sig'),'watchlist_data_status.csv','text/csv')
-st.subheader('🔎 전체 거래소 스캐너')
-f1,f2,f3=st.columns([2,1,1]); query=f1.text_input('이름 검색',placeholder='Hyperliquid, Lighter…')
-only_wallet=f2.checkbox('지갑 데이터 있는 곳만')
-only_points=f3.checkbox('포인트 데이터 있는 곳만')
-only_watch=st.checkbox('관심 프로젝트만 보기')
-view=df.copy()
-if query:view=view[view['name'].str.contains(query,case=False,na=False,regex=False)]
-if only_wallet:view=view[view['active_wallets_7d'].notna()]
-if only_points:view=view[view['weekly_points'].notna()]
-if only_watch:view=view[view['is_watchlist'].fillna(False).astype(bool)]
-cols=['name','chains','listed_date','active_wallets_7d','wallet_change_pct','wallet_competition_percentile','volume_24h_usd','volume_7d_usd','volume_change_pct','oi_usd','weekly_points','point_model']
-for col in cols:
-    if col not in view:view[col]=None
-st.dataframe(view[cols].rename(columns={'name':'Perp DEX','chains':'체인','listed_date':'등록일(상장일 아님)','active_wallets_7d':'7d 활성 지갑','wallet_change_pct':'지갑 변화 %','wallet_competition_percentile':'지갑 경쟁 백분위','volume_24h_usd':'24h Volume $','volume_7d_usd':'7d Volume $','volume_change_pct':'거래량 변화 %','oi_usd':'OI $','weekly_points':'주간 포인트','point_model':'모델'}),hide_index=True,use_container_width=True,height=410)
-st.download_button('현재 표 CSV 저장',view[cols].to_csv(index=False).encode('utf-8-sig'),'perp_radar_export.csv','text/csv')
-
-left,right=st.columns(2)
-with left:
-    st.subheader('A · 참여자 혼잡도')
-    participants=df.dropna(subset=['active_wallets_7d'])
-    if participants.empty:
-        st.info('지갑 데이터 없음. CSV의 active_wallets_7d, active_wallets_prev_7d 등을 연결하면 비교 차트가 표시됩니다.')
-    else:
-        chart=participants.sort_values('active_wallets_7d').tail(25)
-        fig=px.bar(chart,x='active_wallets_7d',y='name',orientation='h',labels={'active_wallets_7d':'주간 활성 지갑','name':'DEX'})
-        st.plotly_chart(fig,use_container_width=True)
-with right:
-    st.subheader('B · 주간 Volume / OI')
-    chart=df.dropna(subset=['volume_7d_usd']).sort_values('volume_7d_usd').tail(20)
-    if chart.empty: st.info('7일 거래량 데이터가 없습니다. 유료 데이터 키 또는 검증된 프로젝트별 거래량 CSV를 연결하세요.')
-    else:
-        fig=px.bar(chart,x='volume_7d_usd',y='name',orientation='h',labels={'volume_7d_usd':'7일 거래량 USD','name':'DEX'})
-        st.plotly_chart(fig,use_container_width=True)
-
-st.subheader('🧮 조건부 포인트 효율 시뮬레이터')
-st.caption('거래량 비례·OI 시간가중 비례처럼 단일 측정치를 기준으로 고정 주간 풀을 배분하는 경우만 계산합니다. 혼합형·비공개형은 계산 불가.')
-p1,p2=st.columns(2)
-with p1:
-    method=st.selectbox('가정하는 포인트 제도',['Volume 비례','시간가중 OI 비례'])
-    pool=st.number_input('주간 배분 포인트',min_value=0.0,value=100000.0,step=10000.0)
-    whole=st.number_input('프로젝트 전체 적격 활동량 (Volume USD 또는 USD·시간)',min_value=0.0,value=10000000.0,step=100000.0,format='%.2f')
-    mine=st.number_input('내 적격 활동량 (동일 단위)',min_value=0.0,value=100000.0,step=10000.0,format='%.2f')
-with p2:
-    fee_bps=st.number_input('왕복 포함 실효 거래 수수료 (bps, Volume형)',min_value=0.0,value=5.0,step=0.5)
-    extra=st.number_input('추가 비용 (USD, 펀딩비·슬리피지 등)',min_value=0.0,value=0.0,step=1.0)
-    if whole>0 and pool>0 and mine<=whole:
-        estimated=mine/whole*pool
-        total_fee=(mine*fee_bps/10000 if method=='Volume 비례' else 0)+extra
-        st.metric('가정하의 예상 포인트',f'{estimated:,.2f}')
-        st.metric('포인트당 비용',f'${total_fee/estimated:.6f}' if estimated>0 else 'N/A')
-        st.write(f'지분: **{mine/whole*100:.4f}%** · 단순 비용: **{fmt_money(total_fee)}**')
-        if method!='Volume 비례':st.caption('OI 활동량에는 반드시 USD·시간 같은 기간 가중 값을 입력해야 합니다. 시점 OI 입력 금지.')
-    else:st.warning('전체 활동량은 0보다 커야 하고 내 활동량을 포함해야 합니다.')
-
-st.subheader('📅 임시 스냅샷 (서버 파일 · 영구 보존 불가)')
-st.warning('Streamlit Community Cloud의 로컬 파일은 재시작·재배포 시 사라질 수 있습니다. 이 기록은 영구 데이터베이스가 아닙니다. 저장 후 반드시 CSV를 내려받아 백업하세요.')
-st.caption('현 버전은 서버 프로세스가 살아 있는 동안에만 파일 저장을 시도하며, 자동 주간 수집은 아직 없습니다.')
-snap_cols=['name','active_wallets_7d','new_wallets_7d','wallet_competition_percentile','volume_24h_usd','volume_7d_usd','oi_usd','weekly_points']
-if st.button('현재 데이터 스냅샷 저장'):
-    snap=df[snap_cols].copy();snap.insert(0,'captured_at_utc',datetime.now(timezone.utc).isoformat())
-    snap.to_csv(SNAPSHOT_FILE,index=False,mode='a',header=not SNAPSHOT_FILE.exists(),encoding='utf-8-sig')
-    st.success(f'{len(snap)}개 항목을 {SNAPSHOT_FILE.name}에 저장했습니다.')
-if SNAPSHOT_FILE.exists():
-    history=pd.read_csv(SNAPSHOT_FILE)
-    st.download_button('스냅샷 기록 CSV 다운로드',SNAPSHOT_FILE.read_bytes(),'radar_snapshots.csv','text/csv')
-    if len(history):
-        names=history['name'].dropna().unique().tolist()
-        selection=st.selectbox('히스토리 조회',names)
-        h=history[history['name']==selection].copy();h['captured_at_utc']=pd.to_datetime(h['captured_at_utc'],utc=True)
-        if h['oi_usd'].notna().any():st.plotly_chart(px.line(h,x='captured_at_utc',y='oi_usd',markers=True,title=f'{selection} · OI snapshots'),use_container_width=True)
-        st.dataframe(h.tail(20),hide_index=True,use_container_width=True)
-else:st.info('저장된 스냅샷이 없습니다.')
+    st.caption('조회 성공은 전체 시장의 데이터가 제공되었다는 보장이 아닙니다. 개별 거래소와 체인 식별을 먼저 확인해야 합니다.')
+with radar_tabs[4]:
+    st.subheader('포인트 효율 시뮬레이터')
+    st.caption('입력값은 계산 예시이며 실거래소의 실제 포인트 산식으로 간주하지 않습니다.')
+    x,y=st.columns(2)
+    with x:
+        method=st.selectbox('가정',['거래량 비례','시간가중 OI 비례'])
+        pool=st.number_input('주간 포인트 풀',min_value=0.,value=100000.,step=10000.)
+        whole=st.number_input('전체 적격 활동량',min_value=0.,value=10000000.,step=100000.)
+    with y:
+        mine=st.number_input('나의 적격 활동량',min_value=0.,value=100000.,step=10000.)
+        fee=st.number_input('실효 수수료 bps',min_value=0.,value=5.,step=.5)
+        extra=st.number_input('추가 비용 USD',min_value=0.,value=0.,step=1.)
+    if pool>0 and whole>0 and mine<=whole:
+        pts=pool*mine/whole
+        cost=(mine*fee/10000 if method=='거래량 비례' else 0)+extra
+        c1,c2,c3=st.columns(3)
+        c1.metric('예상 포인트',f'{pts:,.2f}')
+        c2.metric('포인트당 비용',f'{cost/pts:.6f} USD' if pts else 'N/A')
+        c3.metric('활동 점유율',f'{mine/whole*100:.4f}%')
+    else:st.warning('전체 활동량과 포인트 풀을 확인하세요.')
 st.divider()
-st.caption('리서치 목적 도구. API의 집계 방식·속도·누락 문제와 에어드랍 미보장 리스크를 고려하세요. 이 앱은 주문이나 지갑 서명을 수행하지 않습니다.')
+st.caption('v0.5 · Read-only research dashboard · 에어드랍 수익 보장 없음 · 주문/지갑 서명 기능 없음')
