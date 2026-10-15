@@ -321,7 +321,9 @@ def fetch_public_perps():
     if not isinstance(payload,dict) or not isinstance(payload.get('protocols'),list):
         raise ValueError('Public derivatives overview returned an invalid payload')
     aliases={'nadoperps':'Nado','nado':'Nado',
-             'qfex':'QFEX','txflow':'TxFlow'}
+             'qfex':'QFEX','txflowperps':'TxFlow','txflow':'TxFlow',
+             'n1exchangeperps':'N1','n1exchange':'N1',
+             'lighterrobinhoodperps':'robinhoodchain.lighter'}
     rows={}
     for item in payload['protocols']:
         if not isinstance(item,dict):continue
@@ -1445,7 +1447,9 @@ for venue_name,venue_data in public_perps.items():
 # similarly named platforms or substitute derivatives volume for OI.
 if isinstance(oi,pd.DataFrame) and not oi.empty:
     oi_aliases={'nadoperps':'Nado','nado':'Nado',
-                'qfex':'QFEX','txflow':'TxFlow'}
+                'qfex':'QFEX','txflowperps':'TxFlow','txflow':'TxFlow',
+                'n1exchangeperps':'N1','n1exchange':'N1',
+                'lighterrobinhoodperps':'robinhoodchain.lighter'}
     for _,entry in oi.iterrows():
         venue_name=oi_aliases.get(norm(entry.get('name') or ''))
         if venue_name is None:continue
