@@ -308,6 +308,39 @@ def fetch_nado_ccxt():
         if callable(close):close()
 
 @st.cache_data(ttl=900, show_spinner=False)
+def fetch_public_perps():
+    """DefiLlama's free perps overview; only explicitly matched venue metrics.
+
+    Not an estimate: missing/unreported values remain null. This feed is a
+    fallback for Nado, QFEX and TxFlow, never a replacement for official APIs.
+    """
+    payload=api_get(
+        'https://api.llama.fi/overview/derivatives',
+        params={'excludeTotalDataChart':'true',
+                'excludeTotalDataChartBreakdown':'true'})
+    if not isinstance(payload,dict) or not isinstance(payload.get('protocols'),list):
+        raise ValueError('Public derivatives overview returned an invalid payload')
+    aliases={'nadoperps':'Nado','nado':'Nado',
+             'qfex':'QFEX','txflow':'TxFlow'}
+    rows={}
+    for item in payload['protocols']:
+        if not isinstance(item,dict):continue
+        alias=norm(item.get('name') or '')
+        venue=aliases.get(alias)
+        if venue is None:continue
+        vol=number(item.get('total24h'))
+        if vol is None or vol<0:continue
+        current=rows.get(venue)
+        if current is None or (alias==norm(venue) and current[0]!=norm(venue)):
+            rows[venue]=(alias,vol)
+    return {venue:{
+        'volume_24h_usd':value,
+        'volume_source':'DefiLlama public derivatives overview (reported 24h USD)',
+        'market_data_time':datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}
+        for venue,(_alias,value) in rows.items()}
+
+
+@st.cache_data(ttl=900, show_spinner=False)
 def fetch_pro_derivatives(key):
     payload=api_get('https://pro-api.llama.fi/' + key.strip() + '/api/overview/derivatives',
                     params={'excludeTotalDataChart':'true','excludeTotalDataChartBreakdown':'true'})
@@ -1312,6 +1345,8 @@ with st.spinner('공개 데이터 수집 중…'):
     except Exception as e: entropy_stats=None;errors.append(f'Entropy HIP-3: {e}')
     try: robinhood_lighter_stats=fetch_robinhood_lighter()
     except Exception as e: robinhood_lighter_stats=None;errors.append(f'Robinhood Lighter: {e}')
+    try: public_perps=fetch_public_perps()
+    except Exception as e: public_perps={};errors.append(f'DefiLlama free perps: {e}')
     try: pro=fetch_pro_derivatives(pro_key) if pro_key else pd.DataFrame()
     except Exception as e: pro=pd.DataFrame();errors.append(f'DefiLlama Pro: {e}')
 
@@ -1390,6 +1425,21 @@ if nado_stats:
         for field,value in nado_stats.items():
             if field not in df.columns:df[field]=None
             df.loc[nado_mask,field]=value
+# Free public venue metrics fill missing official figures only; they never
+# replace successfully fetched first-party market readings.
+for venue_name,venue_data in public_perps.items():
+    venue_mask=df['watch_name'].eq(venue_name)
+    if not venue_mask.any():continue
+    for field in ('volume_24h_usd',):
+        if field not in df.columns:df[field]=float('nan')
+        missing=venue_mask & pd.to_numeric(df[field],errors='coerce').isna()
+        if not missing.any():continue
+        metric=venue_data.get(field)
+        if metric is None:continue
+        df.loc[missing,field]=metric
+        source='volume_source'
+        if source not in df.columns:df[source]=None
+        df.loc[missing,source]=venue_data[source]
 if hl:
     hk=norm(hl['name'])
     mask=df['_id']==hk
