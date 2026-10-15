@@ -308,41 +308,6 @@ def fetch_nado_ccxt():
         if callable(close):close()
 
 @st.cache_data(ttl=900, show_spinner=False)
-def fetch_public_perps():
-    """DefiLlama's free perps overview; only explicitly matched venue metrics.
-
-    Not an estimate: missing/unreported values remain null. This feed is a
-    fallback for Nado, QFEX and TxFlow, never a replacement for official APIs.
-    """
-    payload=api_get(
-        'https://api.llama.fi/overview/derivatives',
-        params={'excludeTotalDataChart':'true',
-                'excludeTotalDataChartBreakdown':'true'})
-    if not isinstance(payload,dict) or not isinstance(payload.get('protocols'),list):
-        raise ValueError('Public derivatives overview returned an invalid payload')
-    aliases={'nadoperps':'Nado','nado':'Nado',
-             'qfex':'QFEX','txflowperps':'TxFlow','txflow':'TxFlow',
-             'n1exchangeperps':'N1','n1exchange':'N1',
-             'lighterrobinhoodperps':'robinhoodchain.lighter'}
-    rows={}
-    for item in payload['protocols']:
-        if not isinstance(item,dict):continue
-        alias=norm(item.get('name') or '')
-        venue=aliases.get(alias)
-        if venue is None:continue
-        vol=number(item.get('total24h'))
-        if vol is None or vol<0:continue
-        current=rows.get(venue)
-        if current is None or (alias==norm(venue) and current[0]!=norm(venue)):
-            rows[venue]=(alias,vol)
-    return {venue:{
-        'volume_24h_usd':value,
-        'volume_source':'DefiLlama public derivatives overview (reported 24h USD)',
-        'market_data_time':datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}
-        for venue,(_alias,value) in rows.items()}
-
-
-@st.cache_data(ttl=900, show_spinner=False)
 def fetch_pro_derivatives(key):
     payload=api_get('https://pro-api.llama.fi/' + key.strip() + '/api/overview/derivatives',
                     params={'excludeTotalDataChart':'true','excludeTotalDataChartBreakdown':'true'})
@@ -1347,8 +1312,6 @@ with st.spinner('공개 데이터 수집 중…'):
     except Exception as e: entropy_stats=None;errors.append(f'Entropy HIP-3: {e}')
     try: robinhood_lighter_stats=fetch_robinhood_lighter()
     except Exception as e: robinhood_lighter_stats=None;errors.append(f'Robinhood Lighter: {e}')
-    try: public_perps=fetch_public_perps()
-    except Exception as e: public_perps={};errors.append(f'DefiLlama free perps: {e}')
     try: pro=fetch_pro_derivatives(pro_key) if pro_key else pd.DataFrame()
     except Exception as e: pro=pd.DataFrame();errors.append(f'DefiLlama Pro: {e}')
 
@@ -1371,6 +1334,31 @@ df['is_watchlist']=df['watch_name'].notna().fillna(False).astype(bool)
 
 df=merge_exact(df,oi,'_oi')
 df=merge_exact(df,pro,'_pro')
+# The derivatives volume endpoint is a paid DefiLlama Pro API.
+# Only use it when a user supplies a valid key. Map explicitly verified
+# product names to their own watchlist rows, never related parent platforms.
+if not pro.empty and 'name' in pro.columns:
+    pro_aliases={
+        'nadoperps':'Nado','nado':'Nado','qfex':'QFEX',
+        'txflowperps':'TxFlow','txflow':'TxFlow',
+        'n1exchangeperps':'N1','n1exchange':'N1',
+        'lighterrobinhoodperps':'robinhoodchain.lighter'
+    }
+    for _,entry in pro.iterrows():
+        venue_name=pro_aliases.get(norm(entry.get('name') or ''))
+        if venue_name is None:continue
+        mask=df['watch_name'].eq(venue_name)
+        if not mask.any():continue
+        for metric in ('volume_24h_usd','volume_7d_usd','volume_prev_7d_usd'):
+            value=number(entry.get(metric))
+            if value is None or value<0:continue
+            if metric not in df.columns:df[metric]=float('nan')
+            missing=mask & pd.to_numeric(df[metric],errors='coerce').isna()
+            if not missing.any():continue
+            df.loc[missing,metric]=value
+            if 'volume_source' not in df.columns:df['volume_source']=None
+            df.loc[missing,'volume_source']='DefiLlama Pro derivatives (API key)'
+
 # Keep Robinhood Chain Lighter isolated from general Lighter.
 if robinhood_lighter_stats:
     rh_mask=df['watch_name'].eq('robinhoodchain.lighter')
@@ -1427,21 +1415,6 @@ if nado_stats:
         for field,value in nado_stats.items():
             if field not in df.columns:df[field]=None
             df.loc[nado_mask,field]=value
-# Free public venue metrics fill missing official figures only; they never
-# replace successfully fetched first-party market readings.
-for venue_name,venue_data in public_perps.items():
-    venue_mask=df['watch_name'].eq(venue_name)
-    if not venue_mask.any():continue
-    for field in ('volume_24h_usd',):
-        if field not in df.columns:df[field]=float('nan')
-        missing=venue_mask & pd.to_numeric(df[field],errors='coerce').isna()
-        if not missing.any():continue
-        metric=venue_data.get(field)
-        if metric is None:continue
-        df.loc[missing,field]=metric
-        source='volume_source'
-        if source not in df.columns:df[source]=None
-        df.loc[missing,source]=venue_data[source]
 # DefiLlama's open-interest feed often calls Nado "Nado Perps".
 # Resolve only these verified names to watchlist venues; do not propagate
 # similarly named platforms or substitute derivatives volume for OI.
