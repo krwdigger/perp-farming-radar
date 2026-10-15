@@ -100,6 +100,62 @@ def fetch_hyperliquid():
     return {'name':'Hyperliquid','volume_24h_usd':volume,'oi_usd':oi, 'markets':pairs,
             'volume_source':'Hyperliquid API, 24h market context', 'oi_source':'Hyperliquid API, current estimate'}
 
+@st.cache_data(ttl=900, show_spinner=False)
+def fetch_n1_perps():
+    """Official N1 Nord market API: aggregate *perpetual-only* USD metrics.
+
+    Fail closed when markets cannot be distinguished or units are ambiguous.
+    Each reported open_interest is in base units and must be priced using
+    the market's mark price. A market without perpStats is not included.
+    """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    root='https://zo-mainnet.n1.xyz'
+    info=api_get(root+'/info')
+    if not isinstance(info,dict) or not isinstance(info.get('markets'),list):
+        raise ValueError('N1 /info market catalog unavailable')
+    markets=[m for m in info['markets'] if isinstance(m,dict)
+             and isinstance(m.get('marketId'),int)
+             and not isinstance(m.get('marketId'),bool)]
+    if not markets or len(markets)>150:
+        raise ValueError('N1 market list absent or unexpectedly large')
+    ids=sorted({m['marketId'] for m in markets})
+    def get_stats(market_id):
+        data=api_get(root+'/market/'+str(market_id)+'/stats')
+        if not isinstance(data,dict) or data.get('marketId')!=market_id:
+            raise ValueError('N1 stats market identifier mismatch')
+        return data
+    stats=[]
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        futures={pool.submit(get_stats,mid):mid for mid in ids}
+        for future in as_completed(futures):
+            try:stats.append(future.result())
+            except (requests.RequestException, ValueError, TypeError):
+                continue
+    perp=[item for item in stats if isinstance(item.get('perpStats'),dict)]
+    if not perp:
+        raise ValueError('N1 did not report valid perpetual-market statistics')
+    volumes=[]
+    interests=[]
+    for item in perp:
+        vol=number(item.get('volumeQuote24h'))
+        if vol is not None and vol>=0:volumes.append(vol)
+        detail=item['perpStats']
+        size=number(detail.get('open_interest'))
+        price=number(detail.get('mark_price'))
+        if size is not None and price is not None and size>=0 and price>0:
+            interests.append(size*price)
+    if not volumes and not interests:
+        raise ValueError('N1 reported no USD-compatible perpetual metrics')
+    output={'market_data_time':datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}
+    if volumes:
+        output.update(volume_24h_usd=sum(volumes),
+                      volume_source='N1 Nord official /market/{id}/stats perpetual volumeQuote24h')
+    if interests:
+        output.update(oi_usd=sum(interests),
+                      oi_source='N1 Nord official perpetual open_interest × mark_price (USD)')
+    return output
+
+
 @st.cache_data(ttl=300, show_spinner=False)
 def fetch_entropy_hip3():
     """Entropy's isolated Hyperliquid HIP-3 'io' dex, not global Hyperliquid."""
@@ -1306,6 +1362,8 @@ with st.spinner('공개 데이터 수집 중…'):
     except Exception as e: pacifica_volume=None;errors.append(f'Pacifica 24h volume: {e}')
     try: nado_volume=fetch_ccxt_perp_volume('nado')
     except Exception as e: nado_volume=None;errors.append(f'Nado 24h volume: {e}')
+    try: n1_stats=fetch_n1_perps()
+    except Exception as e: n1_stats=None;errors.append(f'N1 Nord market API: {e}')
     try: nado_stats=fetch_nado_ccxt()
     except Exception as e: nado_stats=None;errors.append(f'Nado CCXT: {e}')
     try: entropy_stats=fetch_entropy_hip3()
@@ -1409,6 +1467,14 @@ for venue_name,venue_data in [('Pacifica',pacifica_volume),('Nado',nado_volume)]
             for field,value in venue_data.items():
                 if field not in df.columns:df[field]=None
                 df.loc[venue_mask,field]=value
+if n1_stats:
+    n1_mask=df['watch_name'].eq('N1')
+    if n1_mask.any():
+        for field,value in n1_stats.items():
+            if value is None:continue
+            if field not in df.columns:df[field]=None
+            # Prefer official N1 data over catalog and paid-provider values.
+            df.loc[n1_mask,field]=value
 if nado_stats:
     nado_mask=df['watch_name'].eq('Nado')
     if nado_mask.any():
