@@ -1440,6 +1440,24 @@ for venue_name,venue_data in public_perps.items():
         source='volume_source'
         if source not in df.columns:df[source]=None
         df.loc[missing,source]=venue_data[source]
+# DefiLlama's open-interest feed often calls Nado "Nado Perps".
+# Resolve only these verified names to watchlist venues; do not propagate
+# similarly named platforms or substitute derivatives volume for OI.
+if isinstance(oi,pd.DataFrame) and not oi.empty:
+    oi_aliases={'nadoperps':'Nado','nado':'Nado',
+                'qfex':'QFEX','txflow':'TxFlow'}
+    for _,entry in oi.iterrows():
+        venue_name=oi_aliases.get(norm(entry.get('name') or ''))
+        if venue_name is None:continue
+        amount=number(entry.get('oi_usd'))
+        if amount is None or amount<0:continue
+        mask=df['watch_name'].eq(venue_name)
+        if 'oi_usd' not in df.columns:df['oi_usd']=float('nan')
+        mask=mask & pd.to_numeric(df['oi_usd'],errors='coerce').isna()
+        if not mask.any():continue
+        df.loc[mask,'oi_usd']=amount
+        if 'oi_source' not in df.columns:df['oi_source']=None
+        df.loc[mask,'oi_source']='DefiLlama public open-interest overview (reported USD OI)'
 if hl:
     hk=norm(hl['name'])
     mask=df['_id']==hk
