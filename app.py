@@ -125,12 +125,16 @@ def fetch_n1_perps():
             raise ValueError('N1 stats market identifier mismatch')
         return data
     stats=[]
+    failures=[]
     with ThreadPoolExecutor(max_workers=6) as pool:
         futures={pool.submit(get_stats,mid):mid for mid in ids}
         for future in as_completed(futures):
             try:stats.append(future.result())
-            except (requests.RequestException, ValueError, TypeError):
-                continue
+            except (requests.RequestException, ValueError, TypeError) as exc:
+                failures.append((futures[future],str(exc)))
+    # An incomplete market set would understate exchange-wide totals.
+    if failures:
+        raise ValueError('N1 market stats incomplete: '+str(len(failures))+' failed requests')
     perp=[item for item in stats if isinstance(item.get('perpStats'),dict)]
     if not perp:
         raise ValueError('N1 did not report valid perpetual-market statistics')
