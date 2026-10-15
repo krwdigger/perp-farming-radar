@@ -1,12 +1,12 @@
 project,amount_usd,display_amount,investors,lead_investor,round,verified,scope,source_url,note
 Variational,60300000,$60.3M,"Dragonfly Capital;Bain Capital Crypto;Coinbase Ventures",Dragonfly Capital,Seed + Series A,yes,project,https://fortune.com/2026/05/20/variational-raises-50-million-series-a/,Seed $10.3M and Series A $50M
 StandX,0,외부 투자 없음,자체 자금,자체 자금,Self-funded,yes,project,https://docs.standx.com/docs/about-standx,공식 문서상 외부 투자 미유치
-Pacifica,,,확인되지 않음,,Unknown,no,project,,동명이인 펀딩과 혼동 방지
+Pacifica,,외부 투자 미공개,확인되지 않음,,Undisclosed,no,project,https://www.rootdata.com/projects/detail/pacifica?k=MTY0NTY%3D,외부 VC 투자 금액 공식 발표 확인 불가; 자체 자금 운영 주장과 공개 펀딩 부재는 투자금 0달러 확정이 아님
 Arcus,,비공개,Robinhood,Robinhood,Strategic,yes,project,https://www.coincarp.com/ko/fundraising/arcus-undisclosed/,투자금 미공개 - 기존 dYdX 전체 펀딩 포함 금지
 N1,7000000,약 $7M,"Founders Fund;dao5;Multicoin Capital;Arthur Hayes","Founders Fund;dao5",Seed + community,partial,ecosystem,https://airdrops.com/reviews/n1-airdrop,블록체인 N1 생태계 투자 - 특정 거래앱 투자금으로 보장되지 않음
-QFEX,9500000,$9.5M,"General Catalyst;Y Combinator;Paul Graham;Yuri Sagalov",General Catalyst,Seed,yes,project,https://www.cypherhunter.com/en/p/qfex/,공개 데이터 출처별 리드 투자자 표기가 달라 교차 검증 필요
+QFEX,9500000,$9.5M,"General Catalyst;Nexus Venture Partners;Y Combinator;Paul Graham;Moonfire Ventures;Goodwater Capital;Liquid 2 Ventures;468 Capital;Ritual Capital",General Catalyst,Seed,yes,project,https://www.ycombinator.com/companies/qfex/jobs/2j9OMID-backend-engineer,창업자 발표 및 Y Combinator 자료로 950만 달러 시드 투자 교차 확인; 리드 투자자 General Catalyst
 Nado,,,확인되지 않음,,Unknown,no,project,,펀딩 검증 전 표시 금지
 Entropy,14000000,$14M,Ribbit Capital,Ribbit Capital,Round,yes,project,https://defillama.com/protocol/entropy.io,2026-08-24 Entropy.io HIP-3 거래 플랫폼 투자 - 과거 동명 업체와 구분
-TxFlow,,,확인되지 않음,,Unknown,no,project,,확인된 외부 투자 정보 없음
+TxFlow,,외부 투자 미공개,확인되지 않음,,Undisclosed,no,project,https://txflow.com/,공식 제품 소개에는 투자 금액 공시 없음; 투자자 토큰 배분 부재와 자금 조달 부재를 혼동하지 않음
 robinhoodchain.lighter,68000000,$68M (Lighter),"Founders Fund;Ribbit Capital;Haun Ventures;Robinhood","Founders Fund;Ribbit Capital",Funding,yes,parent,https://www.theblock.co/news/deals/2025-11-11-lighter-raises-68-million-1-5-billion-valuation-vc-bets-flood-perp-dex-infrastructure-report-378358,전체 Lighter 기업의 2025 투자라 Robinhood 전용 포인트 프로그램의 별도 펀딩 아님
 hello.trade,4600000,$4.6M,"Dragonfly Capital;Mirana Ventures",Dragonfly Capital,Seed,yes,project,https://chainwire.org/2025/11/20/hellotrade-announces-completion-of-4-6m-seed-funding-round/,2025년 공개 시드 투자
