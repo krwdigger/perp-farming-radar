@@ -1885,3 +1885,12 @@ captured_at_utc,venue,volume_24h_usd,oi_usd,markets,source,status,error
 2026-11-10T12:37:33+00:00,Hyperliquid,4497789664.343082,9020065496.473812,235,Official info API,ok,
 2026-11-10T12:37:33+00:00,robinhoodchain.lighter,574367139.631891,,,Robinhood Chain-only exchangeStats,ok,
 2026-11-10T12:37:33+00:00,Lighter,2221836946.5611477,,,Lighter mainnet official exchangeStats,ok,
+2026-11-10T21:47:42+00:00,Variational,2050206902.673813,1600473350.3076572,,Official Omni API,ok,
+2026-11-10T21:47:42+00:00,StandX,18287.976547000002,1770956.690138,,Official public overview,ok,
+2026-11-10T21:47:42+00:00,Pacifica,828153583.3025061,107404776.27844205,78,Official public market info (market count only) + CCXT unified fetchOpenInterests + CCXT public perpetual 24h ticker turnover,ok,
+2026-11-10T21:47:42+00:00,Nado,,77166466.31565188,83,CCXT unified fetchOpenInterests + CCXT public perpetual 24h ticker turnover,ok,
+2026-11-10T21:47:42+00:00,Arcus,322916107.07999974,106592862.47922908,81,Official /v1/markets perpetual 24h notional,ok,
+2026-11-10T21:47:42+00:00,Entropy,187269526.9378731,212188886.09432387,21,Official Hyperliquid HIP-3 io namespace,ok,
+2026-11-10T21:47:42+00:00,Hyperliquid,6797425577.908444,8803958751.83985,235,Official info API,ok,
+2026-11-10T21:47:42+00:00,robinhoodchain.lighter,,,,Robinhood Chain-only exchangeStats,error,HTTP Error 502: Bad Gateway
+2026-11-10T21:47:42+00:00,Lighter,2714207202.8639402,,,Lighter mainnet official exchangeStats,ok,
